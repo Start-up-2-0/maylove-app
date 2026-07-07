@@ -1,0 +1,201 @@
+@theme {
+  --color-maylove: #d94f7a;
+  --color-maylove-dark: #b63f63;
+  --color-maylove-light: #fff4f7;
+  --font-display: 'Playfair Display', 'Fraunces', Georgia, serif;
+}
+
+.wizard-shell {
+  min-height: 100vh;
+  padding: 24px 20px 112px;
+  background:
+    radial-gradient(circle at top left, var(--color-maylove-light) 0%, var(--bg, #fbf7f8) 45%);
+}
+
+.wizard-shell.wizard-theme-dark {
+  --bg: #1a1014;
+  --surface: #261820;
+  --text: #f8eef2;
+  --muted: #c4a8b3;
+  --border: #3d2a32;
+  color-scheme: dark;
+  color: var(--text);
+  background:
+    radial-gradient(circle at top left, #2a1520 0%, #1a1014 50%);
+}
+
+.wizard-inner {
+  width: min(1400px, 100%);
+  margin: 0 auto;
+}
+
+.wizard-editor {
+  min-width: 0;
+}
+
+.wizard-preview-panel {
+  position: sticky;
+  top: 24px;
+  min-width: 0;
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .wizard-preview-panel {
+    display: block;
+  }
+}
+
+.wizard-split {
+  display: grid;
+  gap: 20px;
+}
+
+@media (min-width: 1024px) {
+  .wizard-split {
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+    align-items: start;
+  }
+}
+
+.wizard-footer-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 40;
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  padding: 16px 20px;
+  background: color-mix(in srgb, var(--bg, #fbf7f8) 92%, transparent);
+  border-top: 1px solid var(--border, #ecd9df);
+  backdrop-filter: blur(10px);
+}
+
+.wizard-theme-dark .wizard-footer-bar {
+  background: color-mix(in srgb, #1a1014 92%, transparent);
+}
+
+.wizard-footer-inner {
+  width: min(1400px, 100%);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.wizard-footer-actions {
+  display: flex;
+  gap: 10px;
+  margin-left: auto;
+}
+
+.wizard-stepper-scroll {
+  overflow-x: auto;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+}
+
+.wizard-step-pill {
+  white-space: nowrap;
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-size: 0.88rem;
+  font-weight: 500;
+  border: 1px solid var(--border, #ecd9df);
+  background: var(--surface, #fff);
+  color: var(--muted, #7a5d68);
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.wizard-step-pill:hover:not(:disabled) {
+  border-color: var(--color-maylove);
+  color: var(--color-maylove);
+}
+
+.wizard-step-pill.active {
+  background: var(--color-maylove);
+  border-color: var(--color-maylove);
+  color: #fff;
+  font-weight: 600;
+}
+
+.wizard-step-pill.done {
+  color: var(--color-maylove);
+  border-color: color-mix(in srgb, var(--color-maylove) 35%, var(--border, #ecd9df));
+}
+
+.wizard-step-pill:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.template-carousel {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  padding: 8px 4px 16px;
+  scrollbar-width: thin;
+}
+
+.template-carousel-item {
+  flex: 0 0 min(280px, 85vw);
+  scroll-snap-align: center;
+  cursor: pointer;
+  border-radius: 20px;
+  border: 2px solid var(--border, #ecd9df);
+  background: var(--surface, #fff);
+  overflow: hidden;
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+}
+
+.template-carousel-item:hover {
+  transform: translateY(-2px);
+}
+
+.template-carousel-item.active {
+  border-color: var(--color-maylove);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-maylove) 22%, transparent);
+}
+
+.template-swatch {
+  height: 120px;
+  width: 100%;
+}
+
+.envelope-frame {
+  perspective: 800px;
+}
+
+.envelope-frame-inner {
+  transform-origin: top center;
+  transition: transform 0.5s ease, box-shadow 0.5s ease;
+}
+
+.envelope-frame.open .envelope-frame-inner {
+  transform: rotateX(-4deg) scale(1.01);
+  box-shadow: 0 24px 60px rgba(42, 21, 32, 0.14);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .envelope-frame-inner {
+    transition: none;
+  }
+}
+
+.tribute-preview-content {
+  font-family: var(--font-display);
+}
+
+.tribute-preview-content h3,
+.tribute-preview-content h1 {
+  font-family: var(--font-display);
+}
+
+.preview-viewport-frame {
+  margin: 0 auto;
+  transition: width 0.25s ease;
+  max-width: 100%;
+}

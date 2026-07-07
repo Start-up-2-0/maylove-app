@@ -1,0 +1,150 @@
+@import 'tailwindcss';
+@import 'flowbite/src/themes/default';
+@plugin 'flowbite/plugin';
+@source '../node_modules/flowbite';
+@source '../node_modules/flowbite-vue';
+
+@import 'flowbite-vue/index.css';
+@import './wizard.css';
+
+@theme {
+  --color-maylove: #d94f7a;
+  --color-maylove-dark: #b63f63;
+  --color-maylove-light: #fff4f7;
+}
+
+:root {
+  color-scheme: light;
+  --bg: #fbf7f8;
+  --surface: #ffffff;
+  --text: #2a1520;
+  --muted: #7a5d68;
+  --accent: #d94f7a;
+  --accent-dark: #b63f63;
+  --border: #ecd9df;
+  --shadow: 0 18px 50px rgba(42, 21, 32, 0.08);
+  font-family: 'DM Sans', system-ui, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color: var(--text);
+  background: radial-gradient(circle at top left, #fff4f7 0%, var(--bg) 45%);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+}
+
+h1,
+h2,
+h3 {
+  font-family: 'Fraunces', Georgia, serif;
+  line-height: 1.15;
+  margin: 0;
+}
+
+a {
+  color: var(--accent);
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+.page {
+  min-height: 100vh;
+  padding: 32px 20px 48px;
+}
+
+.shell {
+  width: min(1080px, 100%);
+  margin: 0 auto;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  box-shadow: var(--shadow);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: none;
+  border-radius: 999px;
+  padding: 12px 20px;
+  background: var(--accent);
+  color: white;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.btn:hover {
+  background: var(--accent-dark);
+}
+
+.btn-secondary {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.field {
+  display: grid;
+  gap: 8px;
+}
+
+.field label {
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.field input {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 14px;
+  background: #fff;
+}
+
+.error {
+  color: #b4233c;
+  font-size: 0.92rem;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.badge-published {
+  background: #e8f8ef;
+  color: #1f7a45;
+}
+
+.badge-draft {
+  background: #f3f0ff;
+  color: #5b4bb7;
+}
+
+.badge-awaiting {
+  background: #fff4e5;
+  color: #a15c00;
+}
