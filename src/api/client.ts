@@ -58,7 +58,7 @@ apiClient.interceptors.response.use(
   (response) => response,
   async (error: AxiosError<ApiErrorBody>) => {
     const original = error.config
-    const code = error.response?.data?.error
+    const code = error.response?.data?.code ?? error.response?.data?.error
 
     if (!original || code !== 'TOKEN_EXPIRED' || original.url?.includes('/auth/refresh')) {
       return Promise.reject(error)

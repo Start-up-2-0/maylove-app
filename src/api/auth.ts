@@ -5,6 +5,7 @@ export async function register(payload: {
   name: string
   email: string
   password: string
+  accept_terms: boolean
 }): Promise<void> {
   await apiClient.post<ApiEnvelope<unknown>>('/auth/register', payload)
 }

@@ -10,6 +10,7 @@ export interface ApiEnvelope<T> {
 
 export interface ApiErrorBody {
   error?: string
+  code?: string
   message?: string
   details?: unknown
 }
