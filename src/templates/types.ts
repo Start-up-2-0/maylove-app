@@ -171,7 +171,14 @@ export interface ExperienceContent {
   specialDate: string | null
   photos: ExperienceMediaItem[]
   videoUrl: string | null
-  music: { url: string | null; title: string; autoplay?: boolean; loop?: boolean }
+  music: {
+    url: string | null
+    title: string
+    autoplay?: boolean
+    loop?: boolean
+    startAt?: number
+    endAt?: number | null
+  }
   timeline: ExperienceTimelineItem[]
   eventInfo: ExperienceEventInfo | null
   effects: TributeEffect[]

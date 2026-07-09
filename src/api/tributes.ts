@@ -2,6 +2,7 @@ import { apiClient, unwrap } from './client'
 import type {
   ApiEnvelope,
   CheckoutResponse,
+  MusicMediaStatus,
   PresignResponse,
   PublicTribute,
   SubscriptionInfo,
@@ -97,6 +98,28 @@ export async function deleteMedia(tributeId: string, mediaId: string): Promise<v
 
 export async function reorderMedia(tributeId: string, order: string[]): Promise<void> {
   await apiClient.patch(`/tributes/${tributeId}/media/reorder`, { order })
+}
+
+export async function fetchMusicStatus(
+  tributeId: string,
+  mediaId?: string,
+): Promise<MusicMediaStatus> {
+  const path = mediaId
+    ? `/tributes/${tributeId}/media/${mediaId}/status`
+    : `/tributes/${tributeId}/music/status`
+  const response = await apiClient.get<ApiEnvelope<MusicMediaStatus>>(path)
+  return unwrap(response)
+}
+
+export async function importMusicFromYoutube(
+  tributeId: string,
+  url: string,
+): Promise<MusicMediaStatus> {
+  const response = await apiClient.post<ApiEnvelope<MusicMediaStatus>>(
+    `/tributes/${tributeId}/music/import`,
+    { source: 'youtube', url },
+  )
+  return unwrap(response)
 }
 
 export async function fetchPublicTribute(slug: string): Promise<PublicTribute> {

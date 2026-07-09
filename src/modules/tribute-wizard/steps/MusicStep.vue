@@ -5,7 +5,7 @@
       :description="
         !supportsMusic
           ? 'Este template não suporta música.'
-          : 'Escolha uma faixa da biblioteca ou envie um MP3 (máx. 15 MB).'
+          : 'Escolha da biblioteca, envie MP3/vídeo ou cole um link do YouTube.'
       "
     />
 
@@ -14,14 +14,14 @@
         v-for="option in sourceOptions"
         :key="option.value"
         class="ml-chip"
-        :class="{ 'ml-chip--active': form.music_source === option.value }"
+        :class="{ 'ml-chip--active': form.music_source === option.value || (option.value === 'youtube' && youtubeMode) }"
         @click="setSource(option.value)"
       >
         {{ option.label }}
       </button>
     </div>
 
-    <section v-if="supportsMusic && form.music_source === 'library'">
+    <section v-if="supportsMusic && form.music_source === 'library' && !youtubeMode">
       <div class="category-row">
         <button
           v-for="category in categories"
@@ -61,10 +61,16 @@
       </ul>
     </section>
 
-    <section v-else-if="supportsMusic && form.music_source === 'upload'">
-      <label class="ml-dropzone" :class="{ 'ml-dropzone--disabled': uploading }">
-        <input type="file" accept="audio/mpeg,audio/mp3" class="hidden" :disabled="uploading" @change="onAudioSelected" />
-        <span v-if="uploading" class="ml-spinner" />
+    <section v-else-if="supportsMusic && form.music_source === 'upload' && !youtubeMode">
+      <label class="ml-dropzone" :class="{ 'ml-dropzone--disabled': uploading || processing }">
+        <input
+          type="file"
+          accept="audio/mpeg,audio/mp3,video/mp4"
+          class="hidden"
+          :disabled="uploading || processing"
+          @change="onAudioSelected"
+        />
+        <span v-if="uploading || processing" class="ml-spinner" />
         <span v-else class="ml-dropzone__glyph" aria-hidden="true">
           <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8">
             <path d="M9 18V5l10-2v13" stroke-linecap="round" stroke-linejoin="round" />
@@ -72,14 +78,50 @@
             <circle cx="16" cy="16" r="3" />
           </svg>
         </span>
-        <span v-if="uploading">Enviando áudio...</span>
+        <span v-if="uploading">Enviando arquivo...</span>
+        <span v-else-if="processing">Extraindo áudio do vídeo...</span>
         <template v-else>
-          <span class="ml-dropzone__title">Clique para enviar MP3</span>
-          <span class="ml-dropzone__hint">Formato MP3 · até 15 MB</span>
+          <span class="ml-dropzone__title">Clique para enviar MP3 ou vídeo MP4</span>
+          <span class="ml-dropzone__hint">MP3 ou MP4 · até 50 MB</span>
         </template>
       </label>
       <p v-if="uploadedName" class="ml-alert ml-alert--success mt-3">Arquivo enviado: {{ uploadedName }}</p>
     </section>
+
+    <section v-else-if="supportsMusic && youtubeMode">
+      <p class="youtube-legal">
+        Ao importar de terceiros, você declara ter direito de uso. Alguns vídeos do YouTube podem não estar disponíveis.
+      </p>
+      <label class="ml-field">
+        <span class="ml-field__label">Link do YouTube</span>
+        <input
+          v-model="youtubeUrl"
+          type="url"
+          class="ml-input"
+          placeholder="https://www.youtube.com/watch?v=..."
+          :disabled="importing"
+        />
+      </label>
+      <button
+        type="button"
+        class="ml-btn ml-btn--primary mt-3"
+        :disabled="importing || !youtubeUrl.trim()"
+        @click="importYoutube"
+      >
+        <span v-if="importing" class="ml-spinner ml-spinner--inline" />
+        {{ importing ? 'Importando áudio...' : 'Importar áudio' }}
+      </button>
+    </section>
+
+    <MusicTrimEditor
+      v-if="supportsMusic && showTrimEditor && trimAudioUrl"
+      :audio-url="trimAudioUrl"
+      :duration-seconds="form.music_duration_seconds"
+      :start-seconds="form.music_start_seconds"
+      :end-seconds="effectiveEndSeconds"
+      @update:start-seconds="onStartChange"
+      @update:end-seconds="onEndChange"
+    />
 
     <section v-if="supportsMusic && form.music_source !== 'none'" class="player-options">
       <h4 class="player-options__title">Opções do player</h4>
@@ -94,7 +136,7 @@
         <input v-model="form.music_loop" type="checkbox" />
         <span>
           <strong>Repetir em loop</strong>
-          <small>Recomeça a faixa quando ela terminar.</small>
+          <small>Recomeça o trecho escolhido quando ele terminar.</small>
         </span>
       </label>
     </section>
@@ -104,12 +146,15 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { listMusicTracks } from '@/api/catalog'
-import { confirmMedia, presignMedia } from '@/api/tributes'
+import { confirmMedia, fetchMusicStatus, fetchTribute, importMusicFromYoutube, presignMedia } from '@/api/tributes'
+import { resolveApiError } from '@/api/errors'
 import type { MusicTrack } from '@/api/types'
 import type { useTributeWizard } from '@/composables/useTributeWizard'
 import { uploadFile } from '@/storage/upload'
+import { inferMusicMimeType, isVideoMusicSource, isYoutubeUrl, loadAudioDuration } from '@/storage/musicMime'
+import MusicTrimEditor from '@/components/wizard/MusicTrimEditor.vue'
 import WizardStepHeader from '@/components/wizard/WizardStepHeader.vue'
 
 const props = defineProps<{
@@ -122,7 +167,8 @@ const emit = defineEmits<{ changed: [] }>()
 
 const sourceOptions = [
   { value: 'library' as const, label: 'Biblioteca' },
-  { value: 'upload' as const, label: 'Upload MP3' },
+  { value: 'upload' as const, label: 'Upload' },
+  { value: 'youtube' as const, label: 'YouTube' },
   { value: 'none' as const, label: 'Sem música' },
 ]
 
@@ -131,13 +177,37 @@ const categories = ref<string[]>([])
 const selectedCategory = ref('')
 const loadingTracks = ref(false)
 const uploading = ref(false)
+const processing = ref(false)
+const importing = ref(false)
 const uploadedName = ref('')
 const error = ref('')
+const youtubeUrl = ref('')
+const youtubeMode = ref(false)
+const trimAudioUrl = ref('')
+const activeMediaId = ref<string | null>(null)
 let previewAudio: HTMLAudioElement | null = null
+let pollTimer: ReturnType<typeof setInterval> | null = null
+
+const effectiveEndSeconds = computed(() =>
+  props.form.music_end_seconds > 0 ? props.form.music_end_seconds : props.form.music_duration_seconds,
+)
+
+const showTrimEditor = computed(
+  () =>
+    props.form.music_source !== 'none' &&
+    props.form.music_duration_seconds > 0 &&
+    !processing.value &&
+    !importing.value,
+)
 
 onMounted(async () => {
   if (!props.supportsMusic) return
   await loadTracks()
+  await refreshMusicState()
+})
+
+onUnmounted(() => {
+  stopPolling()
 })
 
 watch(selectedCategory, loadTracks)
@@ -146,9 +216,7 @@ async function loadTracks() {
   loadingTracks.value = true
   try {
     const result = await listMusicTracks(
-      selectedCategory.value && selectedCategory.value !== 'Todas'
-        ? selectedCategory.value
-        : undefined,
+      selectedCategory.value && selectedCategory.value !== 'Todas' ? selectedCategory.value : undefined,
     )
     tracks.value = result.tracks
     categories.value = ['Todas', ...result.categories]
@@ -158,16 +226,27 @@ async function loadTracks() {
   }
 }
 
-function setSource(source: 'none' | 'library' | 'upload') {
+function setSource(source: 'none' | 'library' | 'upload' | 'youtube') {
+  youtubeMode.value = source === 'youtube'
+  if (source === 'youtube') {
+    props.form.music_source = 'upload'
+    return
+  }
   props.form.music_source = source
   if (source === 'none') {
     props.form.music_track_id = null
+    trimAudioUrl.value = ''
   }
 }
 
 function selectTrack(track: MusicTrack) {
+  youtubeMode.value = false
   props.form.music_source = 'library'
   props.form.music_track_id = track.id
+  props.form.music_duration_seconds = track.duration_seconds
+  props.form.music_start_seconds = 0
+  props.form.music_end_seconds = track.duration_seconds
+  trimAudioUrl.value = track.preview_url
 }
 
 function preview(url: string) {
@@ -176,11 +255,25 @@ function preview(url: string) {
   void previewAudio.play()
 }
 
+function onStartChange(value: number) {
+  props.form.music_start_seconds = value
+}
+
+function onEndChange(value: number) {
+  props.form.music_end_seconds = value
+}
+
 async function onAudioSelected(event: Event) {
   const input = event.target as HTMLInputElement
   const file = input.files?.[0]
   input.value = ''
   if (!file) return
+
+  const mimeType = inferMusicMimeType(file)
+  if (!mimeType) {
+    error.value = 'Formato não suportado. Use MP3 ou MP4.'
+    return
+  }
 
   uploading.value = true
   error.value = ''
@@ -188,19 +281,159 @@ async function onAudioSelected(event: Event) {
     const presign = await presignMedia(props.tributeId, {
       media_type: 'audio',
       filename: file.name,
-      mime_type: file.type || 'audio/mpeg',
+      mime_type: mimeType,
       size_bytes: file.size,
     })
     await uploadFile(file, presign)
-    await confirmMedia(props.tributeId, presign.media_id)
+    const media = await confirmMedia(props.tributeId, presign.media_id)
     props.form.music_source = 'upload'
     props.form.music_track_id = null
     uploadedName.value = file.name
+    activeMediaId.value = media.id
+
+    if (media.processing_status === 'processing' || isVideoMusicSource(mimeType)) {
+      processing.value = true
+      startPolling(media.id)
+    } else {
+      await applyReadyMusic(media.url ?? null, media.duration_seconds ?? null)
+    }
     emit('changed')
-  } catch {
-    error.value = 'Falha no upload do áudio.'
+  } catch (err) {
+    error.value = resolveApiError(err, 'Falha no upload do áudio.')
   } finally {
     uploading.value = false
+  }
+}
+
+async function importYoutube() {
+  const url = youtubeUrl.value.trim()
+  if (!isYoutubeUrl(url)) {
+    error.value = 'Informe um link válido do YouTube.'
+    return
+  }
+
+  importing.value = true
+  error.value = ''
+  try {
+    const status = await importMusicFromYoutube(props.tributeId, url)
+    props.form.music_source = 'upload'
+    props.form.music_track_id = null
+    if (status.processing_status === 'processing') {
+      processing.value = true
+      if (status.media_id) startPolling(status.media_id)
+      else startMusicPolling()
+    } else {
+      await applyReadyMusic(status.url, status.duration_seconds)
+    }
+    emit('changed')
+  } catch (err) {
+    error.value = resolveApiError(err, 'Não foi possível importar o áudio do YouTube.')
+  } finally {
+    importing.value = false
+  }
+}
+
+async function applyReadyMusic(url: string | null, duration: number | null) {
+  if (!url) return
+  trimAudioUrl.value = url
+  let resolvedDuration = duration ?? 0
+  if (resolvedDuration <= 0) {
+    try {
+      resolvedDuration = await loadAudioDuration(url)
+    } catch {
+      resolvedDuration = 0
+    }
+  }
+  if (resolvedDuration > 0) {
+    props.form.music_duration_seconds = resolvedDuration
+    if (props.form.music_end_seconds <= 0 || props.form.music_end_seconds > resolvedDuration) {
+      props.form.music_end_seconds = resolvedDuration
+    }
+  }
+}
+
+function startPolling(mediaId: string) {
+  stopPolling()
+  activeMediaId.value = mediaId
+  pollTimer = setInterval(() => {
+    void pollMediaStatus(mediaId)
+  }, 2500)
+  void pollMediaStatus(mediaId)
+}
+
+function startMusicPolling() {
+  stopPolling()
+  pollTimer = setInterval(() => {
+    void pollMusicStatus()
+  }, 2500)
+  void pollMusicStatus()
+}
+
+function stopPolling() {
+  if (pollTimer) {
+    clearInterval(pollTimer)
+    pollTimer = null
+  }
+}
+
+async function pollMediaStatus(mediaId: string) {
+  try {
+    const status = await fetchMusicStatus(props.tributeId, mediaId)
+    if (status.processing_status === 'processing') return
+    stopPolling()
+    processing.value = false
+    if (status.processing_status === 'failed') {
+      error.value = status.processing_error || 'Falha ao processar o áudio.'
+      return
+    }
+    await applyReadyMusic(status.url, status.duration_seconds)
+    emit('changed')
+  } catch {
+    // mantém polling
+  }
+}
+
+async function pollMusicStatus() {
+  try {
+    const status = await fetchMusicStatus(props.tributeId)
+    if (status.processing_status === 'processing') return
+    stopPolling()
+    processing.value = false
+    if (status.processing_status === 'failed') {
+      error.value = status.processing_error || 'Falha ao importar o áudio.'
+      return
+    }
+    if (status.media_id) activeMediaId.value = status.media_id
+    await applyReadyMusic(status.url, status.duration_seconds)
+    emit('changed')
+  } catch {
+    // mantém polling
+  }
+}
+
+async function refreshMusicState() {
+  try {
+    const tribute = await fetchTribute(props.tributeId)
+    if (props.form.music_source === 'library' && props.form.music_track_id) {
+      const track = tracks.value.find((item) => item.id === props.form.music_track_id)
+      trimAudioUrl.value = track?.preview_url || tribute.music?.preview_url || tribute.music?.url || ''
+      return
+    }
+    if (props.form.music_source === 'upload') {
+      const status = await fetchMusicStatus(props.tributeId)
+      if (status.processing_status === 'processing') {
+        processing.value = true
+        if (status.media_id) startPolling(status.media_id)
+        else startMusicPolling()
+        return
+      }
+      trimAudioUrl.value = status.url || tribute.music?.url || ''
+      if (status.duration_seconds) {
+        props.form.music_duration_seconds = status.duration_seconds
+      }
+    }
+  } catch {
+    // ignora no mount
   }
 }
 
@@ -228,7 +461,6 @@ function formatDuration(seconds: number): string {
   padding: 5px 12px;
   font-size: 0.82rem;
 }
-
 .tracks-loading {
   display: flex;
   align-items: center;
@@ -236,7 +468,6 @@ function formatDuration(seconds: number): string {
   color: var(--muted);
   padding: 22px 4px;
 }
-
 .track-list {
   list-style: none;
   margin: 0;
@@ -254,10 +485,6 @@ function formatDuration(seconds: number): string {
   border: 1px solid var(--border);
   background: var(--surface);
   cursor: pointer;
-  transition: border-color var(--dur) var(--ease), background var(--dur) var(--ease);
-}
-.track:hover {
-  border-color: var(--primary);
 }
 .track--active {
   border-color: var(--primary);
@@ -269,7 +496,6 @@ function formatDuration(seconds: number): string {
   border-radius: 999px;
   border: 2px solid var(--border-strong);
   flex-shrink: 0;
-  transition: border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
 }
 .track--active .track__radio {
   border-color: var(--primary);
@@ -283,16 +509,11 @@ function formatDuration(seconds: number): string {
 .track__title {
   display: block;
   font-weight: 600;
-  color: var(--ink);
 }
 .track__meta {
   font-size: 0.84rem;
   color: var(--muted);
 }
-.track__play {
-  flex-shrink: 0;
-}
-
 .player-options {
   margin-top: 22px;
   padding-top: 18px;
@@ -315,35 +536,19 @@ function formatDuration(seconds: number): string {
   gap: 10px;
   cursor: pointer;
 }
-.player-toggle input {
-  margin-top: 3px;
-  accent-color: var(--primary);
-}
 .player-toggle span {
   display: flex;
   flex-direction: column;
 }
-.player-toggle strong {
-  font-weight: 600;
-  color: var(--ink);
-}
-.player-toggle small {
+.youtube-legal {
+  margin: 0 0 12px;
   font-size: 0.82rem;
   color: var(--muted);
 }
-
 .mt-3 {
   margin-top: 12px;
 }
 .hidden {
   display: none;
-}
-.ml-dropzone__title {
-  font-weight: 600;
-  color: inherit;
-}
-.ml-dropzone__hint {
-  font-size: 0.82rem;
-  color: var(--subtle);
 }
 </style>

@@ -39,6 +39,9 @@ export function useTributeWizard(tributeId: string) {
     event_info: { date: '', location: '', map_url: '' } as TributeEventInfo,
     music_autoplay: true,
     music_loop: true,
+    music_start_seconds: 0,
+    music_end_seconds: 0,
+    music_duration_seconds: 0,
   })
 
   // event_info só é enviado se algum campo estiver preenchido; caso contrário
@@ -96,6 +99,16 @@ export function useTributeWizard(tributeId: string) {
       event_info: cleanEventInfo(),
       music_autoplay: form.music_autoplay,
       music_loop: form.music_loop,
+      ...(form.music_duration_seconds > 0
+        ? {
+            music_start_seconds: form.music_start_seconds,
+            music_end_seconds:
+              form.music_end_seconds > form.music_start_seconds
+                ? form.music_end_seconds
+                : form.music_duration_seconds,
+            music_duration_seconds: form.music_duration_seconds,
+          }
+        : {}),
     },
   }))
 
@@ -161,6 +174,16 @@ export function useTributeWizard(tributeId: string) {
     }
     form.music_autoplay = data.content_json?.music_autoplay ?? true
     form.music_loop = data.content_json?.music_loop ?? true
+    const duration =
+      data.content_json?.music_duration_seconds ??
+      data.music?.duration_seconds ??
+      data.music?.track?.duration_seconds ??
+      0
+    form.music_duration_seconds = duration > 0 ? duration : 0
+    form.music_start_seconds = data.content_json?.music_start_seconds ?? 0
+    form.music_end_seconds =
+      data.content_json?.music_end_seconds ??
+      (form.music_duration_seconds > 0 ? form.music_duration_seconds : 0)
   }
 
   async function reload() {

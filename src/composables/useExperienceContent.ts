@@ -218,6 +218,18 @@ export function resolveContent(def: TemplateDefinition, opts: ResolveOptions): E
   const musicAutoplay =
     form?.music_autoplay ?? content.music_autoplay ?? sample.music?.autoplay ?? true
   const musicLoop = form?.music_loop ?? content.music_loop ?? sample.music?.loop ?? true
+  const musicDuration =
+    form?.music_duration_seconds ??
+    content.music_duration_seconds ??
+    detail?.music?.duration_seconds ??
+    detail?.music?.track?.duration_seconds ??
+    publicData?.music?.duration_seconds ??
+    0
+  const musicStart = form?.music_start_seconds ?? content.music_start_seconds ?? 0
+  const musicEnd =
+    form?.music_end_seconds ??
+    content.music_end_seconds ??
+    (musicDuration > 0 ? musicDuration : null)
 
   return {
     honoreeName,
@@ -238,6 +250,8 @@ export function resolveContent(def: TemplateDefinition, opts: ResolveOptions): E
       title: sample.music?.title || 'Trilha sonora',
       autoplay: musicAutoplay,
       loop: musicLoop,
+      startAt: musicStart > 0 ? musicStart : 0,
+      endAt: musicEnd,
     },
     timeline,
     eventInfo,

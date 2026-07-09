@@ -63,6 +63,9 @@ export interface TributeMedia {
   url_thumbnail: string | null
   url?: string | null
   created_at: string
+  processing_status?: 'ready' | 'processing' | 'failed'
+  processing_error?: string | null
+  duration_seconds?: number | null
 }
 
 export interface TributeMusic {
@@ -72,6 +75,15 @@ export interface TributeMusic {
   track: MusicTrack | null
   url: string | null
   preview_url: string | null
+  duration_seconds?: number | null
+}
+
+export interface MusicMediaStatus {
+  media_id: string
+  processing_status: 'ready' | 'processing' | 'failed'
+  processing_error: string | null
+  duration_seconds: number | null
+  url: string | null
 }
 
 export interface TributeTimelineItem {
@@ -124,6 +136,12 @@ export interface TributeContentJson {
   music_autoplay?: boolean
   /** Player de música repete ao terminar. */
   music_loop?: boolean
+  /** Segundo em que a música começa a tocar. */
+  music_start_seconds?: number
+  /** Segundo em que a música para (fim do trecho). */
+  music_end_seconds?: number
+  /** Duração total da faixa em segundos. */
+  music_duration_seconds?: number
 }
 
 export interface TributeDetail {

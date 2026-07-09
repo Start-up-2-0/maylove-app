@@ -25,6 +25,8 @@ const props = defineProps<{
   url: string | null
   loop?: boolean
   autoplay?: boolean
+  startAt?: number
+  endAt?: number | null
 }>()
 
 // Usa o áudio único provido pelo ExperienceRenderer quando disponível; senão,
@@ -36,6 +38,8 @@ const fallback = shared
   : useTributeAudio(() => urlRef.value, {
       loop: () => props.loop !== false,
       autoplay: () => props.autoplay !== false,
+      startAt: () => props.startAt ?? 0,
+      endAt: () => props.endAt ?? null,
     })
 const playing = shared ? shared.playing : fallback!.playing
 const toggle = shared ? shared.toggle : fallback!.toggle

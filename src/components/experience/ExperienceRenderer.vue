@@ -28,6 +28,8 @@
       :url="content.music.url"
       :loop="content.music.loop !== false"
       :autoplay="content.music.autoplay !== false"
+      :start-at="content.music.startAt ?? 0"
+      :end-at="content.music.endAt ?? null"
     />
   </div>
 </template>
@@ -76,6 +78,8 @@ provideExperienceAudio(
   {
     loop: () => props.content.music.loop !== false,
     autoplay: () => props.content.music.autoplay !== false,
+    startAt: () => props.content.music.startAt ?? 0,
+    endAt: () => props.content.music.endAt ?? null,
   },
 )
 
