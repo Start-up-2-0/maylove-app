@@ -12,15 +12,22 @@
             <circle cx="16" cy="16" r="3" />
           </svg>
         </div>
+        <span v-if="previewing" class="spotify-trim__eq" aria-hidden="true">
+          <span /><span /><span />
+        </span>
       </div>
 
       <div class="spotify-trim__main">
         <div class="spotify-trim__meta">
           <div class="spotify-trim__text">
-            <strong class="spotify-trim__title">{{ title }}</strong>
+            <div class="spotify-trim__title-row">
+              <strong class="spotify-trim__title">{{ title }}</strong>
+              <span class="spotify-trim__chip">{{ formatTime(modelEnd - modelStart) }}</span>
+            </div>
             <span class="spotify-trim__artist">
               {{ artist }}
               <template v-if="sourceLabel"> · {{ sourceLabel }}</template>
+              <span class="spotify-trim__duration-total"> · {{ formatTime(safeDuration) }} total</span>
             </span>
           </div>
 
@@ -43,13 +50,23 @@
         <div
           ref="trackRef"
           class="spotify-trim__timeline"
+          :class="{ 'spotify-trim__timeline--dragging': !!dragMode }"
           @pointerdown="onTrackPointerDown"
         >
           <div class="spotify-trim__wave" aria-hidden="true">
-            <span v-for="bar in waveformBars" :key="bar" :style="{ height: `${bar}%` }" />
+            <span
+              v-for="(bar, index) in waveformBars"
+              :key="index"
+              class="spotify-trim__bar"
+              :class="{
+                'spotify-trim__bar--selected': bar.inSelection,
+                'spotify-trim__bar--played': bar.played,
+              }"
+              :style="{ height: `${bar.height}%` }"
+            />
           </div>
 
-          <div class="spotify-trim__track-base" />
+          <div class="spotify-trim__rail" />
 
           <div
             class="spotify-trim__selection"
@@ -60,35 +77,62 @@
           />
 
           <div
-            v-if="previewing || playbackProgress > 0"
-            class="spotify-trim__progress"
-            :style="{ width: `${playbackProgress}%` }"
+            class="spotify-trim__shade spotify-trim__shade--left"
+            :style="{ width: `${startPercent}%` }"
+          />
+          <div
+            class="spotify-trim__shade spotify-trim__shade--right"
+            :style="{ width: `${100 - endPercent}%` }"
+          />
+
+          <div
+            v-if="previewing"
+            class="spotify-trim__playhead"
+            :style="{ left: `${playheadPercent}%` }"
           />
 
           <button
             type="button"
             class="spotify-trim__handle spotify-trim__handle--start"
+            :class="{ 'spotify-trim__handle--active': dragMode === 'start' }"
             :style="{ left: `${startPercent}%` }"
             aria-label="Ajustar início do trecho"
             @pointerdown.stop="startDrag('start', $event)"
-          />
+          >
+            <span class="spotify-trim__handle-tip">Início</span>
+          </button>
 
           <button
             type="button"
             class="spotify-trim__handle spotify-trim__handle--end"
+            :class="{ 'spotify-trim__handle--active': dragMode === 'end' }"
             :style="{ left: `${endPercent}%` }"
             aria-label="Ajustar fim do trecho"
             @pointerdown.stop="startDrag('end', $event)"
-          />
+          >
+            <span class="spotify-trim__handle-tip">Fim</span>
+          </button>
         </div>
 
         <div class="spotify-trim__times">
-          <span>{{ formatTime(modelStart) }}</span>
-          <span class="spotify-trim__times-center">
-            <template v-if="previewing">{{ formatTime(displayCurrentTime) }}</template>
-            <template v-else>Trecho {{ formatTime(modelEnd - modelStart) }}</template>
+          <span class="spotify-trim__time-label">
+            <small>Início</small>
+            {{ formatTime(modelStart) }}
           </span>
-          <span>{{ formatTime(modelEnd) }}</span>
+          <span class="spotify-trim__times-center">
+            <template v-if="previewing">
+              <small>Ouvindo</small>
+              {{ formatTime(displayCurrentTime) }}
+            </template>
+            <template v-else>
+              <small>Trecho</small>
+              {{ formatTime(modelEnd - modelStart) }}
+            </template>
+          </span>
+          <span class="spotify-trim__time-label spotify-trim__time-label--end">
+            <small>Fim</small>
+            {{ formatTime(modelEnd) }}
+          </span>
         </div>
       </div>
     </div>
@@ -122,6 +166,11 @@ const emit = defineEmits<{
   'update:endSeconds': [value: number]
 }>()
 
+const BAR_HEIGHTS = [
+  38, 62, 44, 78, 52, 88, 40, 70, 48, 82, 36, 66, 54, 90, 42, 74, 50, 84, 46, 68, 58, 76, 34, 64,
+  72, 46, 80, 38, 60, 86, 44, 68, 52, 92, 36, 58, 74, 48, 82, 40, 66, 54, 88, 42, 70, 50, 78, 36,
+]
+
 const safeDuration = computed(() => Math.max(props.durationSeconds, 1))
 const modelStart = computed(() => props.startSeconds)
 const modelEnd = computed(() => props.endSeconds)
@@ -132,19 +181,36 @@ const selectionPercent = computed(() => Math.max(endPercent.value - startPercent
 const previewing = ref(false)
 const currentTime = ref(0)
 const trackRef = ref<HTMLElement | null>(null)
+const dragMode = ref<'start' | 'end' | null>(null)
 
 let audio: HTMLAudioElement | null = null
-let dragMode: 'start' | 'end' | null = null
-
-const waveformBars = [38, 62, 44, 78, 52, 88, 40, 70, 48, 82, 36, 66, 54, 90, 42, 74, 50, 84, 46, 68, 58, 76, 34, 64]
 
 const displayCurrentTime = computed(() =>
   Math.max(modelStart.value, Math.min(currentTime.value, modelEnd.value)),
 )
 
-const playbackProgress = computed(() => {
-  if (safeDuration.value <= 0) return 0
-  return (displayCurrentTime.value / safeDuration.value) * 100
+const clipProgress = computed(() => {
+  const clipLength = modelEnd.value - modelStart.value
+  if (clipLength <= 0) return 0
+  return (displayCurrentTime.value - modelStart.value) / clipLength
+})
+
+const playheadPercent = computed(() => startPercent.value + clipProgress.value * selectionPercent.value)
+
+const waveformBars = computed(() => {
+  const count = BAR_HEIGHTS.length
+  const playedRatio = clipProgress.value
+
+  return BAR_HEIGHTS.map((height, index) => {
+    const center = ((index + 0.5) / count) * 100
+    const inSelection = center >= startPercent.value && center <= endPercent.value
+    const selectionStart = startPercent.value
+    const selectionWidth = Math.max(selectionPercent.value, 0.001)
+    const relative = (center - selectionStart) / selectionWidth
+    const played = previewing.value && inSelection && relative <= playedRatio
+
+    return { height, inSelection, played }
+  })
 })
 
 function formatTime(seconds: number): string {
@@ -172,21 +238,28 @@ function secondsFromClientX(clientX: number): number {
   return ratio * safeDuration.value
 }
 
+function seekPreview(seconds: number) {
+  const clamped = Math.max(modelStart.value, Math.min(seconds, modelEnd.value))
+  currentTime.value = clamped
+  if (audio) audio.currentTime = clamped
+}
+
 function applyDrag(clientX: number) {
-  if (!dragMode) return
+  if (!dragMode.value) return
   const seconds = secondsFromClientX(clientX)
 
-  if (dragMode === 'start') {
+  if (dragMode.value === 'start') {
     const { start, end } = clampRange(seconds, modelEnd.value)
     emit('update:startSeconds', start)
     if (end !== modelEnd.value) emit('update:endSeconds', end)
-    if (previewing.value && audio) audio.currentTime = start
+    if (previewing.value) seekPreview(start)
     return
   }
 
   const { start, end } = clampRange(modelStart.value, seconds)
   if (start !== modelStart.value) emit('update:startSeconds', start)
   emit('update:endSeconds', end)
+  if (previewing.value && seconds < modelEnd.value) seekPreview(seconds)
 }
 
 function onPointerMove(event: PointerEvent) {
@@ -194,13 +267,14 @@ function onPointerMove(event: PointerEvent) {
 }
 
 function stopDrag() {
-  dragMode = null
+  dragMode.value = null
   window.removeEventListener('pointermove', onPointerMove)
   window.removeEventListener('pointerup', stopDrag)
 }
 
 function startDrag(mode: 'start' | 'end', event: PointerEvent) {
-  dragMode = mode
+  dragMode.value = mode
+  ;(event.target as HTMLElement).setPointerCapture?.(event.pointerId)
   window.addEventListener('pointermove', onPointerMove)
   window.addEventListener('pointerup', stopDrag, { once: true })
   applyDrag(event.clientX)
@@ -208,7 +282,14 @@ function startDrag(mode: 'start' | 'end', event: PointerEvent) {
 
 function onTrackPointerDown(event: PointerEvent) {
   if ((event.target as HTMLElement).closest('.spotify-trim__handle')) return
+
   const seconds = secondsFromClientX(event.clientX)
+
+  if (previewing.value && seconds >= modelStart.value && seconds <= modelEnd.value) {
+    seekPreview(seconds)
+    return
+  }
+
   const distanceToStart = Math.abs(seconds - modelStart.value)
   const distanceToEnd = Math.abs(seconds - modelEnd.value)
   startDrag(distanceToStart <= distanceToEnd ? 'start' : 'end', event)
@@ -276,42 +357,89 @@ onUnmounted(() => {
 <style scoped>
 .spotify-trim {
   margin-top: 18px;
-  padding: 18px;
-  border-radius: 18px;
-  border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+  padding: 16px 18px 14px;
+  border-radius: 20px;
+  border: 1px solid color-mix(in srgb, var(--primary) 18%, var(--border));
   background:
-    radial-gradient(120% 140% at 100% 0%, color-mix(in srgb, var(--primary) 14%, transparent), transparent 55%),
-    linear-gradient(165deg, color-mix(in srgb, var(--surface-3) 92%, #000) 0%, var(--surface-2) 100%);
-  box-shadow: 0 18px 40px -28px rgba(0, 0, 0, 0.45);
+    radial-gradient(90% 120% at 0% 0%, color-mix(in srgb, var(--primary) 10%, transparent), transparent 50%),
+    linear-gradient(180deg, color-mix(in srgb, var(--surface-3) 88%, #000) 0%, var(--surface-2) 100%);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, #fff 6%, transparent),
+    0 16px 36px -26px rgba(0, 0, 0, 0.55);
 }
 
 .spotify-trim__hint {
-  margin: 0 0 14px;
-  font-size: 0.84rem;
+  margin: 0 0 12px;
+  font-size: 0.82rem;
   color: var(--muted);
+  letter-spacing: 0.01em;
 }
 
 .spotify-trim__player {
   display: grid;
   grid-template-columns: auto 1fr;
-  gap: 14px;
+  gap: 16px;
   align-items: start;
 }
 
+.spotify-trim__art {
+  position: relative;
+}
+
 .spotify-trim__cover {
-  width: 72px;
-  height: 72px;
-  border-radius: 12px;
+  width: 76px;
+  height: 76px;
+  border-radius: 14px;
   object-fit: cover;
-  box-shadow: 0 10px 24px -12px rgba(0, 0, 0, 0.55);
+  box-shadow: 0 12px 28px -14px rgba(0, 0, 0, 0.65);
 }
 
 .spotify-trim__cover--fallback {
   display: grid;
   place-items: center;
   background:
-    linear-gradient(145deg, color-mix(in srgb, var(--primary) 35%, #1a121f), #120d16);
-  color: color-mix(in srgb, var(--primary) 70%, #fff);
+    linear-gradient(145deg, color-mix(in srgb, var(--primary) 42%, #1a121f), #100a12);
+  color: color-mix(in srgb, var(--primary) 75%, #fff);
+}
+
+.spotify-trim__eq {
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 14px;
+  padding: 4px 5px;
+  border-radius: 999px;
+  background: var(--primary);
+  box-shadow: 0 4px 12px -4px color-mix(in srgb, var(--primary) 80%, transparent);
+}
+
+.spotify-trim__eq span {
+  width: 2px;
+  height: 100%;
+  border-radius: 2px;
+  background: #fff;
+  animation: spotify-eq 0.85s ease-in-out infinite;
+}
+
+.spotify-trim__eq span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.spotify-trim__eq span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes spotify-eq {
+  0%,
+  100% {
+    transform: scaleY(0.35);
+  }
+  50% {
+    transform: scaleY(1);
+  }
 }
 
 .spotify-trim__main {
@@ -320,19 +448,26 @@ onUnmounted(() => {
 
 .spotify-trim__meta {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 
 .spotify-trim__text {
   min-width: 0;
+  padding-top: 2px;
+}
+
+.spotify-trim__title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
 }
 
 .spotify-trim__title {
-  display: block;
-  font-size: 1rem;
+  font-size: 1.02rem;
   font-weight: 700;
   color: var(--ink);
   white-space: nowrap;
@@ -340,146 +475,263 @@ onUnmounted(() => {
   text-overflow: ellipsis;
 }
 
+.spotify-trim__chip {
+  flex-shrink: 0;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--primary-strong);
+  background: color-mix(in srgb, var(--primary) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--primary) 28%, transparent);
+}
+
 .spotify-trim__artist {
   display: block;
-  margin-top: 2px;
-  font-size: 0.84rem;
+  margin-top: 4px;
+  font-size: 0.82rem;
   color: var(--muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
+.spotify-trim__duration-total {
+  opacity: 0.75;
+}
+
 .spotify-trim__play {
   flex-shrink: 0;
   display: grid;
   place-items: center;
-  width: 46px;
-  height: 46px;
+  width: 44px;
+  height: 44px;
   border: none;
   border-radius: 999px;
-  color: #fff;
+  color: #0f0a0d;
   background: var(--primary);
-  box-shadow: 0 10px 22px -10px color-mix(in srgb, var(--primary) 70%, transparent);
+  box-shadow: 0 10px 24px -12px color-mix(in srgb, var(--primary) 75%, transparent);
   cursor: pointer;
-  transition: transform 0.18s ease, background 0.18s ease;
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    background 0.18s ease;
 }
 
 .spotify-trim__play:hover {
-  transform: scale(1.05);
+  transform: scale(1.06);
   background: var(--primary-hover);
 }
 
 .spotify-trim__play--active {
+  color: #fff;
   background: var(--primary-strong);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 22%, transparent);
 }
 
 .spotify-trim__timeline {
   position: relative;
-  height: 38px;
+  height: 44px;
   cursor: pointer;
   touch-action: none;
   user-select: none;
 }
 
+.spotify-trim__timeline--dragging {
+  cursor: grabbing;
+}
+
 .spotify-trim__wave {
   position: absolute;
-  inset: 8px 0 10px;
+  inset: 6px 0 12px;
   display: flex;
   align-items: flex-end;
   gap: 2px;
-  opacity: 0.35;
   pointer-events: none;
 }
 
-.spotify-trim__wave span {
+.spotify-trim__bar {
   flex: 1;
   min-width: 2px;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--ink) 55%, transparent);
+  background: color-mix(in srgb, var(--ink) 18%, transparent);
+  opacity: 0.45;
+  transition:
+    background 0.15s ease,
+    opacity 0.15s ease,
+    transform 0.15s ease;
 }
 
-.spotify-trim__track-base,
-.spotify-trim__selection,
-.spotify-trim__progress {
+.spotify-trim__bar--selected {
+  opacity: 0.9;
+  background: color-mix(in srgb, var(--primary) 45%, var(--ink));
+}
+
+.spotify-trim__bar--played {
+  opacity: 1;
+  background: var(--primary);
+  transform: scaleY(1.04);
+}
+
+.spotify-trim__rail {
   position: absolute;
   left: 0;
   right: 0;
   top: 50%;
-  height: 5px;
+  height: 3px;
   transform: translateY(-50%);
   border-radius: 999px;
+  background: color-mix(in srgb, var(--border) 70%, transparent);
   pointer-events: none;
 }
 
-.spotify-trim__track-base {
-  background: color-mix(in srgb, var(--border) 85%, transparent);
-}
-
 .spotify-trim__selection {
-  right: auto;
-  background: color-mix(in srgb, var(--primary) 55%, transparent);
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary) 35%, transparent);
+  position: absolute;
+  top: 50%;
+  height: 3px;
+  transform: translateY(-50%);
+  border-radius: 999px;
+  pointer-events: none;
+  background: color-mix(in srgb, var(--primary) 35%, transparent);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--primary) 25%, transparent);
 }
 
-.spotify-trim__progress {
-  right: auto;
-  width: 0;
-  background: var(--primary);
-  transition: width 0.08s linear;
+.spotify-trim__shade {
+  position: absolute;
+  top: 4px;
+  bottom: 8px;
+  pointer-events: none;
+  background: color-mix(in srgb, var(--surface-2) 72%, transparent);
+  backdrop-filter: blur(0.5px);
+}
+
+.spotify-trim__shade--left {
+  left: 0;
+  border-radius: 8px 0 0 8px;
+}
+
+.spotify-trim__shade--right {
+  right: 0;
+  border-radius: 0 8px 8px 0;
+}
+
+.spotify-trim__playhead {
+  position: absolute;
+  top: 50%;
+  width: 2px;
+  height: 22px;
+  margin-left: -1px;
+  transform: translateY(-50%);
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary) 60%, transparent);
+  pointer-events: none;
 }
 
 .spotify-trim__handle {
   position: absolute;
   top: 50%;
-  width: 14px;
-  height: 14px;
-  margin-left: -7px;
+  width: 16px;
+  height: 16px;
+  margin-left: -8px;
   transform: translateY(-50%);
   border: 2px solid #fff;
   border-radius: 999px;
   background: var(--primary);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.28);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
   cursor: grab;
   padding: 0;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.spotify-trim__handle:hover,
+.spotify-trim__handle--active {
+  transform: translateY(-50%) scale(1.12);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 24%, transparent);
 }
 
 .spotify-trim__handle:active {
   cursor: grabbing;
-  transform: translateY(-50%) scale(1.08);
+}
+
+.spotify-trim__handle-tip {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 8px);
+  transform: translateX(-50%) scale(0.94);
+  padding: 2px 7px;
+  border-radius: 6px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.72);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  white-space: nowrap;
+}
+
+.spotify-trim__handle:hover .spotify-trim__handle-tip,
+.spotify-trim__handle--active .spotify-trim__handle-tip {
+  opacity: 1;
+  transform: translateX(-50%) scale(1);
 }
 
 .spotify-trim__times {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   gap: 8px;
-  margin-top: 4px;
-  font-size: 0.76rem;
+  margin-top: 2px;
+  font-size: 0.8rem;
   font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+.spotify-trim__time-label {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.spotify-trim__time-label small,
+.spotify-trim__times-center small {
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   color: var(--muted);
 }
 
-.spotify-trim__times span:first-child {
-  text-align: left;
-}
-
-.spotify-trim__times span:last-child {
+.spotify-trim__time-label--end {
   text-align: right;
+  align-items: flex-end;
 }
 
 .spotify-trim__times-center {
-  color: var(--ink);
-  font-weight: 600;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  font-weight: 700;
+  color: var(--primary-strong);
 }
 
 @media (max-width: 520px) {
   .spotify-trim__player {
     grid-template-columns: 1fr;
+    gap: 12px;
   }
 
   .spotify-trim__art {
     display: flex;
     justify-content: center;
+  }
+
+  .spotify-trim__meta {
+    align-items: center;
   }
 }
 </style>
