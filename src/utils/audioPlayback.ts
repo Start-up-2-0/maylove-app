@@ -1,4 +1,6 @@
 const HAVE_METADATA = 1
+const SEEK_TOLERANCE_SECONDS = 0.15
+const SEEK_TIMEOUT_MS = 8000
 
 export function waitForAudioMetadata(audio: HTMLMediaElement, timeoutMs = 15000): Promise<void> {
   if (audio.readyState >= HAVE_METADATA) {
@@ -40,6 +42,10 @@ export function waitForAudioMetadata(audio: HTMLMediaElement, timeoutMs = 15000)
   })
 }
 
+function isNearTime(current: number, target: number): boolean {
+  return Math.abs(current - target) <= SEEK_TOLERANCE_SECONDS
+}
+
 export async function seekAudioTo(audio: HTMLMediaElement, seconds: number): Promise<void> {
   const target = Math.max(0, seconds)
   await waitForAudioMetadata(audio)
@@ -47,40 +53,74 @@ export async function seekAudioTo(audio: HTMLMediaElement, seconds: number): Pro
   const duration = Number.isFinite(audio.duration) ? audio.duration : target
   const clampedTarget = Math.min(target, Math.max(duration - 0.05, 0))
 
-  if (Math.abs(audio.currentTime - clampedTarget) < 0.05) {
+  if (isNearTime(audio.currentTime, clampedTarget)) {
     return
   }
 
   await new Promise<void>((resolve, reject) => {
+    let pollTimer = 0
     let settled = false
-    const finish = () => {
+    const deadline = Date.now() + SEEK_TIMEOUT_MS
+
+    const finish = (ok: boolean) => {
       if (settled) return
       settled = true
+      window.clearTimeout(pollTimer)
       audio.removeEventListener('seeked', onSeeked)
-      window.clearTimeout(timer)
-      resolve()
+      if (ok) {
+        resolve()
+        return
+      }
+      reject(new Error('Não foi possível posicionar o áudio no trecho escolhido.'))
     }
-    const onSeeked = () => finish()
-    const timer = window.setTimeout(finish, 250)
 
-    audio.addEventListener('seeked', onSeeked, { once: true })
+    const checkPosition = () => {
+      if (isNearTime(audio.currentTime, clampedTarget)) {
+        finish(true)
+        return
+      }
+      if (Date.now() >= deadline) {
+        finish(false)
+        return
+      }
+      pollTimer = window.setTimeout(checkPosition, 40)
+    }
+
+    const onSeeked = () => {
+      checkPosition()
+    }
+
+    audio.addEventListener('seeked', onSeeked)
     try {
       audio.currentTime = clampedTarget
     } catch (error) {
       settled = true
-      window.clearTimeout(timer)
+      window.clearTimeout(pollTimer)
       audio.removeEventListener('seeked', onSeeked)
       reject(error instanceof Error ? error : new Error('Falha ao posicionar áudio.'))
+      return
     }
+
+    checkPosition()
   })
 }
 
 export async function playFromSeconds(audio: HTMLMediaElement, seconds: number): Promise<void> {
   await seekAudioTo(audio, seconds)
 
-  if (Math.abs(audio.currentTime - seconds) > 0.35) {
+  if (!isNearTime(audio.currentTime, seconds)) {
     await seekAudioTo(audio, seconds)
   }
 
+  if (!isNearTime(audio.currentTime, seconds)) {
+    throw new Error('Não foi possível iniciar o áudio no trecho escolhido.')
+  }
+
   await audio.play()
+
+  if (audio.currentTime < seconds - 0.2) {
+    audio.pause()
+    await seekAudioTo(audio, seconds)
+    await audio.play()
+  }
 }

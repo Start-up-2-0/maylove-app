@@ -147,7 +147,7 @@
 
 <script setup lang="ts">
 import { computed, onUnmounted, ref, watch } from 'vue'
-import { playFromSeconds } from '@/utils/audioPlayback'
+import { playFromSeconds, seekAudioTo } from '@/utils/audioPlayback'
 
 const props = withDefaults(
   defineProps<{
@@ -328,6 +328,7 @@ function ensureAudio(): HTMLAudioElement | null {
     audio.addEventListener('pause', () => {
       previewing.value = false
     })
+    audio.addEventListener('playing', onPlaying)
     audio.addEventListener('timeupdate', onTimeUpdate)
     audio.addEventListener('ended', () => {
       previewing.value = false
@@ -340,8 +341,21 @@ function ensureAudio(): HTMLAudioElement | null {
   return audio
 }
 
+function onPlaying() {
+  if (!audio) return
+  if (audio.currentTime < modelStart.value - 0.1) {
+    void seekAudioTo(audio, modelStart.value)
+  }
+}
+
 function onTimeUpdate() {
   if (!audio || !previewing.value) return
+
+  if (audio.currentTime < modelStart.value - 0.05) {
+    audio.currentTime = modelStart.value
+    return
+  }
+
   currentTime.value = audio.currentTime
   if (audio.currentTime >= modelEnd.value) {
     audio.pause()
