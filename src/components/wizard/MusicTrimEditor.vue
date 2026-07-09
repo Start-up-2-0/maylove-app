@@ -35,10 +35,12 @@
             type="button"
             class="spotify-trim__play"
             :class="{ 'spotify-trim__play--active': previewing }"
+            :disabled="previewLoading"
             :aria-label="previewing ? 'Pausar prévia' : 'Ouvir trecho'"
             @click="togglePreview"
           >
-            <svg v-if="!previewing" viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+            <span v-if="previewLoading" class="spotify-trim__spinner" aria-hidden="true" />
+            <svg v-else-if="!previewing" viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
               <path d="M8 5.14v14.72a1 1 0 0 0 1.5.86l11.04-7.36a1 1 0 0 0 0-1.72L9.5 4.28A1 1 0 0 0 8 5.14z" />
             </svg>
             <svg v-else viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
@@ -120,7 +122,11 @@
             {{ formatTime(modelStart) }}
           </span>
           <span class="spotify-trim__times-center">
-            <template v-if="previewing">
+            <template v-if="previewLoading">
+              <small>Carregando</small>
+              ...
+            </template>
+            <template v-else-if="previewing">
               <small>Ouvindo</small>
               {{ formatTime(displayCurrentTime) }}
             </template>
@@ -141,7 +147,7 @@
 
 <script setup lang="ts">
 import { computed, onUnmounted, ref, watch } from 'vue'
-import { playFromSeconds, seekAudioTo } from '@/utils/audioPlayback'
+import { playFromSeconds } from '@/utils/audioPlayback'
 
 const props = withDefaults(
   defineProps<{
@@ -180,6 +186,7 @@ const endPercent = computed(() => (modelEnd.value / safeDuration.value) * 100)
 const selectionPercent = computed(() => Math.max(endPercent.value - startPercent.value, 0))
 
 const previewing = ref(false)
+const previewLoading = ref(false)
 const currentTime = ref(0)
 const trackRef = ref<HTMLElement | null>(null)
 const dragMode = ref<'start' | 'end' | null>(null)
@@ -239,13 +246,11 @@ function secondsFromClientX(clientX: number): number {
   return ratio * safeDuration.value
 }
 
-function seekPreview(seconds: number) {
-  const clamped = Math.max(modelStart.value, Math.min(seconds, modelEnd.value))
-  currentTime.value = clamped
-  if (!audio) return
-  void seekAudioTo(audio, clamped).then(() => {
-    if (audio) currentTime.value = audio.currentTime
-  })
+function setStartAt(seconds: number) {
+  const { start, end } = clampRange(seconds, modelEnd.value)
+  emit('update:startSeconds', start)
+  if (end !== modelEnd.value) emit('update:endSeconds', end)
+  currentTime.value = start
 }
 
 function applyDrag(clientX: number) {
@@ -253,17 +258,15 @@ function applyDrag(clientX: number) {
   const seconds = secondsFromClientX(clientX)
 
   if (dragMode.value === 'start') {
-    const { start, end } = clampRange(seconds, modelEnd.value)
-    emit('update:startSeconds', start)
-    if (end !== modelEnd.value) emit('update:endSeconds', end)
-    if (previewing.value) seekPreview(start)
+    setStartAt(seconds)
+    if (previewing.value) void resumePreviewFrom(modelStart.value)
     return
   }
 
   const { start, end } = clampRange(modelStart.value, seconds)
   if (start !== modelStart.value) emit('update:startSeconds', start)
   emit('update:endSeconds', end)
-  if (previewing.value && seconds < modelEnd.value) seekPreview(seconds)
+  if (previewing.value) void resumePreviewFrom(Math.min(seconds, end))
 }
 
 function onPointerMove(event: PointerEvent) {
@@ -289,14 +292,29 @@ function onTrackPointerDown(event: PointerEvent) {
 
   const seconds = secondsFromClientX(event.clientX)
 
-  if (previewing.value && seconds >= modelStart.value && seconds <= modelEnd.value) {
-    seekPreview(seconds)
+  if (previewing.value) {
+    if (seconds >= modelStart.value && seconds <= modelEnd.value) {
+      void resumePreviewFrom(seconds)
+    }
     return
   }
 
-  const distanceToStart = Math.abs(seconds - modelStart.value)
-  const distanceToEnd = Math.abs(seconds - modelEnd.value)
-  startDrag(distanceToStart <= distanceToEnd ? 'start' : 'end', event)
+  setStartAt(seconds)
+}
+
+async function resumePreviewFrom(seconds: number) {
+  const element = ensureAudio()
+  if (!element) return
+
+  const clamped = Math.max(modelStart.value, Math.min(seconds, modelEnd.value))
+  currentTime.value = clamped
+  try {
+    await playFromSeconds(element, clamped)
+    previewing.value = true
+    currentTime.value = element.currentTime
+  } catch {
+    previewing.value = false
+  }
 }
 
 function ensureAudio(): HTMLAudioElement | null {
@@ -304,22 +322,22 @@ function ensureAudio(): HTMLAudioElement | null {
   if (!audio) {
     audio = new Audio(props.audioUrl)
     audio.preload = 'auto'
+    audio.addEventListener('play', () => {
+      previewing.value = true
+    })
+    audio.addEventListener('pause', () => {
+      previewing.value = false
+    })
     audio.addEventListener('timeupdate', onTimeUpdate)
-    audio.addEventListener('playing', onPlaying)
     audio.addEventListener('ended', () => {
       previewing.value = false
     })
   } else if (audio.src !== props.audioUrl) {
+    audio.pause()
     audio.src = props.audioUrl
+    audio.load()
   }
   return audio
-}
-
-function onPlaying() {
-  if (!audio || !previewing.value) return
-  if (audio.currentTime < modelStart.value - 0.1) {
-    void seekAudioTo(audio, modelStart.value)
-  }
 }
 
 function onTimeUpdate() {
@@ -338,35 +356,26 @@ async function togglePreview() {
 
   if (previewing.value) {
     element.pause()
-    previewing.value = false
     return
   }
 
-  previewing.value = true
+  previewLoading.value = true
   try {
     await playFromSeconds(element, modelStart.value)
     currentTime.value = element.currentTime
   } catch {
     previewing.value = false
+  } finally {
+    previewLoading.value = false
   }
 }
-
-watch(
-  () => props.startSeconds,
-  (start) => {
-    if (previewing.value && audio) {
-      void seekAudioTo(audio, start).then(() => {
-        if (audio) currentTime.value = audio.currentTime
-      })
-    }
-  },
-)
 
 watch(
   () => props.audioUrl,
   () => {
     audio?.pause()
     previewing.value = false
+    previewLoading.value = false
     currentTime.value = 0
     audio = null
   },
@@ -553,6 +562,27 @@ onUnmounted(() => {
   color: #fff;
   background: var(--primary-strong);
   box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 22%, transparent);
+}
+
+.spotify-trim__play:disabled {
+  opacity: 0.7;
+  cursor: wait;
+  transform: none;
+}
+
+.spotify-trim__spinner {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  border: 2px solid color-mix(in srgb, #fff 35%, transparent);
+  border-top-color: #fff;
+  animation: spotify-spin 0.7s linear infinite;
+}
+
+@keyframes spotify-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .spotify-trim__timeline {
