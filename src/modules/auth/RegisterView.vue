@@ -91,13 +91,13 @@ async function submit() {
   error.value = ''
   success.value = ''
   try {
-    await register({
+    const result = await register({
       name: name.value,
       email: email.value,
       password: password.value,
       accept_terms: acceptTerms.value,
     })
-    success.value = 'Conta criada! Verifique seu e-mail para confirmar o cadastro.'
+    success.value = result.message
   } catch (err) {
     error.value = resolveRegisterError(err)
   } finally {

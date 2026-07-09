@@ -6,8 +6,18 @@ export async function register(payload: {
   email: string
   password: string
   accept_terms: boolean
-}): Promise<void> {
-  await apiClient.post<ApiEnvelope<unknown>>('/auth/register', payload)
+}): Promise<{ message: string; email_verified: boolean }> {
+  const response = await apiClient.post<ApiEnvelope<{
+    id: string
+    email: string
+    email_verified: boolean
+    status: string
+  }>>('/auth/register', payload)
+
+  return {
+    message: response.data.message,
+    email_verified: response.data.data.email_verified,
+  }
 }
 
 export async function login(payload: {
