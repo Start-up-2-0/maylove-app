@@ -119,6 +119,9 @@
       :duration-seconds="form.music_duration_seconds"
       :start-seconds="form.music_start_seconds"
       :end-seconds="effectiveEndSeconds"
+      :title="trimTitle"
+      :artist="trimArtist"
+      :source-label="trimSourceLabel"
       @update:start-seconds="onStartChange"
       @update:end-seconds="onEndChange"
     />
@@ -191,6 +194,29 @@ let pollTimer: ReturnType<typeof setInterval> | null = null
 const effectiveEndSeconds = computed(() =>
   props.form.music_end_seconds > 0 ? props.form.music_end_seconds : props.form.music_duration_seconds,
 )
+
+const selectedTrack = computed(
+  () => tracks.value.find((item) => item.id === props.form.music_track_id) ?? null,
+)
+
+const trimTitle = computed(() => {
+  if (selectedTrack.value) return selectedTrack.value.title
+  if (uploadedName.value) return uploadedName.value.replace(/\.[^.]+$/, '')
+  if (youtubeUrl.value.trim()) return 'Áudio do YouTube'
+  return 'Sua trilha'
+})
+
+const trimArtist = computed(() => {
+  if (selectedTrack.value) return selectedTrack.value.artist
+  if (youtubeUrl.value.trim()) return 'YouTube'
+  if (uploadedName.value) return 'Arquivo enviado'
+  return 'MayLove'
+})
+
+const trimSourceLabel = computed(() => {
+  if (selectedTrack.value) return selectedTrack.value.category
+  return null
+})
 
 const showTrimEditor = computed(
   () =>
