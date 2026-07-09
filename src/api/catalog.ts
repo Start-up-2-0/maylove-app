@@ -1,5 +1,6 @@
 import { apiClient, unwrap } from './client'
 import type { ApiEnvelope, MusicTrackList, Template, TributeType } from './types'
+import type { PresentationCatalogEntry } from '@/templates/presentationSchema'
 
 export async function listTributeTypes(): Promise<TributeType[]> {
   const response = await apiClient.get<ApiEnvelope<TributeType[]>>('/tribute-types')
@@ -10,6 +11,11 @@ export async function listTemplates(tributeTypeId?: string): Promise<Template[]>
   const response = await apiClient.get<ApiEnvelope<Template[]>>('/templates', {
     params: tributeTypeId ? { tribute_type_id: tributeTypeId } : undefined,
   })
+  return unwrap(response)
+}
+
+export async function listPresentations(): Promise<PresentationCatalogEntry[]> {
+  const response = await apiClient.get<ApiEnvelope<PresentationCatalogEntry[]>>('/presentations')
   return unwrap(response)
 }
 

@@ -73,6 +73,58 @@ export interface TributeMusic {
   preview_url: string | null
 }
 
+export interface TributeTimelineItem {
+  date?: string
+  title: string
+  description?: string
+  photo_url?: string
+}
+
+export interface TributeEventInfo {
+  date?: string
+  location?: string
+  map_url?: string
+}
+
+/**
+ * Conteudo rico da homenagem, persistido em content_json. Todos os campos sao
+ * opcionais para manter compatibilidade com tributos antigos (que so tinham effects).
+ */
+export interface TributeContentJson {
+  effects?: string[]
+  sender_name?: string
+  signature?: string
+  messages?: string[]
+  timeline?: TributeTimelineItem[]
+  event_info?: TributeEventInfo
+  video_url?: string
+  /** Fonte de destaque (família CSS) escolhida pelo usuário. Sobrepõe o estilo. */
+  font?: string
+  /** Plano de fundo (id de preset). Sobrepõe o estilo/template. */
+  background?: string
+  animation_speed?: 'slow' | 'normal' | 'fast'
+  /** Transição de entrada dos blocos (fade/deslizar/zoom). Sobrepõe o estilo. */
+  entrance?: 'fade' | 'slide-up' | 'zoom'
+  /** Ordem das seções habilitadas (por id). Aplica-se ao layout de rolagem. */
+  section_order?: string[]
+  /** Forma de exibição das fotos (slider/galeria/mosaico/polaroid). */
+  photo_style?: 'slider' | 'gallery' | 'mosaic' | 'polaroid'
+  /** Forma como os textos surgem (padrão/digitação). */
+  text_style?: 'default' | 'typewriter'
+  /** Estilo visual escolhido (paleta/tipografia/fundo). Não altera a estrutura. */
+  style_id?: string | null
+  /** Estilo de apresentação (experiência/layout) escolhido pelo usuário. */
+  presentation?: string | null
+  /** Pergunta do pedido (usada no estilo "Pedido interativo"). */
+  question?: string
+  /** Mensagem exibida quando o pedido é aceito. */
+  celebration?: string
+  /** Player de música começa a tocar automaticamente. */
+  music_autoplay?: boolean
+  /** Player de música repete ao terminar. */
+  music_loop?: boolean
+}
+
 export interface TributeDetail {
   id: string
   slug: string
@@ -88,7 +140,7 @@ export interface TributeDetail {
   music_track_id: string | null
   music_media_id: string | null
   music: TributeMusic
-  content_json: { effects?: string[] }
+  content_json: TributeContentJson
   og_image_url: string | null
   views_count: number
   published_at: string | null
@@ -170,6 +222,7 @@ export interface CheckoutResponse {
 }
 
 export interface SubscriptionInfo {
+  billing_enabled?: boolean
   has_subscription: boolean
   status?: string
   billing_mode?: string
@@ -182,10 +235,12 @@ export interface PublicTribute {
   honoree_name: string | null
   message: string | null
   closing_message: string | null
+  special_date: string | null
   color_primary: string | null
   views_count: number
   og_image_url: string | null
   published_at: string | null
+  content_json: TributeContentJson
   tribute_type: { slug: string; name: string; icon: string | null }
   template: {
     slug: string
@@ -217,15 +272,40 @@ export const TRIBUTE_EFFECTS = [
 
 export type TributeEffect = (typeof TRIBUTE_EFFECTS)[number]
 
-export type WizardStep = 'photos' | 'texts' | 'music' | 'effects' | 'preview' | 'publish'
+export type WizardStep =
+  | 'presentation'
+  | 'photos'
+  | 'moments'
+  | 'texts'
+  | 'style'
+  | 'music'
+  | 'video'
+  | 'event'
+  | 'effects'
+  | 'preview'
+  | 'publish'
 
-export const WIZARD_STEPS: WizardStep[] = ['photos', 'texts', 'music', 'effects', 'preview', 'publish']
+export const WIZARD_STEPS: WizardStep[] = [
+  'presentation',
+  'style',
+  'texts',
+  'photos',
+  'music',
+  'effects',
+  'preview',
+  'publish',
+]
 
 export const WIZARD_STEP_LABELS: Record<WizardStep, string> = {
+  presentation: 'Apresentação',
   photos: 'Fotos',
+  moments: 'Momentos',
   texts: 'Textos',
+  style: 'Estilo',
   music: 'Música',
+  video: 'Vídeo',
+  event: 'Evento',
   effects: 'Efeitos',
-  preview: 'Preview',
+  preview: 'Revisar e Concluir',
   publish: 'Publicar',
 }

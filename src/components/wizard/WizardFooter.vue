@@ -1,38 +1,33 @@
 <template>
   <footer class="wizard-footer-bar">
     <div class="wizard-footer-inner">
-      <FwbButton
-        color="alternative"
-        :disabled="!hasPrevious"
-        @click="$emit('previous')"
-      >
+      <button class="ml-btn ml-btn--secondary" :disabled="!hasPrevious" @click="$emit('previous')">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M15 6l-6 6 6 6" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
         Voltar
-      </FwbButton>
+      </button>
 
       <div class="wizard-footer-actions">
-        <FwbButton
-          v-if="showPreviewButton"
-          color="light"
-          class="lg:hidden"
-          @click="$emit('preview')"
-        >
+        <button v-if="showPreviewButton" class="ml-btn ml-btn--ghost lg:hidden" @click="$emit('preview')">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
+            <circle cx="12" cy="12" r="3" />
+          </svg>
           Preview
-        </FwbButton>
-        <FwbButton
-          v-if="hasNext"
-          color="pink"
-          @click="$emit('next')"
-        >
+        </button>
+        <button v-if="hasNext" class="ml-btn ml-btn--primary" @click="$emit('next')">
           Continuar
-        </FwbButton>
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </button>
       </div>
     </div>
   </footer>
 </template>
 
 <script setup lang="ts">
-import { FwbButton } from 'flowbite-vue'
-
 defineProps<{
   hasPrevious: boolean
   hasNext: boolean

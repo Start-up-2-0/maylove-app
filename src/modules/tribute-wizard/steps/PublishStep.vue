@@ -2,86 +2,79 @@
   <div class="publish-step">
     <WizardStepHeader
       title="Publicar"
-      description="Valide os requisitos e publique ou inicie o pagamento avulso."
+      :description="billingEnabled
+        ? 'Valide os requisitos e publique ou inicie o pagamento avulso.'
+        : 'Valide os requisitos e publique a homenagem.'"
     />
 
-    <FwbAlert
-      v-if="paymentMessage"
-      :type="paymentAlertType"
-      class="mb-4"
-    >
+    <div v-if="paymentMessage" class="ml-alert mb-4" :class="paymentAlertClass">
       {{ paymentMessage }}
-    </FwbAlert>
+    </div>
 
-    <div v-if="loadingValidation" class="flex items-center gap-2 text-gray-500 py-4">
-      <FwbSpinner size="6" />
+    <div v-if="loadingValidation" class="validation-loading">
+      <span class="ml-spinner" />
       Validando homenagem...
     </div>
 
-    <section v-else class="mb-4">
-      <FwbAlert v-if="validation?.valid" type="success">
-        Tudo certo para publicar.
-      </FwbAlert>
-      <FwbAlert v-if="validation?.errors.length" type="danger">
-        <ul class="list-disc pl-4">
-          <li v-for="issue in validation.errors" :key="issue.field + issue.code">
-            {{ issue.message }}
-          </li>
+    <section v-else class="validation">
+      <div v-if="!publishBlocked" class="ml-alert ml-alert--success">
+        <svg class="ml-alert__icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M20 6 9 17l-5-5" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+        <span>Tudo certo para publicar.</span>
+      </div>
+      <div v-if="validation?.errors.length || schemaIssues.length" class="ml-alert ml-alert--danger">
+        <ul class="issue-list">
+          <li v-for="issue in schemaIssues" :key="issue.field + issue.code">{{ issue.message }}</li>
+          <li v-for="issue in validation?.errors ?? []" :key="issue.field + issue.code">{{ issue.message }}</li>
         </ul>
-      </FwbAlert>
-      <FwbAlert v-if="validation?.warnings.length" type="warning" class="mt-3">
-        <ul class="list-disc pl-4">
-          <li v-for="issue in validation.warnings" :key="issue.field + issue.code">
-            {{ issue.message }}
-          </li>
+      </div>
+      <div v-if="validation?.warnings.length" class="ml-alert ml-alert--warning mt-3">
+        <ul class="issue-list">
+          <li v-for="issue in validation.warnings" :key="issue.field + issue.code">{{ issue.message }}</li>
         </ul>
-      </FwbAlert>
+      </div>
     </section>
 
-    <FwbCard v-if="tribute?.status === 'published'" class="p-5">
-      <h3 class="text-lg font-semibold mb-2">Homenagem publicada!</h3>
-      <p class="text-gray-500 dark:text-gray-400 mb-4">
-        Compartilhe o link com quem você ama.
-      </p>
-      <div class="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3 mb-3">
-        <FwbInput :model-value="publicUrl" readonly />
-        <FwbButton color="pink" @click="copyLink">
+    <div v-if="tribute?.status === 'published'" class="ml-card published-card">
+      <h3 class="published-card__title">Homenagem publicada! 🎉</h3>
+      <p class="text-muted published-card__sub">Compartilhe o link com quem você ama.</p>
+      <div class="published-card__row">
+        <input :value="publicUrl" readonly class="ml-input" />
+        <button class="ml-btn ml-btn--primary" @click="copyLink">
           {{ copied ? 'Copiado!' : 'Copiar link' }}
-        </FwbButton>
+        </button>
       </div>
-      <FwbButton :href="publicUrl" tag="a" target="_blank" color="alternative">
-        Abrir página
-      </FwbButton>
-    </FwbCard>
-
-    <div v-else class="flex flex-wrap gap-3">
-      <FwbButton
-        color="pink"
-        :disabled="!validation?.valid || publishing"
-        :loading="publishing"
-        @click="publish"
-      >
-        {{ hasSubscription ? 'Publicar agora' : 'Publicar (assinante)' }}
-      </FwbButton>
-      <FwbButton
-        v-if="!hasSubscription"
-        color="alternative"
-        :disabled="!validation?.valid || checkingOut"
-        :loading="checkingOut"
-        @click="startCheckout"
-      >
-        Pagar R$ {{ priceLabel }} e publicar
-      </FwbButton>
+      <a :href="publicUrl" target="_blank" class="ml-btn ml-btn--secondary">Abrir página</a>
     </div>
 
-    <p v-if="actionError" class="text-red-600 text-sm mt-3">{{ actionError }}</p>
+    <div v-else class="publish-actions">
+      <button
+        class="ml-btn ml-btn--primary ml-btn--lg"
+        :disabled="publishBlocked || publishing"
+        @click="publish"
+      >
+        <span v-if="publishing" class="ml-spinner ml-spinner--sm" />
+        {{ publishButtonLabel }}
+      </button>
+      <button
+        v-if="billingEnabled && !hasSubscription"
+        class="ml-btn ml-btn--secondary ml-btn--lg"
+        :disabled="publishBlocked || checkingOut"
+        @click="startCheckout"
+      >
+        <span v-if="checkingOut" class="ml-spinner ml-spinner--sm" />
+        Pagar R$ {{ priceLabel }} e publicar
+      </button>
+    </div>
+
+    <p v-if="actionError" class="ml-alert ml-alert--danger mt-3">{{ actionError }}</p>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
-import { FwbAlert, FwbButton, FwbCard, FwbInput, FwbSpinner } from 'flowbite-vue'
 import {
   checkoutTribute,
   fetchSubscription,
@@ -89,6 +82,8 @@ import {
   validateTribute,
 } from '@/api/tributes'
 import type { TributeDetail, TributeValidation } from '@/api/types'
+import { getTemplateDefinition } from '@/templates/registry'
+import { resolvePresentationSchema } from '@/templates/presentationSchema'
 import WizardStepHeader from '@/components/wizard/WizardStepHeader.vue'
 
 const props = defineProps<{
@@ -96,11 +91,65 @@ const props = defineProps<{
   tribute: TributeDetail | null
 }>()
 
+const MOMENT_LAYOUTS = ['timeline', 'album', 'storytelling', 'cinematic', 'proposal']
+
+// Validações derivadas do schema da apresentação (obrigatórios e mínimos), além
+// da validação do backend. Bloqueiam a publicação no cliente com mensagens claras.
+const schemaIssues = computed<{ field: string; code: string; message: string }[]>(() => {
+  const tribute = props.tribute
+  if (!tribute) return []
+  const definition = getTemplateDefinition(tribute.template.slug)
+  const schema = resolvePresentationSchema(tribute.content_json?.presentation, definition)
+  const issues: { field: string; code: string; message: string }[] = []
+
+  const hasText = (value?: string | null) => Boolean(value && value.replace(/<[^>]*>/g, '').trim())
+  if (schema.required.includes('title') && !hasText(tribute.title)) {
+    issues.push({ field: 'title', code: 'REQUIRED', message: 'Defina um título para a homenagem.' })
+  }
+  if (schema.required.includes('message') && !hasText(tribute.message)) {
+    issues.push({ field: 'message', code: 'REQUIRED', message: 'Escreva a mensagem principal.' })
+  }
+
+  const photoCount = (tribute.media ?? []).filter((m) => m.media_type === 'photo').length
+  const momentCount = (tribute.content_json?.timeline ?? []).length
+  const usesMoments = MOMENT_LAYOUTS.includes(schema.layout)
+
+  if (usesMoments) {
+    if (momentCount === 0 && photoCount === 0) {
+      issues.push({
+        field: 'moments',
+        code: 'MIN_MOMENTS',
+        message: 'Adicione ao menos um momento (ou uma foto) para esta experiência.',
+      })
+    }
+  } else if (schema.limits.minPhotos > 0 && photoCount < schema.limits.minPhotos) {
+    issues.push({
+      field: 'photos',
+      code: 'MIN_PHOTOS',
+      message: `Envie pelo menos ${schema.limits.minPhotos} foto(s) para este estilo.`,
+    })
+  }
+
+  return issues
+})
+
+const publishBlocked = computed(
+  () => !validation.value?.valid || schemaIssues.value.length > 0,
+)
+
+const canPublishDirectly = computed(() => !billingEnabled.value || hasSubscription.value)
+
+const publishButtonLabel = computed(() => {
+  if (!billingEnabled.value) return 'Publicar agora'
+  return hasSubscription.value ? 'Publicar agora' : 'Publicar (assinante)'
+})
+
 const emit = defineEmits<{ published: [] }>()
 
 const route = useRoute()
 const validation = ref<TributeValidation | null>(null)
 const loadingValidation = ref(true)
+const billingEnabled = ref(true)
 const hasSubscription = ref(false)
 const publishing = ref(false)
 const checkingOut = ref(false)
@@ -125,10 +174,10 @@ const paymentMessage = computed(() => {
   return ''
 })
 
-const paymentAlertType = computed(() => {
-  if (paymentStatus.value === 'success') return 'success'
-  if (paymentStatus.value === 'failure') return 'danger'
-  return 'warning'
+const paymentAlertClass = computed(() => {
+  if (paymentStatus.value === 'success') return 'ml-alert--success'
+  if (paymentStatus.value === 'failure') return 'ml-alert--danger'
+  return 'ml-alert--warning'
 })
 
 onMounted(async () => {
@@ -138,6 +187,7 @@ onMounted(async () => {
       fetchSubscription(),
     ])
     validation.value = validationResult
+    billingEnabled.value = subscription.billing_enabled !== false
     hasSubscription.value = subscription.has_subscription
     if (paymentStatus.value === 'success') {
       emit('published')
@@ -156,8 +206,9 @@ async function publish() {
     await publishTribute(props.tributeId)
     emit('published')
   } catch {
-    actionError.value =
-      'Publicação indisponível. Verifique assinatura ou use o pagamento avulso.'
+    actionError.value = canPublishDirectly.value
+      ? 'Não foi possível publicar a homenagem.'
+      : 'Publicação indisponível. Verifique assinatura ou use o pagamento avulso.'
   } finally {
     publishing.value = false
   }
@@ -186,3 +237,64 @@ async function copyLink() {
   copied.value = true
 }
 </script>
+
+<style scoped>
+.mb-4 {
+  margin-bottom: 16px;
+}
+.mt-3 {
+  margin-top: 12px;
+}
+.validation-loading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--muted);
+  padding: 16px 0;
+}
+.validation {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.issue-list {
+  list-style: disc;
+  padding-left: 18px;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.published-card {
+  padding: 24px;
+}
+.published-card__title {
+  font-size: 1.25rem;
+}
+.published-card__sub {
+  margin: 6px 0 16px;
+}
+.published-card__row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.publish-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+@media (max-width: 560px) {
+  .published-card__row {
+    grid-template-columns: 1fr;
+  }
+  .publish-actions .ml-btn {
+    flex: 1;
+  }
+}
+</style>

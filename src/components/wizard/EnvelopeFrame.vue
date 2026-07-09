@@ -1,6 +1,6 @@
 <template>
-  <div class="envelope-frame" :class="{ open: isOpen }">
-    <div class="envelope-frame-inner rounded-2xl border border-[var(--border,#ecd9df)] bg-white shadow-lg overflow-hidden dark:bg-gray-800 dark:border-gray-700">
+  <div class="envelope-frame" :class="{ open: isOpen && !flat, flat }">
+    <div class="envelope-frame-inner">
       <slot />
     </div>
   </div>
@@ -12,8 +12,10 @@ import { onMounted, ref } from 'vue'
 const props = withDefaults(
   defineProps<{
     autoOpen?: boolean
+    /** Sem perspectiva 3D — usado no preview ao vivo do wizard. */
+    flat?: boolean
   }>(),
-  { autoOpen: true },
+  { autoOpen: true, flat: false },
 )
 
 const isOpen = ref(false)

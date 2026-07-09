@@ -1,25 +1,33 @@
 <template>
-  <nav class="wizard-stepper mb-5">
-    <FwbProgress
-      class="mb-3"
-      :progress="progressPercent"
-      color="purple"
-      size="sm"
-      label="Progresso"
-      label-position="outside"
-    />
-    <div class="wizard-stepper-scroll flex gap-2 pb-1">
+  <nav class="wiz-stepper" aria-label="Etapas">
+    <div class="wiz-stepper__progress-row">
+      <span class="wiz-stepper__progress-label">
+        Etapa {{ currentIndex + 1 }} de {{ steps.length }}
+      </span>
+      <span class="wiz-stepper__progress-pct">{{ progressPercent }}%</span>
+    </div>
+    <div class="wizard-progress">
+      <div class="wizard-progress__fill" :style="{ width: `${progressPercent}%` }" />
+    </div>
+
+    <div class="wizard-stepper-scroll flex gap-2 pb-1 mt-3">
       <button
-        v-for="step in steps"
+        v-for="(step, index) in steps"
         :key="step"
         type="button"
         class="wizard-step-pill"
         :class="{
           active: currentStep === step,
-          done: stepIndex(step) < stepIndex(currentStep),
+          done: index < currentIndex,
         }"
         @click="$emit('go', step)"
       >
+        <span class="wizard-step-pill__num">
+          <svg v-if="index < currentIndex" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="3">
+            <path d="M20 6 9 17l-5-5" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          <template v-else>{{ index + 1 }}</template>
+        </span>
         {{ WIZARD_STEP_LABELS[step] }}
       </button>
     </div>
@@ -28,23 +36,45 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { FwbProgress } from 'flowbite-vue'
 import { WIZARD_STEP_LABELS, WIZARD_STEPS, type WizardStep } from '@/api/types'
 
-const props = defineProps<{
-  currentStep: WizardStep
-}>()
+const props = withDefaults(
+  defineProps<{
+    currentStep: WizardStep
+    steps?: WizardStep[]
+  }>(),
+  { steps: () => WIZARD_STEPS },
+)
 
 defineEmits<{ go: [step: WizardStep] }>()
 
-const steps = WIZARD_STEPS
+const steps = computed(() => props.steps)
 
-const progressPercent = computed(() => {
-  const index = steps.indexOf(props.currentStep)
-  return Math.round(((index + 1) / steps.length) * 100)
-})
+const currentIndex = computed(() => steps.value.indexOf(props.currentStep))
 
-function stepIndex(step: WizardStep): number {
-  return steps.indexOf(step)
-}
+const progressPercent = computed(() =>
+  Math.round(((currentIndex.value + 1) / steps.value.length) * 100),
+)
 </script>
+
+<style scoped>
+.wiz-stepper {
+  margin-bottom: 22px;
+}
+.wiz-stepper__progress-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.wiz-stepper__progress-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+.wiz-stepper__progress-pct {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--primary-strong);
+}
+</style>

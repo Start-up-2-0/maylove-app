@@ -1,72 +1,49 @@
 <template>
-  <div class="tribute-live-preview">
-    <div v-if="showViewportTabs" class="mb-4">
-      <FwbTabs v-model="activeViewport" variant="underline">
-        <FwbTab name="375" title="Mobile" />
-        <FwbTab name="768" title="Tablet" />
-        <FwbTab name="1280" title="Desktop" />
-      </FwbTabs>
+  <div
+    class="tribute-live-preview"
+    :class="{
+      'tribute-live-preview--compact': compact,
+      'tribute-live-preview--faithful': faithful,
+    }"
+  >
+    <div v-if="showViewportTabs" class="viewport-seg">
+      <button
+        v-for="option in viewportOptions"
+        :key="option.value"
+        type="button"
+        class="viewport-seg__btn"
+        :class="{ 'viewport-seg__btn--active': activeViewport === option.value }"
+        @click="activeViewport = option.value"
+      >
+        {{ option.label }}
+      </button>
     </div>
 
-    <section v-if="loading" class="flex items-center justify-center py-12 text-gray-500 dark:text-gray-400">
-      <FwbSpinner size="8" class="mr-3" />
+    <section v-if="loading" class="preview-loading">
+      <span class="ml-spinner" />
       Carregando preview...
     </section>
 
     <section v-else-if="loadError" class="text-red-600 text-sm py-4">{{ loadError }}</section>
 
-    <div v-else class="preview-viewport-wrap overflow-x-auto pb-2">
-      <EnvelopeFrame :auto-open="!compact">
-        <article
-          class="preview-viewport-frame tribute-preview-content p-5"
-          :style="frameStyle"
-        >
-          <div
-            class="rounded-xl p-5"
-            :style="{
-              borderTop: `4px solid ${accent}`,
-              background: `radial-gradient(circle at top, color-mix(in srgb, ${accent} 14%, white), transparent 60%)`,
-            }"
-          >
-            <p class="text-xs font-bold uppercase tracking-widest mb-2" :style="{ color: accent }">
-              {{ typeName }}
-            </p>
-            <h3 class="text-2xl font-semibold text-gray-900 dark:text-white mb-2">
-              {{ displayTitle }}
-            </h3>
-            <p v-if="displaySubtitle" class="text-gray-600 dark:text-gray-300 mb-3">
-              {{ displaySubtitle }}
-            </p>
-            <p v-if="displayMessage" class="text-gray-600 dark:text-gray-300 whitespace-pre-wrap leading-relaxed">
-              {{ displayMessage }}
-            </p>
-          </div>
-
-          <div v-if="photos.length" class="grid gap-3 mt-4">
-            <img
-              v-for="photo in photos"
-              :key="photo.id"
-              :src="photo.url || photo.url_thumbnail || ''"
-              alt=""
-              class="w-full rounded-xl object-cover max-h-72"
-            />
-          </div>
-
-          <footer class="mt-5 text-center text-gray-500 dark:text-gray-400 text-sm space-y-3">
-            <p>{{ displayClosing }}</p>
-            <FwbButton
-              v-if="musicUrl"
-              color="alternative"
-              size="sm"
-              @click="toggle"
-            >
-              {{ playing ? 'Pausar música' : blocked ? 'Toque para ouvir' : 'Ouvir música' }}
-            </FwbButton>
-            <p v-if="readonly && viewsCount !== null" class="text-xs">
-              {{ viewsCount }} visualizações
-            </p>
-          </footer>
-        </article>
+    <div
+      v-else
+      class="preview-viewport-wrap"
+      :class="{
+        'preview-viewport-wrap--compact': compact,
+        'preview-viewport-wrap--faithful': faithful,
+      }"
+    >
+      <EnvelopeFrame flat :auto-open="false">
+        <div class="preview-viewport-frame" :style="frameStyle">
+          <ExperienceRenderer
+            :definition="definition"
+            :content="content"
+            :theme="theme"
+            :presentation="presentationId"
+            :mode="faithful ? 'full' : 'preview'"
+          />
+        </div>
       </EnvelopeFrame>
     </div>
   </div>
@@ -74,12 +51,13 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
-import { FwbButton, FwbSpinner, FwbTab, FwbTabs } from 'flowbite-vue'
 import { fetchPreviewData } from '@/api/tributes'
-import type { PublicTribute, TributeDetail, TributeMedia } from '@/api/types'
+import type { PublicTribute, TributeDetail } from '@/api/types'
 import type { useTributeWizard } from '@/composables/useTributeWizard'
-import { useTributeAudio } from '@/composables/useTributeAudio'
+import { getTemplateDefinition } from '@/templates/registry'
+import { resolveContent, resolveTheme } from '@/composables/useExperienceContent'
 import EnvelopeFrame from './EnvelopeFrame.vue'
+import ExperienceRenderer from '@/components/experience/ExperienceRenderer.vue'
 
 const props = withDefaults(
   defineProps<{
@@ -89,6 +67,8 @@ const props = withDefaults(
     publicData?: PublicTribute | null
     readonly?: boolean
     compact?: boolean
+    /** Prévia fiel (como publicado) — usada na etapa Revisar e Concluir. */
+    faithful?: boolean
     showViewportTabs?: boolean
     viewportWidth?: number
     refreshToken?: number
@@ -100,6 +80,7 @@ const props = withDefaults(
     publicData: null,
     readonly: false,
     compact: false,
+    faithful: false,
     showViewportTabs: true,
     viewportWidth: 375,
     refreshToken: 0,
@@ -111,89 +92,119 @@ const loading = ref(false)
 const loadError = ref('')
 const activeViewport = ref(String(props.viewportWidth))
 
+const viewportOptions = [
+  { value: '375', label: 'Mobile' },
+  { value: '768', label: 'Tablet' },
+  { value: '1280', label: 'Desktop' },
+]
+
 const frameStyle = computed(() => {
-  const width = props.showViewportTabs ? Number(activeViewport.value) : props.viewportWidth
-  return { width: `${width}px`, maxWidth: '100%' }
+  const target = props.showViewportTabs ? Number(activeViewport.value) : props.viewportWidth
+  if (props.faithful) {
+    return {
+      width: '100%',
+      maxWidth: `${target}px`,
+      margin: '0 auto',
+      flexShrink: '0',
+    }
+  }
+  return {
+    width: `min(${target}px, 100%)`,
+    flexShrink: '0',
+  }
 })
 
-const accent = computed(() => {
-  if (props.form?.color_primary) return props.form.color_primary
-  if (props.publicData?.color_primary) return props.publicData.color_primary
-  return (
+const templateSlug = computed(
+  () =>
+    props.tribute?.template.slug ||
+    props.publicData?.template.slug ||
+    apiData.value?.template.slug ||
+    null,
+)
+
+const definition = computed(() => getTemplateDefinition(templateSlug.value))
+
+const accentColor = computed(
+  () =>
+    props.form?.color_primary ||
+    props.publicData?.color_primary ||
     props.tribute?.color_primary ||
-    props.tribute?.template.primary_color ||
-    props.publicData?.template.primary_color ||
-    apiData.value?.template.primary_color ||
-    '#d94f7a'
-  )
-})
+    apiData.value?.color_primary ||
+    null,
+)
 
-const typeName = computed(
+const animationSpeed = computed(
   () =>
-    props.tribute?.tribute_type.name ||
-    props.publicData?.tribute_type.name ||
-    apiData.value?.tribute_type.name ||
-    'Homenagem',
+    (props.form?.animation_speed || undefined) ||
+    props.tribute?.content_json?.animation_speed ||
+    apiData.value?.content_json?.animation_speed ||
+    props.publicData?.content_json?.animation_speed,
 )
 
-const displayTitle = computed(
+const styleId = computed(
   () =>
-    props.form?.title ||
-    props.form?.honoree_name ||
-    props.publicData?.title ||
-    props.publicData?.honoree_name ||
-    apiData.value?.title ||
-    apiData.value?.honoree_name ||
-    'Homenagem',
+    (props.form?.style_id || undefined) ||
+    props.tribute?.content_json?.style_id ||
+    apiData.value?.content_json?.style_id ||
+    props.publicData?.content_json?.style_id ||
+    null,
 )
 
-const displaySubtitle = computed(
-  () => props.form?.subtitle || props.publicData?.subtitle || apiData.value?.subtitle || '',
-)
-
-const displayMessage = computed(
-  () => props.form?.message || props.publicData?.message || apiData.value?.message || '',
-)
-
-const displayClosing = computed(
+const fontFamily = computed(
   () =>
-    props.form?.closing_message ||
-    props.publicData?.closing_message ||
-    apiData.value?.closing_message ||
-    'Feito com carinho no MayLove',
+    (props.form?.font || undefined) ||
+    props.tribute?.content_json?.font ||
+    apiData.value?.content_json?.font ||
+    props.publicData?.content_json?.font ||
+    null,
 )
 
-const viewsCount = computed(() =>
-  props.readonly && props.publicData ? props.publicData.views_count : null,
+const backgroundId = computed(
+  () =>
+    (props.form?.background || undefined) ||
+    props.tribute?.content_json?.background ||
+    apiData.value?.content_json?.background ||
+    props.publicData?.content_json?.background ||
+    null,
 )
 
-const photos = computed((): TributeMedia[] => {
-  if (props.publicData?.media?.length) {
-    return props.publicData.media.map((item) => ({
-      id: item.id,
-      storage_file_id: '',
-      media_type: item.media_type as 'photo',
-      original_filename: '',
-      mime_type: null,
-      size_bytes: null,
-      sort_order: item.sort_order,
-      url_thumbnail: item.url_thumbnail,
-      url: item.url,
-      created_at: '',
-    }))
-  }
-  return (apiData.value?.media ?? []).filter((item) => item.media_type === 'photo')
-})
+const presentationId = computed(
+  () =>
+    (props.form?.presentation || undefined) ||
+    props.tribute?.content_json?.presentation ||
+    apiData.value?.content_json?.presentation ||
+    props.publicData?.content_json?.presentation ||
+    null,
+)
 
-const musicUrl = computed(() => {
-  if (props.publicData?.music && typeof props.publicData.music === 'object') {
-    const music = props.publicData.music as { preview_url?: string; url?: string }
-    return music.preview_url || music.url || null
-  }
-  return apiData.value?.music?.preview_url || apiData.value?.music?.url || null
-})
+const entrance = computed(
+  () =>
+    (props.form?.entrance || undefined) ||
+    props.tribute?.content_json?.entrance ||
+    apiData.value?.content_json?.entrance ||
+    props.publicData?.content_json?.entrance ||
+    null,
+)
 
-const { playing, blocked, toggle } = useTributeAudio(() => musicUrl.value)
+const theme = computed(() =>
+  resolveTheme(definition.value, {
+    color: accentColor.value,
+    speed: animationSpeed.value,
+    styleId: styleId.value,
+    font: fontFamily.value,
+    background: backgroundId.value,
+    entrance: entrance.value,
+  }),
+)
+
+const content = computed(() =>
+  resolveContent(definition.value, {
+    form: props.form,
+    tribute: props.tribute ?? apiData.value,
+    detail: apiData.value,
+    publicData: props.publicData,
+  }),
+)
 
 watch(
   () => props.viewportWidth,
@@ -230,3 +241,128 @@ async function loadPreviewData() {
   }
 }
 </script>
+
+<style scoped>
+.viewport-seg {
+  display: inline-flex;
+  gap: 2px;
+  padding: 4px;
+  margin-bottom: 16px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+}
+.viewport-seg__btn {
+  border: none;
+  background: transparent;
+  padding: 6px 16px;
+  border-radius: var(--radius-pill);
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--muted);
+  transition:
+    background var(--dur) var(--ease),
+    color var(--dur) var(--ease);
+}
+.viewport-seg__btn:hover {
+  color: var(--text);
+}
+.viewport-seg__btn--active {
+  background: var(--surface);
+  color: var(--primary-strong);
+  box-shadow: var(--shadow-xs);
+}
+.preview-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 48px 0;
+  color: var(--muted);
+}
+
+.tribute-live-preview {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* Área rolável: o conteúdo da homenagem fica contido sem esticar a página. */
+.preview-viewport-wrap {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  max-height: min(480px, calc(100vh - 260px));
+  overflow: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  display: flex;
+  justify-content: center;
+  padding: 10px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  background: var(--surface-3);
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--primary) 50%, transparent) transparent;
+}
+
+.preview-viewport-wrap--compact {
+  max-height: min(68vh, 640px);
+}
+
+.preview-viewport-wrap--faithful {
+  max-height: none;
+  min-height: min(75vh, 820px);
+  overflow: visible;
+  display: block;
+  padding: 0;
+  border: none;
+  background: transparent;
+}
+
+.preview-viewport-wrap--faithful::after {
+  display: none;
+}
+
+.tribute-live-preview--faithful .preview-viewport-frame {
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+}
+
+/* Dica visual de que há mais conteúdo abaixo. */
+.preview-viewport-wrap::after {
+  content: '';
+  position: sticky;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: block;
+  height: 28px;
+  margin-top: -28px;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    color-mix(in srgb, var(--surface-3) 88%, transparent)
+  );
+  pointer-events: none;
+}
+
+.preview-viewport-wrap::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.preview-viewport-wrap::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--primary) 45%, transparent);
+}
+
+.preview-viewport-frame {
+  margin: 0;
+  overflow: hidden;
+  border-radius: 18px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: var(--shadow-md);
+}
+</style>

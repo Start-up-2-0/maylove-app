@@ -9,104 +9,102 @@
       "
     />
 
-    <div v-if="supportsMusic" class="flex flex-wrap gap-2 mb-5">
-      <FwbButton
-        :color="form.music_source === 'library' ? 'pink' : 'alternative'"
-        size="sm"
-        @click="setSource('library')"
+    <div v-if="supportsMusic" class="source-toggle">
+      <button
+        v-for="option in sourceOptions"
+        :key="option.value"
+        class="ml-chip"
+        :class="{ 'ml-chip--active': form.music_source === option.value }"
+        @click="setSource(option.value)"
       >
-        Biblioteca
-      </FwbButton>
-      <FwbButton
-        :color="form.music_source === 'upload' ? 'pink' : 'alternative'"
-        size="sm"
-        @click="setSource('upload')"
-      >
-        Upload MP3
-      </FwbButton>
-      <FwbButton
-        :color="form.music_source === 'none' ? 'pink' : 'alternative'"
-        size="sm"
-        @click="setSource('none')"
-      >
-        Sem música
-      </FwbButton>
+        {{ option.label }}
+      </button>
     </div>
 
     <section v-if="supportsMusic && form.music_source === 'library'">
-      <div class="flex flex-wrap gap-2 mb-4">
-        <FwbButton
+      <div class="category-row">
+        <button
           v-for="category in categories"
           :key="category"
-          size="xs"
-          :color="selectedCategory === category ? 'pink' : 'light'"
+          class="ml-chip ml-chip--sm"
+          :class="{ 'ml-chip--active': selectedCategory === category }"
           @click="selectedCategory = category"
         >
           {{ category }}
-        </FwbButton>
+        </button>
       </div>
 
-      <div v-if="loadingTracks" class="flex items-center gap-2 text-gray-500 py-6">
-        <FwbSpinner size="6" />
+      <div v-if="loadingTracks" class="tracks-loading">
+        <span class="ml-spinner" />
         Carregando faixas...
       </div>
 
-      <FwbListGroup v-else class="mb-4">
-        <FwbListGroupItem
+      <ul v-else class="track-list">
+        <li
           v-for="track in tracks"
           :key="track.id"
-          :class="{ 'bg-pink-50 dark:bg-pink-950/20': form.music_track_id === track.id }"
+          class="track"
+          :class="{ 'track--active': form.music_track_id === track.id }"
           @click="selectTrack(track)"
         >
-          <div class="flex items-center justify-between gap-3 w-full">
-            <div>
-              <strong class="block text-gray-900 dark:text-white">{{ track.title }}</strong>
-              <span class="text-sm text-gray-500">
-                {{ track.artist }} · {{ formatDuration(track.duration_seconds) }}
-              </span>
-            </div>
-            <FwbButton color="light" size="xs" @click.stop="preview(track.preview_url)">
-              ▶
-            </FwbButton>
+          <span class="track__radio" aria-hidden="true" />
+          <div class="track__info">
+            <strong class="track__title">{{ track.title }}</strong>
+            <span class="track__meta">{{ track.artist }} · {{ formatDuration(track.duration_seconds) }}</span>
           </div>
-        </FwbListGroupItem>
-      </FwbListGroup>
+          <button class="ml-icon-btn track__play" title="Ouvir prévia" @click.stop="preview(track.preview_url)">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor">
+              <path d="M8 5v14l11-7z" />
+            </svg>
+          </button>
+        </li>
+      </ul>
     </section>
 
     <section v-else-if="supportsMusic && form.music_source === 'upload'">
-      <label
-        class="flex flex-col items-center justify-center min-h-[120px] rounded-2xl border-2 border-dashed border-gray-300 dark:border-gray-600 p-6 text-center cursor-pointer"
-        :class="{ 'opacity-60 cursor-not-allowed': uploading }"
-      >
-        <input
-          type="file"
-          accept="audio/mpeg,audio/mp3"
-          class="hidden"
-          :disabled="uploading"
-          @change="onAudioSelected"
-        />
-        <FwbSpinner v-if="uploading" size="6" class="mb-2" />
-        <span v-if="uploading" class="text-gray-500">Enviando áudio...</span>
-        <span v-else class="text-gray-500">Clique para enviar MP3</span>
+      <label class="ml-dropzone" :class="{ 'ml-dropzone--disabled': uploading }">
+        <input type="file" accept="audio/mpeg,audio/mp3" class="hidden" :disabled="uploading" @change="onAudioSelected" />
+        <span v-if="uploading" class="ml-spinner" />
+        <span v-else class="ml-dropzone__glyph" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M9 18V5l10-2v13" stroke-linecap="round" stroke-linejoin="round" />
+            <circle cx="6" cy="18" r="3" />
+            <circle cx="16" cy="16" r="3" />
+          </svg>
+        </span>
+        <span v-if="uploading">Enviando áudio...</span>
+        <template v-else>
+          <span class="ml-dropzone__title">Clique para enviar MP3</span>
+          <span class="ml-dropzone__hint">Formato MP3 · até 15 MB</span>
+        </template>
       </label>
-      <FwbAlert v-if="uploadedName" type="success" class="mt-3">
-        Arquivo enviado: {{ uploadedName }}
-      </FwbAlert>
+      <p v-if="uploadedName" class="ml-alert ml-alert--success mt-3">Arquivo enviado: {{ uploadedName }}</p>
     </section>
 
-    <p v-if="error" class="text-red-600 text-sm mt-3">{{ error }}</p>
+    <section v-if="supportsMusic && form.music_source !== 'none'" class="player-options">
+      <h4 class="player-options__title">Opções do player</h4>
+      <label class="player-toggle">
+        <input v-model="form.music_autoplay" type="checkbox" />
+        <span>
+          <strong>Tocar automaticamente</strong>
+          <small>Inicia a música assim que o visitante interage com a página.</small>
+        </span>
+      </label>
+      <label class="player-toggle">
+        <input v-model="form.music_loop" type="checkbox" />
+        <span>
+          <strong>Repetir em loop</strong>
+          <small>Recomeça a faixa quando ela terminar.</small>
+        </span>
+      </label>
+    </section>
+
+    <p v-if="error" class="ml-alert ml-alert--danger mt-3">{{ error }}</p>
   </div>
 </template>
 
 <script setup lang="ts">
 import { onMounted, ref, watch } from 'vue'
-import {
-  FwbAlert,
-  FwbButton,
-  FwbListGroup,
-  FwbListGroupItem,
-  FwbSpinner,
-} from 'flowbite-vue'
 import { listMusicTracks } from '@/api/catalog'
 import { confirmMedia, presignMedia } from '@/api/tributes'
 import type { MusicTrack } from '@/api/types'
@@ -121,6 +119,12 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{ changed: [] }>()
+
+const sourceOptions = [
+  { value: 'library' as const, label: 'Biblioteca' },
+  { value: 'upload' as const, label: 'Upload MP3' },
+  { value: 'none' as const, label: 'Sem música' },
+]
 
 const tracks = ref<MusicTrack[]>([])
 const categories = ref<string[]>([])
@@ -206,3 +210,140 @@ function formatDuration(seconds: number): string {
   return `${mins}:${String(secs).padStart(2, '0')}`
 }
 </script>
+
+<style scoped>
+.source-toggle {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 22px;
+}
+.category-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+.ml-chip--sm {
+  padding: 5px 12px;
+  font-size: 0.82rem;
+}
+
+.tracks-loading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--muted);
+  padding: 22px 4px;
+}
+
+.track-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.track {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  cursor: pointer;
+  transition: border-color var(--dur) var(--ease), background var(--dur) var(--ease);
+}
+.track:hover {
+  border-color: var(--primary);
+}
+.track--active {
+  border-color: var(--primary);
+  background: var(--primary-softer);
+}
+.track__radio {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  border: 2px solid var(--border-strong);
+  flex-shrink: 0;
+  transition: border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+}
+.track--active .track__radio {
+  border-color: var(--primary);
+  background: var(--primary);
+  box-shadow: inset 0 0 0 3px var(--surface);
+}
+.track__info {
+  flex: 1;
+  min-width: 0;
+}
+.track__title {
+  display: block;
+  font-weight: 600;
+  color: var(--ink);
+}
+.track__meta {
+  font-size: 0.84rem;
+  color: var(--muted);
+}
+.track__play {
+  flex-shrink: 0;
+}
+
+.player-options {
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.player-options__title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0;
+}
+.player-toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+}
+.player-toggle input {
+  margin-top: 3px;
+  accent-color: var(--primary);
+}
+.player-toggle span {
+  display: flex;
+  flex-direction: column;
+}
+.player-toggle strong {
+  font-weight: 600;
+  color: var(--ink);
+}
+.player-toggle small {
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.mt-3 {
+  margin-top: 12px;
+}
+.hidden {
+  display: none;
+}
+.ml-dropzone__title {
+  font-weight: 600;
+  color: inherit;
+}
+.ml-dropzone__hint {
+  font-size: 0.82rem;
+  color: var(--subtle);
+}
+</style>

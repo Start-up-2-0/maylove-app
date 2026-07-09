@@ -5,40 +5,38 @@
       :description="`Envie pelo menos uma foto. Máximo de ${maxPhotos} neste template.`"
     />
 
-    <div v-if="photos.length" class="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-5">
-      <FwbCard
-        v-for="(photo, index) in photos"
-        :key="photo.id"
-        class="overflow-hidden"
-        img-alt=""
-        :img-src="photo.url || photo.url_thumbnail || ''"
-      >
-        <div class="p-3 flex items-center justify-between gap-2 text-sm">
-          <span class="text-gray-500">#{{ index + 1 }}</span>
-          <div class="flex gap-1">
-            <FwbButton color="alternative" size="xs" :disabled="index === 0" @click="move(index, -1)">
-              ↑
-            </FwbButton>
-            <FwbButton
-              color="alternative"
-              size="xs"
-              :disabled="index === photos.length - 1"
-              @click="move(index, 1)"
-            >
-              ↓
-            </FwbButton>
-            <FwbButton color="red" size="xs" outline @click="remove(photo.id)">
-              Remover
-            </FwbButton>
-          </div>
-        </div>
-      </FwbCard>
+    <div class="ph-context" :class="{ 'ph-context--warn': needsMore }">
+      <span class="ph-context__emoji" aria-hidden="true">{{ presentationEmoji }}</span>
+      <span class="ph-context__text">{{ photoGuidance }}</span>
     </div>
 
-    <label
-      class="flex flex-col items-center justify-center min-h-[140px] rounded-2xl border-2 border-dashed border-gray-300 dark:border-gray-600 p-6 text-center cursor-pointer transition-colors hover:border-pink-400"
-      :class="{ 'opacity-60 cursor-not-allowed': photos.length >= maxPhotos || uploading }"
-    >
+    <div v-if="photos.length" class="photo-grid">
+      <figure v-for="(photo, index) in photos" :key="photo.id" class="photo-tile">
+        <img class="photo-tile__img" :src="photo.url || photo.url_thumbnail || ''" alt="" loading="lazy" />
+        <figcaption class="photo-tile__bar">
+          <span class="photo-tile__index">#{{ index + 1 }}</span>
+          <div class="photo-tile__actions">
+            <button class="ml-icon-btn" :disabled="index === 0" title="Mover para cima" @click="move(index, -1)">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 19V5M6 11l6-6 6 6" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </button>
+            <button class="ml-icon-btn" :disabled="index === photos.length - 1" title="Mover para baixo" @click="move(index, 1)">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 5v14M6 13l6 6 6-6" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </button>
+            <button class="ml-icon-btn ml-icon-btn--danger" title="Remover" @click="remove(photo.id)">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </button>
+          </div>
+        </figcaption>
+      </figure>
+    </div>
+
+    <label class="ml-dropzone" :class="{ 'ml-dropzone--disabled': photos.length >= maxPhotos || uploading }">
       <input
         type="file"
         accept="image/jpeg,image/png,image/webp"
@@ -47,28 +45,57 @@
         :disabled="photos.length >= maxPhotos || uploading"
         @change="onFilesSelected"
       />
-      <FwbSpinner v-if="uploading" size="6" class="mb-2" />
-      <span v-if="uploading" class="text-gray-500">Enviando {{ uploadLabel }}...</span>
-      <span v-else class="text-gray-500">Clique para adicionar fotos (JPEG, PNG, WebP)</span>
+      <span v-if="uploading" class="ml-spinner" />
+      <span v-else class="ml-dropzone__glyph" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M12 16V4M8 8l4-4 4 4" stroke-linecap="round" stroke-linejoin="round" />
+          <path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" stroke-linecap="round" />
+        </svg>
+      </span>
+      <span v-if="uploading">Enviando {{ uploadLabel }}...</span>
+      <template v-else>
+        <span class="ml-dropzone__title">Clique para adicionar fotos</span>
+        <span class="ml-dropzone__hint">JPEG, PNG ou WebP · até {{ maxPhotos }} fotos</span>
+      </template>
     </label>
 
-    <p v-if="error" class="text-red-600 text-sm mt-3">{{ error }}</p>
+    <p v-if="error" class="ml-alert ml-alert--danger mt-4">{{ error }}</p>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { FwbButton, FwbCard, FwbSpinner } from 'flowbite-vue'
+import { computed, ref } from 'vue'
 import { confirmMedia, deleteMedia, presignMedia, reorderMedia } from '@/api/tributes'
 import type { TributeMedia } from '@/api/types'
 import { uploadFile } from '@/storage/upload'
+import type { useTributeWizard } from '@/composables/useTributeWizard'
+import { resolvePresentationSchema } from '@/templates/presentationSchema'
+import type { TemplateDefinition } from '@/templates/types'
 import WizardStepHeader from '@/components/wizard/WizardStepHeader.vue'
 
 const props = defineProps<{
   tributeId: string
   photos: TributeMedia[]
   maxPhotos: number
+  form: ReturnType<typeof useTributeWizard>['form']
+  definition: TemplateDefinition
 }>()
+
+// O schema da apresentação define como as fotos são usadas e o mínimo recomendado.
+const schema = computed(() => resolvePresentationSchema(props.form.presentation, props.definition))
+const presentationEmoji = computed(() => schema.value.presentationEmoji)
+
+const needsMore = computed(
+  () => schema.value.photos.minPhotos > 0 && props.photos.length < schema.value.photos.minPhotos,
+)
+
+const photoGuidance = computed(() => {
+  const base = schema.value.photos.guidance
+  if (needsMore.value) {
+    return `${base} Recomendado: pelo menos ${schema.value.photos.minPhotos} foto(s) para esta experiência.`
+  }
+  return base
+})
 
 const emit = defineEmits<{ changed: [] }>()
 
@@ -129,3 +156,84 @@ async function move(index: number, direction: -1 | 1) {
   }
 }
 </script>
+
+<style scoped>
+.ph-context {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  margin-bottom: 20px;
+  border-radius: var(--radius-md);
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+}
+.ph-context__emoji {
+  font-size: 1.2rem;
+  line-height: 1;
+}
+.ph-context__text {
+  font-size: 0.9rem;
+  color: var(--text);
+}
+.ph-context--warn {
+  background: var(--warning-soft, color-mix(in srgb, #f59e0b 14%, transparent));
+  border-color: color-mix(in srgb, #f59e0b 45%, var(--border));
+}
+
+.photo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 14px;
+  margin-bottom: 20px;
+}
+.photo-tile {
+  margin: 0;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow var(--dur) var(--ease), transform var(--dur) var(--ease);
+}
+.photo-tile:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+.photo-tile__img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  display: block;
+}
+.photo-tile__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+}
+.photo-tile__index {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--subtle);
+}
+.photo-tile__actions {
+  display: flex;
+  gap: 5px;
+}
+.mt-4 {
+  margin-top: 16px;
+}
+.ml-dropzone__title {
+  font-weight: 600;
+  color: inherit;
+}
+.ml-dropzone__hint {
+  font-size: 0.82rem;
+  color: var(--subtle);
+}
+.hidden {
+  display: none;
+}
+</style>
