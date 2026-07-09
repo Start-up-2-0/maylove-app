@@ -10,15 +10,42 @@
     <header class="detail-head">
       <div>
         <p class="eyebrow">Analytics</p>
-        <h1 class="section-title">Desempenho da homenagem</h1>
+        <h1 class="section-title">{{ tributeTitle }}</h1>
+        <p v-if="publicPath" class="detail-head__slug text-muted">{{ publicPath }}</p>
       </div>
-      <RouterLink
-        v-if="stats && stats.status !== 'published'"
-        :to="`/dashboard/tributes/${tributeId}/edit`"
-        class="ml-btn ml-btn--secondary"
-      >
-        Continuar edição
-      </RouterLink>
+      <div class="detail-head__actions">
+        <RouterLink
+          v-if="stats && stats.status !== 'published'"
+          :to="`/dashboard/tributes/${tributeId}/edit`"
+          class="ml-btn ml-btn--secondary"
+        >
+          Continuar edição
+        </RouterLink>
+        <button
+          v-if="stats?.status === 'published'"
+          type="button"
+          class="ml-btn ml-btn--secondary"
+          @click="copyPublicLink"
+        >
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8">
+            <rect x="9" y="9" width="13" height="13" rx="2" />
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+          </svg>
+          {{ copied ? 'Link copiado' : 'Copiar link' }}
+        </button>
+        <a
+          v-if="stats?.status === 'published' && publicUrl"
+          :href="publicUrl"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="ml-btn ml-btn--secondary"
+        >
+          Abrir página
+        </a>
+        <button type="button" class="ml-btn ml-btn--danger" @click="confirmDelete">
+          Excluir
+        </button>
+      </div>
     </header>
 
     <section v-if="loading" class="ml-card state">Carregando estatísticas...</section>
@@ -51,20 +78,57 @@
         </article>
       </section>
     </template>
+
+    <div v-if="deleteOpen" class="delete-modal" role="dialog" aria-modal="true" aria-labelledby="delete-title">
+      <div class="delete-modal__backdrop" @click="cancelDelete" />
+      <div class="delete-modal__panel ml-card">
+        <h2 id="delete-title" class="delete-modal__title">Excluir homenagem?</h2>
+        <p class="text-muted delete-modal__text">
+          <strong>{{ tributeTitle }}</strong>
+          será removida permanentemente, incluindo fotos, músicas e demais arquivos armazenados.
+        </p>
+        <p v-if="deleteError" class="delete-modal__error">{{ deleteError }}</p>
+        <div class="delete-modal__actions">
+          <button type="button" class="ml-btn ml-btn--secondary" :disabled="deleting" @click="cancelDelete">
+            Cancelar
+          </button>
+          <button type="button" class="ml-btn ml-btn--danger" :disabled="deleting" @click="executeDelete">
+            <span v-if="deleting" class="ml-spinner ml-spinner--sm" />
+            Excluir definitivamente
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { useRoute, RouterLink } from 'vue-router'
-import { fetchTributeStats } from '@/api/tributes'
-import type { TributeStats } from '@/api/types'
+import { useRoute, useRouter, RouterLink } from 'vue-router'
+import { deleteTribute, fetchTribute, fetchTributeStats } from '@/api/tributes'
+import type { TributeDetail, TributeStats } from '@/api/types'
 
 const route = useRoute()
+const router = useRouter()
 const tributeId = route.params.id as string
 const stats = ref<TributeStats | null>(null)
+const tribute = ref<TributeDetail | null>(null)
 const loading = ref(true)
 const error = ref('')
+const copied = ref(false)
+const deleteOpen = ref(false)
+const deleting = ref(false)
+const deleteError = ref('')
+
+const tributeTitle = computed(
+  () => tribute.value?.title || tribute.value?.honoree_name || 'Desempenho da homenagem',
+)
+
+const publicPath = computed(() => (tribute.value?.slug ? `/h/${tribute.value.slug}` : ''))
+
+const publicUrl = computed(() =>
+  tribute.value?.slug ? `${window.location.origin}/h/${tribute.value.slug}` : '',
+)
 
 const statusLabel = computed(() => {
   const status = stats.value?.status ?? ''
@@ -145,13 +209,55 @@ const iconCalendar =
 
 onMounted(async () => {
   try {
-    stats.value = await fetchTributeStats(tributeId)
+    const [statsResult, tributeResult] = await Promise.all([
+      fetchTributeStats(tributeId),
+      fetchTribute(tributeId),
+    ])
+    stats.value = statsResult
+    tribute.value = tributeResult
   } catch {
     error.value = 'Não foi possível carregar as estatísticas.'
   } finally {
     loading.value = false
   }
 })
+
+async function copyPublicLink() {
+  if (!publicUrl.value || stats.value?.status !== 'published') return
+  try {
+    await navigator.clipboard.writeText(publicUrl.value)
+    copied.value = true
+    window.setTimeout(() => {
+      copied.value = false
+    }, 2000)
+  } catch {
+    // Clipboard pode falhar em contextos inseguros.
+  }
+}
+
+function confirmDelete() {
+  deleteError.value = ''
+  deleteOpen.value = true
+}
+
+function cancelDelete() {
+  if (deleting.value) return
+  deleteOpen.value = false
+  deleteError.value = ''
+}
+
+async function executeDelete() {
+  deleting.value = true
+  deleteError.value = ''
+  try {
+    await deleteTribute(tributeId)
+    await router.push('/dashboard')
+  } catch {
+    deleteError.value = 'Não foi possível excluir a homenagem. Tente novamente.'
+  } finally {
+    deleting.value = false
+  }
+}
 
 function formatDate(value: string | null): string {
   if (!value) return '—'
@@ -184,6 +290,16 @@ function formatDate(value: string | null): string {
   justify-content: space-between;
   gap: 16px;
   margin-bottom: 24px;
+}
+.detail-head__slug {
+  margin-top: 6px;
+  font-size: 0.88rem;
+  font-family: var(--font-sans);
+}
+.detail-head__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .hero-stat {
@@ -261,5 +377,44 @@ function formatDate(value: string | null): string {
 }
 .state--error {
   color: var(--error);
+}
+
+.delete-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+}
+.delete-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: var(--overlay);
+  backdrop-filter: blur(3px);
+}
+.delete-modal__panel {
+  position: relative;
+  width: min(100%, 440px);
+  padding: 24px;
+}
+.delete-modal__title {
+  font-size: 1.2rem;
+  margin-bottom: 10px;
+}
+.delete-modal__text {
+  line-height: 1.55;
+}
+.delete-modal__error {
+  margin-top: 12px;
+  color: var(--error);
+  font-size: 0.9rem;
+}
+.delete-modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 20px;
 }
 </style>

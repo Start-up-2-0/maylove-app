@@ -44,6 +44,10 @@ export async function updateTribute(
   return unwrap(response)
 }
 
+export async function deleteTribute(id: string): Promise<void> {
+  await apiClient.delete(`/tributes/${id}`)
+}
+
 export async function fetchPreviewData(id: string): Promise<TributeDetail> {
   const response = await apiClient.get<ApiEnvelope<TributeDetail>>(`/tributes/${id}/preview-data`)
   return unwrap(response)

@@ -61,6 +61,10 @@ export const db = {
     return tributes.get(id)
   },
 
+  deleteTribute(id: string): boolean {
+    return tributes.delete(id)
+  },
+
   getTributeBySlug(slug: string): TributeDetail | undefined {
     return Array.from(tributes.values()).find((tribute) => tribute.slug === slug)
   },

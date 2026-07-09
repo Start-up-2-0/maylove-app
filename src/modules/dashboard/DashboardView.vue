@@ -102,24 +102,81 @@
             </p>
             <p class="tribute-card__slug">/h/{{ tribute.slug }}</p>
           </div>
-          <div class="tribute-card__foot">
-            <span class="tribute-card__cta">
-              {{ tribute.status === 'published' ? 'Ver analytics' : 'Continuar edição' }}
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M5 12h14M13 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round" />
-              </svg>
-            </span>
-          </div>
         </RouterLink>
+
+        <div class="tribute-card__foot">
+          <RouterLink :to="tributeLink(tribute)" class="tribute-card__cta">
+            {{ tribute.status === 'published' ? 'Ver analytics' : 'Continuar edição' }}
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M5 12h14M13 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </RouterLink>
+
+          <div class="tribute-card__actions">
+            <button
+              type="button"
+              class="tribute-card__action"
+              :class="{ 'tribute-card__action--done': copiedId === tribute.id }"
+              :disabled="tribute.status !== 'published'"
+              :title="tribute.status === 'published' ? 'Copiar link público' : 'Disponível após publicar'"
+              @click="copyPublicLink(tribute)"
+            >
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8">
+                <rect x="9" y="9" width="13" height="13" rx="2" />
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+              </svg>
+              {{ copiedId === tribute.id ? 'Copiado' : 'Copiar' }}
+            </button>
+
+            <button
+              type="button"
+              class="tribute-card__action tribute-card__action--danger"
+              title="Excluir homenagem"
+              :disabled="deletingId === tribute.id"
+              @click="confirmDelete(tribute)"
+            >
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+              {{ deletingId === tribute.id ? 'Excluindo...' : 'Excluir' }}
+            </button>
+          </div>
+        </div>
       </article>
     </section>
+
+    <div v-if="deleteTarget" class="delete-modal" role="dialog" aria-modal="true" aria-labelledby="delete-title">
+      <div class="delete-modal__backdrop" @click="cancelDelete" />
+      <div class="delete-modal__panel ml-card">
+        <h2 id="delete-title" class="delete-modal__title">Excluir homenagem?</h2>
+        <p class="text-muted delete-modal__text">
+          <strong>{{ deleteTarget.title || deleteTarget.honoree_name || 'Sem título' }}</strong>
+          será removida permanentemente, incluindo fotos, músicas e demais arquivos armazenados.
+        </p>
+        <p v-if="deleteError" class="delete-modal__error">{{ deleteError }}</p>
+        <div class="delete-modal__actions">
+          <button type="button" class="ml-btn ml-btn--secondary" :disabled="deletingId !== null" @click="cancelDelete">
+            Cancelar
+          </button>
+          <button
+            type="button"
+            class="ml-btn ml-btn--danger"
+            :disabled="deletingId !== null"
+            @click="executeDelete"
+          >
+            <span v-if="deletingId" class="ml-spinner ml-spinner--sm" />
+            Excluir definitivamente
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
-import { listTributes } from '@/api/tributes'
+import { deleteTribute, listTributes } from '@/api/tributes'
 import type { TributeSummary } from '@/api/types'
 import { useAuthStore } from '@/stores/auth'
 
@@ -129,6 +186,10 @@ const rawTributes = ref<TributeSummary[]>([])
 const loading = ref(true)
 const error = ref('')
 const activeFilter = ref<'all' | 'draft' | 'published'>('all')
+const copiedId = ref<string | null>(null)
+const deleteTarget = ref<TributeSummary | null>(null)
+const deletingId = ref<string | null>(null)
+const deleteError = ref('')
 
 const firstName = computed(() => auth.user?.name?.split(/\s+/)[0] ?? 'você')
 
@@ -231,6 +292,49 @@ function badgeClass(status: string): string {
   if (status === 'published') return 'ml-badge--success'
   if (status === 'awaiting_payment') return 'ml-badge--warning'
   return 'ml-badge--info'
+}
+
+function publicUrl(tribute: TributeSummary): string {
+  return `${window.location.origin}/h/${tribute.slug}`
+}
+
+async function copyPublicLink(tribute: TributeSummary) {
+  if (tribute.status !== 'published') return
+  try {
+    await navigator.clipboard.writeText(publicUrl(tribute))
+    copiedId.value = tribute.id
+    window.setTimeout(() => {
+      if (copiedId.value === tribute.id) copiedId.value = null
+    }, 2000)
+  } catch {
+    // Clipboard pode falhar em contextos inseguros.
+  }
+}
+
+function confirmDelete(tribute: TributeSummary) {
+  deleteError.value = ''
+  deleteTarget.value = tribute
+}
+
+function cancelDelete() {
+  if (deletingId.value) return
+  deleteTarget.value = null
+  deleteError.value = ''
+}
+
+async function executeDelete() {
+  if (!deleteTarget.value) return
+  deletingId.value = deleteTarget.value.id
+  deleteError.value = ''
+  try {
+    await deleteTribute(deleteTarget.value.id)
+    rawTributes.value = rawTributes.value.filter((item) => item.id !== deleteTarget.value?.id)
+    deleteTarget.value = null
+  } catch {
+    deleteError.value = 'Não foi possível excluir a homenagem. Tente novamente.'
+  } finally {
+    deletingId.value = null
+  }
 }
 </script>
 
@@ -367,6 +471,11 @@ function badgeClass(status: string): string {
   font-family: var(--font-sans);
 }
 .tribute-card__foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
   padding: 12px 18px 18px;
   border-top: 1px solid var(--border);
 }
@@ -381,6 +490,85 @@ function badgeClass(status: string): string {
 }
 .tribute-card:hover .tribute-card__cta {
   gap: 11px;
+}
+.tribute-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-left: auto;
+}
+.tribute-card__action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 11px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+  transition:
+    background var(--dur) var(--ease),
+    color var(--dur) var(--ease),
+    border-color var(--dur) var(--ease);
+}
+.tribute-card__action:hover:not(:disabled) {
+  color: var(--ink);
+  border-color: var(--border-strong);
+  background: var(--surface-3);
+}
+.tribute-card__action:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.tribute-card__action--done {
+  color: var(--success);
+  border-color: color-mix(in srgb, var(--success) 35%, var(--border));
+}
+.tribute-card__action--danger:hover:not(:disabled) {
+  color: var(--error);
+  border-color: color-mix(in srgb, var(--error) 35%, var(--border));
+  background: color-mix(in srgb, var(--error) 8%, var(--surface-2));
+}
+
+.delete-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+}
+.delete-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: var(--overlay);
+  backdrop-filter: blur(3px);
+}
+.delete-modal__panel {
+  position: relative;
+  width: min(100%, 440px);
+  padding: 24px;
+}
+.delete-modal__title {
+  font-size: 1.2rem;
+  margin-bottom: 10px;
+}
+.delete-modal__text {
+  line-height: 1.55;
+}
+.delete-modal__error {
+  margin-top: 12px;
+  color: var(--error);
+  font-size: 0.9rem;
+}
+.delete-modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 20px;
 }
 
 /* Estados */

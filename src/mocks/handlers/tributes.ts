@@ -97,6 +97,11 @@ export const tributeHandlers = [
     return tribute ? ok(tribute) : fail('NOT_FOUND', 'Homenagem não encontrada.', 404)
   }),
 
+  http.delete(api('/tributes/:id'), ({ params }) => {
+    const deleted = db.deleteTribute(params.id as string)
+    return deleted ? ok(null, 'Homenagem excluída.') : fail('NOT_FOUND', 'Homenagem não encontrada.', 404)
+  }),
+
   http.get(api('/tributes/:id/preview-data'), ({ params }) => {
     const tribute = db.getTribute(params.id as string)
     return tribute
