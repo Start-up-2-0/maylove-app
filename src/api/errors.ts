@@ -13,5 +13,9 @@ export function resolveApiError(err: unknown, fallback: string): string {
     return data.code
   }
 
+  if (err instanceof Error && err.message) {
+    return err.message
+  }
+
   return fallback
 }

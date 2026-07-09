@@ -67,7 +67,9 @@
 import { computed, ref } from 'vue'
 import { confirmMedia, deleteMedia, presignMedia, reorderMedia } from '@/api/tributes'
 import type { TributeMedia } from '@/api/types'
+import { resolveApiError } from '@/api/errors'
 import { uploadFile } from '@/storage/upload'
+import { inferImageMimeType } from '@/storage/mime'
 import type { useTributeWizard } from '@/composables/useTributeWizard'
 import { resolvePresentationSchema } from '@/templates/presentationSchema'
 import type { TemplateDefinition } from '@/templates/types'
@@ -115,19 +117,27 @@ async function onFilesSelected(event: Event) {
   try {
     for (const file of files) {
       if (props.photos.length >= props.maxPhotos) break
+      const mimeType = inferImageMimeType(file)
+      if (!mimeType) {
+        throw new Error('Formato não suportado. Use JPEG, PNG ou WebP.')
+      }
+
       uploadLabel.value = file.name
       const presign = await presignMedia(props.tributeId, {
         media_type: 'photo',
         filename: file.name,
-        mime_type: file.type,
+        mime_type: mimeType,
         size_bytes: file.size,
       })
       await uploadFile(file, presign)
       await confirmMedia(props.tributeId, presign.media_id)
       emit('changed')
     }
-  } catch {
-    error.value = 'Falha no upload. Verifique tamanho (máx. 10 MB) e formato.'
+  } catch (err) {
+    error.value = resolveApiError(
+      err,
+      'Falha no upload. Verifique tamanho (máx. 50 MB) e formato (JPEG, PNG ou WebP).',
+    )
   } finally {
     uploading.value = false
     uploadLabel.value = ''
