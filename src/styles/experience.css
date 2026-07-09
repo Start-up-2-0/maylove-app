@@ -1,0 +1,157 @@
+/* ============================================================
+   Experience engine — estilos base compartilhados por todas as secoes.
+   Os tokens --exp-* sao injetados pelo ExperienceRenderer (tema do template).
+   ============================================================ */
+
+.exp-root {
+  --exp-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  width: 100%;
+  color: var(--exp-text, #3a2c34);
+  background: var(--exp-bg, #fff);
+  font-family: var(--exp-font-body, 'Hanken Grotesk', sans-serif);
+}
+
+.exp-root h1,
+.exp-root h2,
+.exp-root h3 {
+  font-family: var(--exp-font-display, 'Fraunces', serif);
+  color: var(--exp-ink, #241820);
+  margin: 0;
+  line-height: 1.1;
+}
+
+.exp-section {
+  position: relative;
+  padding: clamp(48px, 9vw, 120px) clamp(20px, 5vw, 40px);
+}
+
+.exp-container {
+  width: 100%;
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+.exp-eyebrow {
+  font-family: var(--exp-font-body, sans-serif);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--exp-primary, #d94f7a);
+}
+
+/* ---------- Animacao de entrada (diretiva v-reveal) ---------- */
+.exp-reveal {
+  opacity: 0;
+  transform: translateY(26px);
+  transition:
+    opacity var(--exp-reveal-dur, 0.7s) var(--exp-ease),
+    transform var(--exp-reveal-dur, 0.7s) var(--exp-ease);
+  will-change: opacity, transform;
+}
+.exp-reveal.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+/* Variantes de transição de entrada (definidas por classe no .exp-root). */
+.exp-entrance--fade .exp-reveal {
+  transform: none;
+}
+.exp-entrance--zoom .exp-reveal {
+  transform: scale(0.92);
+}
+.exp-entrance--zoom .exp-reveal.is-visible {
+  transform: none;
+}
+
+/* ---------- Efeitos ambientes ---------- */
+.exp-effects {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 1;
+}
+.exp-particle {
+  position: absolute;
+  top: -8%;
+  will-change: transform, opacity;
+}
+.exp-particle--fall {
+  animation: exp-fall linear infinite;
+}
+.exp-particle--sway {
+  animation: exp-sway ease-in-out infinite alternate;
+}
+.exp-particle--twinkle {
+  top: auto;
+  animation: exp-twinkle ease-in-out infinite alternate;
+}
+.exp-particle--burst {
+  top: auto;
+  border-radius: 999px;
+  animation: exp-burst ease-out infinite;
+}
+.exp-confetti {
+  width: 9px;
+  height: 14px;
+  border-radius: 2px;
+}
+
+@keyframes exp-fall {
+  0% {
+    transform: translateY(-10vh) rotate(0deg);
+    opacity: 0;
+  }
+  8% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(115vh) rotate(360deg);
+    opacity: 0.9;
+  }
+}
+@keyframes exp-sway {
+  from {
+    margin-left: -18px;
+  }
+  to {
+    margin-left: 18px;
+  }
+}
+@keyframes exp-twinkle {
+  from {
+    opacity: 0.2;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+}
+@keyframes exp-burst {
+  0% {
+    transform: scale(0.2);
+    opacity: 0;
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .exp-reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .exp-effects {
+    display: none;
+  }
+}
