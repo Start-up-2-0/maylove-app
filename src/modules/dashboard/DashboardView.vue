@@ -419,11 +419,15 @@ async function executeDelete() {
 .tribute-card {
   overflow: hidden;
   padding: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 .tribute-card__link {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  flex: 1;
+  min-height: 0;
   color: inherit;
 }
 .tribute-card__banner {
@@ -472,12 +476,21 @@ async function executeDelete() {
 }
 .tribute-card__foot {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
+  align-items: stretch;
   gap: 10px;
+  flex-shrink: 0;
   padding: 12px 18px 18px;
   border-top: 1px solid var(--border);
+  background: var(--surface);
+}
+@media (min-width: 360px) {
+  .tribute-card__foot {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+  }
 }
 .tribute-card__cta {
   display: inline-flex;
@@ -496,6 +509,13 @@ async function executeDelete() {
   flex-wrap: wrap;
   gap: 8px;
   margin-left: auto;
+  width: 100%;
+  justify-content: flex-end;
+}
+@media (min-width: 360px) {
+  .tribute-card__actions {
+    width: auto;
+  }
 }
 .tribute-card__action {
   display: inline-flex;
@@ -505,7 +525,7 @@ async function executeDelete() {
   border-radius: var(--radius-md);
   border: 1px solid var(--border);
   background: var(--surface-2);
-  color: var(--muted);
+  color: var(--ink);
   font-size: 0.8rem;
   font-weight: 600;
   transition:
