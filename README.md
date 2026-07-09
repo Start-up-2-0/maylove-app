@@ -19,6 +19,21 @@ npm run dev
 
 App em `http://localhost:5173` com proxy `/api` → `http://localhost:8080`.
 
+### Modo mockado (sem backend)
+
+Para desenvolver o layout sem subir `maylove-api` (8080) nem `maylove-storages` (8081),
+use o [MSW](https://mswjs.io) ativado por variável de ambiente:
+
+```bash
+# .env.local (já ignorado pelo git)
+VITE_USE_MOCKS=true
+```
+
+Com a flag ligada, o app inicia com um token semeado no `localStorage`, cai direto no
+`/dashboard` e todas as chamadas (auth, catálogo, wizard, upload e página pública) são
+respondidas por dados em memória de `src/mocks/`. Com `VITE_USE_MOCKS=false` (ou ausente)
+o app volta a falar com o backend real, sem nenhuma outra mudança.
+
 ## Rotas principais
 
 | Rota | Descrição |

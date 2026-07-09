@@ -28,27 +28,35 @@ const router = createRouter({
     },
     {
       path: '/dashboard',
-      name: 'dashboard',
-      component: () => import('@/modules/dashboard/DashboardView.vue'),
+      component: () => import('@/components/layout/AppLayout.vue'),
       meta: { requiresAuth: true },
-    },
-    {
-      path: '/dashboard/tributes/new',
-      name: 'tribute-new',
-      component: () => import('@/modules/tribute-wizard/NewTributeView.vue'),
-      meta: { requiresAuth: true },
-    },
-    {
-      path: '/dashboard/tributes/:id/edit',
-      name: 'tribute-edit',
-      component: () => import('@/modules/tribute-wizard/TributeWizardView.vue'),
-      meta: { requiresAuth: true },
-    },
-    {
-      path: '/dashboard/tributes/:id',
-      name: 'tribute-detail',
-      component: () => import('@/modules/dashboard/TributeDetailView.vue'),
-      meta: { requiresAuth: true },
+      children: [
+        {
+          path: '',
+          name: 'dashboard',
+          component: () => import('@/modules/dashboard/DashboardView.vue'),
+        },
+        {
+          path: 'modelos',
+          name: 'templates-gallery',
+          component: () => import('@/modules/templates/TemplatesGalleryView.vue'),
+        },
+        {
+          path: 'tributes/new',
+          name: 'tribute-new',
+          component: () => import('@/modules/tribute-wizard/NewTributeView.vue'),
+        },
+        {
+          path: 'tributes/:id/edit',
+          name: 'tribute-edit',
+          component: () => import('@/modules/tribute-wizard/TributeWizardView.vue'),
+        },
+        {
+          path: 'tributes/:id',
+          name: 'tribute-detail',
+          component: () => import('@/modules/dashboard/TributeDetailView.vue'),
+        },
+      ],
     },
     {
       path: '/h/:slug',

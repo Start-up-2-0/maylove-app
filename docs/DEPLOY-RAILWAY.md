@@ -29,6 +29,7 @@ Configure em cada environment do serviço **maylove-app**:
 | `VITE_API_BASE_URL` | `https://api-staging.seudominio.com/api/v1` |
 | `VITE_AUTH_TOKEN_HEADER` | `x-maylove-token` |
 | `VITE_STORAGE_UPLOAD_URL` | `https://storage-staging.seudominio.com/api/v1` |
+| `VITE_BILLING_ENABLED` | `false` em teste; `true` quando checkout estiver ativo |
 
 ## Build local
 
