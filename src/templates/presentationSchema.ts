@@ -117,13 +117,14 @@ const TEXT_SCHEMA: Record<ExperienceLayout, TextFieldSchema> = {
     subtitlePlaceholder: 'Ex.: Você recebeu uma mensagem',
     subtitleHint: 'Aparece sobre o envelope fechado, antes de abrir.',
     showProposal: false,
-    messageSectionTitle: 'A carta',
-    messageSectionHint: 'Texto que surge com efeito de digitação assim que o envelope abre.',
-    messageLabel: 'Corpo da carta',
-    messagePlaceholder: 'Querida(o)...',
+    messageSectionTitle: 'Abertura (opcional)',
+    messageSectionHint:
+      'Texto inicial antes dos trechos. Os parágrafos entre as fotos são definidos na etapa Momentos.',
+    messageLabel: 'Texto de abertura',
+    messagePlaceholder: 'Opcional — deixe em branco se a carta começar direto nos trechos.',
     closingLabel: 'Despedida',
     closingPlaceholder: 'Com amor,',
-    closingHint: 'Aparece ao final, após a digitação terminar.',
+    closingHint: 'Aparece ao final, após todos os trechos.',
     showDate: false,
     dateLabel: 'Data especial',
     dateHint: '',
@@ -264,7 +265,7 @@ const PHOTO_SCHEMA: Record<ExperienceLayout, PhotoFieldSchema> = {
     minPhotos: 0,
   },
   envelope: {
-    guidance: 'As fotos surgem entre os parágrafos da carta. Escolha poucas e marcantes.',
+    guidance: 'Envie as fotos na etapa Fotos e associe cada uma a um trecho na etapa Momentos.',
     minPhotos: 0,
   },
   cinematic: {
@@ -291,7 +292,14 @@ const PHOTO_SCHEMA: Record<ExperienceLayout, PhotoFieldSchema> = {
 }
 
 /** Layouts narrativos/foto-centrados editam conteúdo por "Momentos". */
-const MOMENT_LAYOUTS: ExperienceLayout[] = ['timeline', 'album', 'storytelling', 'cinematic', 'proposal']
+const MOMENT_LAYOUTS: ExperienceLayout[] = [
+  'envelope',
+  'timeline',
+  'album',
+  'storytelling',
+  'cinematic',
+  'proposal',
+]
 
 /** Categorias em que faz sentido pedir data/local/mapa do evento. */
 const EVENT_CATEGORIES = ['casamento', 'pedido-casamento', 'formatura', 'cha-de-bebe']
@@ -375,7 +383,7 @@ export function resolvePresentationSchema(
     config,
     steps: steps.map(buildStepConfig),
     limits: { minPhotos, maxPhotos },
-    required: entry?.required ?? ['title', 'message'],
+    required: entry?.required ?? (usesMoments ? ['title'] : ['title', 'message']),
     text: TEXT_SCHEMA[layout] ?? TEXT_SCHEMA.scroll,
     photos: PHOTO_SCHEMA[layout] ?? PHOTO_SCHEMA.scroll,
   }
@@ -406,6 +414,7 @@ export function buildPresentationCatalog(): PresentationCatalogEntry[] {
       minimal: p.config?.minimal === true,
       dramatic: p.config?.dramatic === true,
     }
+    const usesMoments = MOMENT_LAYOUTS.includes(p.layout)
     return {
       id: p.id,
       label: p.label,
@@ -416,7 +425,7 @@ export function buildPresentationCatalog(): PresentationCatalogEntry[] {
       config,
       steps: catalogSteps(p.layout, config),
       limits: { minPhotos: MIN_PHOTOS[p.layout] ?? 1, maxPhotos: null },
-      required: ['title', 'message'],
+      required: usesMoments ? ['title'] : ['title', 'message'],
     }
   })
 }

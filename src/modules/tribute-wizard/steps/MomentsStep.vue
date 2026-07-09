@@ -182,6 +182,21 @@ interface MomentCopy {
 }
 
 const COPY_BY_LAYOUT: Partial<Record<ExperienceLayout, MomentCopy>> = {
+  envelope: {
+    title: 'Trechos da carta',
+    description: 'Cada trecho é digitado na carta, com uma foto aparecendo em seguida.',
+    hint: 'Monte a sequência da carta: texto e foto para cada trecho, na ordem em que devem aparecer.',
+    itemNoun: 'Trecho',
+    itemNounLower: 'trecho',
+    itemNounPlural: 'trechos',
+    experienceNoun: 'carta',
+    titleFieldLabel: 'Título (opcional)',
+    titlePlaceholder: 'Ex.: Lembro bem desse dia',
+    textFieldLabel: 'Texto do trecho',
+    textPlaceholder: 'O que será digitado antes da foto...',
+    showDate: false,
+    photoRequired: false,
+  },
   timeline: {
     title: 'Marcos da linha do tempo',
     description: 'Cada marco vira um ponto na linha do tempo, na ordem definida aqui.',

@@ -39,7 +39,7 @@ export const PRESENTATION_STYLES: PresentationStyle[] = [
     description: 'Uma carta que conta uma história, com envelope e digitação.',
     layout: 'envelope',
     config: { music: true },
-    highlights: ['Envelope que abre', 'Texto surgindo aos poucos', 'Fotos entre os parágrafos'],
+    highlights: ['Envelope que abre', 'Trechos com digitação', 'Fotos entre os textos'],
   },
   {
     id: 'slider-fotos',

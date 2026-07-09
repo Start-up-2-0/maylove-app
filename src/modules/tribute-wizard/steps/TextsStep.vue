@@ -87,7 +87,7 @@
       <p class="tx-hint">{{ copy.messageSectionHint }}</p>
       <div class="tx-grid">
         <div class="ml-field span-2">
-          <label class="ml-label">{{ copy.messageLabel }} *</label>
+          <label class="ml-label">{{ copy.messageLabel }}<template v-if="messageRequired"> *</template></label>
           <RichTextEditor v-model="form.message" :placeholder="copy.messagePlaceholder" />
         </div>
 
@@ -156,6 +156,7 @@ const props = defineProps<{
 const schema = computed(() => resolvePresentationSchema(props.form.presentation, props.definition))
 
 const copy = computed(() => schema.value.text)
+const messageRequired = computed(() => schema.value.required.includes('message'))
 const presentationLabel = computed(() => schema.value.presentationLabel)
 const presentationEmoji = computed(() => schema.value.presentationEmoji)
 </script>

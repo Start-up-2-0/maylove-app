@@ -91,7 +91,7 @@ const props = defineProps<{
   tribute: TributeDetail | null
 }>()
 
-const MOMENT_LAYOUTS = ['timeline', 'album', 'storytelling', 'cinematic', 'proposal']
+const MOMENT_LAYOUTS = ['envelope', 'timeline', 'album', 'storytelling', 'cinematic', 'proposal']
 
 // Validações derivadas do schema da apresentação (obrigatórios e mínimos), além
 // da validação do backend. Bloqueiam a publicação no cliente com mensagens claras.
@@ -111,15 +111,18 @@ const schemaIssues = computed<{ field: string; code: string; message: string }[]
   }
 
   const photoCount = (tribute.media ?? []).filter((m) => m.media_type === 'photo').length
-  const momentCount = (tribute.content_json?.timeline ?? []).length
   const usesMoments = MOMENT_LAYOUTS.includes(schema.layout)
 
   if (usesMoments) {
-    if (momentCount === 0 && photoCount === 0) {
+    const moments = tribute.content_json?.timeline ?? []
+    const filledMoments = moments.filter(
+      (m) => hasText(m.description) || hasText(m.title),
+    )
+    if (filledMoments.length === 0 && photoCount === 0) {
       issues.push({
         field: 'moments',
         code: 'MIN_MOMENTS',
-        message: 'Adicione ao menos um momento (ou uma foto) para esta experiência.',
+        message: 'Adicione ao menos um trecho com texto (ou uma foto) para esta experiência.',
       })
     }
   } else if (schema.limits.minPhotos > 0 && photoCount < schema.limits.minPhotos) {

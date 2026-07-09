@@ -7,7 +7,7 @@
         <p v-if="content.honoreeName" class="ltr__to">Para {{ content.honoreeName }}</p>
       </header>
 
-      <div class="ltr__body">
+      <div v-if="paragraphs.length || messageIsHtml" class="ltr__body">
         <template v-if="messageIsHtml">
           <RichText :text="content.message" class="ltr__para" />
           <p v-for="(para, i) in extraParagraphs" :key="i" class="ltr__para">{{ para }}</p>
@@ -51,7 +51,7 @@ const paragraphs = computed<string[]>(() => {
     .filter(Boolean)
   const extra = props.content.messages.filter(Boolean)
   const all = [...base, ...extra]
-  return all.length ? all : ['Com carinho, para você.']
+  return all.length ? all : []
 })
 
 // Poucas fotos, para manter o clima minimalista de carta.

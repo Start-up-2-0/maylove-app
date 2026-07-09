@@ -111,8 +111,13 @@ function readSeconds(value: unknown): number | undefined {
   return typeof value === 'number' && Number.isFinite(value) ? value : undefined
 }
 
+function hasRealTributeSource(opts: ResolveOptions): boolean {
+  return Boolean(opts.publicData || opts.detail || opts.tribute || opts.form)
+}
+
 export function resolveContent(def: TemplateDefinition, opts: ResolveOptions): ExperienceContent {
-  const sample = def.sampleContent ?? {}
+  const useSample = !hasRealTributeSource(opts)
+  const sample = useSample ? (def.sampleContent ?? {}) : {}
   const { detail, publicData, form, tribute } = opts
   const content: TributeContentJson =
     tribute?.content_json ?? detail?.content_json ?? publicData?.content_json ?? {}
@@ -122,7 +127,7 @@ export function resolveContent(def: TemplateDefinition, opts: ResolveOptions): E
     detail?.honoree_name ||
     publicData?.honoree_name ||
     tribute?.honoree_name ||
-    sample.honoreeName ||
+    (useSample ? sample.honoreeName : '') ||
     ''
 
   const title =
@@ -130,34 +135,36 @@ export function resolveContent(def: TemplateDefinition, opts: ResolveOptions): E
     detail?.title ||
     publicData?.title ||
     tribute?.title ||
-    sample.title ||
+    (useSample ? sample.title : '') ||
     honoreeName ||
     'Homenagem'
 
   const subtitle =
-    form?.subtitle || detail?.subtitle || publicData?.subtitle || sample.subtitle || ''
+    form?.subtitle || detail?.subtitle || publicData?.subtitle || (useSample ? sample.subtitle : '') || ''
 
   const message =
-    form?.message || detail?.message || publicData?.message || sample.message || ''
+    form?.message || detail?.message || publicData?.message || tribute?.message || (useSample ? sample.message : '') || ''
 
   const closingMessage =
     form?.closing_message ||
     detail?.closing_message ||
     publicData?.closing_message ||
-    sample.closingMessage ||
-    'Feito com carinho'
+    tribute?.closing_message ||
+    (useSample ? sample.closingMessage : '') ||
+    (useSample ? 'Feito com carinho' : '')
 
   const specialDate =
     form?.special_date ||
     detail?.special_date ||
     publicData?.special_date ||
-    sample.specialDate ||
+    tribute?.special_date ||
+    (useSample ? sample.specialDate : '') ||
     null
 
   const realPhotos = publicData
     ? mediaFromPublic(publicData.media)
     : mediaFromDetail(tribute?.media ?? detail?.media ?? [])
-  const photos = realPhotos.length ? realPhotos : sample.photos ?? []
+  const photos = realPhotos.length ? realPhotos : useSample ? (sample.photos ?? []) : []
 
   const formMessages = form?.messages?.map((msg) => msg.trim()).filter((msg) => msg.length > 0)
   const messages =
@@ -165,9 +172,15 @@ export function resolveContent(def: TemplateDefinition, opts: ResolveOptions): E
       ? formMessages
       : content.messages && content.messages.length
         ? content.messages
-        : sample.messages ?? (message ? [message] : [])
+        : useSample
+          ? (sample.messages ?? (message ? [message] : []))
+          : message
+            ? [message]
+            : []
 
-  const formTimeline = form?.timeline?.filter((item) => item.title?.trim())
+  const formTimeline = form?.timeline?.filter(
+    (item) => item.title?.trim() || item.description?.trim() || item.photo_url?.trim(),
+  )
   const timeline =
     formTimeline && formTimeline.length
       ? formTimeline.map((item) => ({
@@ -183,7 +196,9 @@ export function resolveContent(def: TemplateDefinition, opts: ResolveOptions): E
             description: item.description,
             photoUrl: item.photo_url,
           }))
-        : sample.timeline ?? []
+        : useSample
+          ? (sample.timeline ?? [])
+          : []
 
   const formEvent = form?.event_info
   const hasFormEvent = Boolean(
@@ -195,13 +210,15 @@ export function resolveContent(def: TemplateDefinition, opts: ResolveOptions): E
         location: formEvent!.location,
         mapUrl: formEvent!.map_url,
       }
-    : content.event_info
+      : content.event_info
       ? {
           date: content.event_info.date,
           location: content.event_info.location,
           mapUrl: content.event_info.map_url,
         }
-      : sample.eventInfo ?? null
+      : useSample
+        ? (sample.eventInfo ?? null)
+        : null
 
   const musicUrl = resolveMusicUrl(opts)
   const effects = (content.effects as ExperienceContent['effects']) ?? def.effects ?? []
@@ -216,10 +233,10 @@ export function resolveContent(def: TemplateDefinition, opts: ResolveOptions): E
   const textStyle = (form?.text_style || content.text_style || null) as
     | ExperienceContent['textStyle']
 
-  const question = form?.question || content.question || sample.question || ''
-  const celebration = form?.celebration || content.celebration || sample.celebration || ''
+  const question = form?.question || content.question || (useSample ? sample.question : '') || ''
+  const celebration = form?.celebration || content.celebration || (useSample ? sample.celebration : '') || ''
 
-  const senderName = form?.sender_name || content.sender_name || sample.senderName || ''
+  const senderName = form?.sender_name || content.sender_name || (useSample ? sample.senderName : '') || ''
   const musicAutoplay =
     form?.music_autoplay ?? content.music_autoplay ?? sample.music?.autoplay ?? true
   const musicLoop = form?.music_loop ?? content.music_loop ?? sample.music?.loop ?? true
@@ -246,10 +263,10 @@ export function resolveContent(def: TemplateDefinition, opts: ResolveOptions): E
     closingMessage,
     question,
     celebration,
-    signature: form?.signature || content.signature || sample.signature || senderName,
+    signature: form?.signature || content.signature || (useSample ? sample.signature : '') || senderName,
     specialDate,
     photos,
-    videoUrl: form?.video_url || content.video_url || sample.videoUrl || null,
+    videoUrl: form?.video_url || content.video_url || (useSample ? sample.videoUrl : null) || null,
     music: {
       url: musicUrl,
       title: sample.music?.title || 'Trilha sonora',

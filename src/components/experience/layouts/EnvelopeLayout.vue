@@ -35,12 +35,12 @@
               <img :src="photo.url" :alt="content.title" loading="lazy" />
             </figure>
           </template>
-          <template v-for="(para, i) in paragraphs" v-else :key="i">
-            <p v-if="i <= activeIndex" class="letter__para">
-              {{ i < activeIndex ? para : typedText }}<span v-if="i === activeIndex && !doneTyping" class="letter__caret" />
+          <template v-for="(beat, i) in beats" v-else :key="i">
+            <p v-if="beat.text && i <= activeIndex" class="letter__para">
+              {{ i < activeIndex ? beat.text : typedText }}<span v-if="i === activeIndex && !doneTyping" class="letter__caret" />
             </p>
-            <figure v-if="photoFor(i) && i < activeIndex" class="letter__photo">
-              <img :src="photoFor(i)!.url" :alt="`Recordação ${i + 1}`" loading="lazy" />
+            <figure v-if="beat.photo && i < activeIndex" class="letter__photo">
+              <img :src="beat.photo.url" :alt="`Recordação ${i + 1}`" loading="lazy" />
             </figure>
           </template>
         </div>
@@ -63,6 +63,11 @@ import { containsHtml } from '@/utils/richText'
 import ShareBar from '../shared/ShareBar.vue'
 import RichText from '../shared/RichText.vue'
 
+interface LetterBeat {
+  text: string
+  photo?: ExperienceMediaItem
+}
+
 const props = defineProps<LayoutComponentProps>()
 const audio = useExperienceAudio()
 
@@ -77,19 +82,39 @@ let timer: number | undefined
 
 const initial = computed(() => (props.content.senderName || props.content.honoreeName || 'M').charAt(0).toUpperCase())
 
-const paragraphs = computed<string[]>(() => {
+function resolvePhoto(photoUrl?: string): ExperienceMediaItem | undefined {
+  if (!photoUrl) return undefined
+  return props.content.photos.find((p) => p.url === photoUrl || p.thumbnail === photoUrl)
+}
+
+const beats = computed<LetterBeat[]>(() => {
+  const timeline = props.content.timeline
+  if (timeline.length) {
+    const items: LetterBeat[] = []
+    const intro = (props.content.message || '').replace(/<[^>]*>/g, '').trim()
+    if (intro) items.push({ text: intro })
+    for (const item of timeline) {
+      const text = (item.description || item.title || '').trim()
+      const photo = resolvePhoto(item.photoUrl)
+      if (text || photo) items.push({ text, photo })
+    }
+    return items
+  }
+
   const base = (props.content.message || '')
     .split('\n')
     .map((line) => line.trim())
     .filter(Boolean)
   const extra = props.content.messages.filter(Boolean)
   const all = [...base, ...extra]
-  return all.length ? all : ['Com carinho, para você.']
+  if (all.length) {
+    return all.map((text, i) => ({ text, photo: props.content.photos[i] }))
+  }
+  if (props.content.photos.length) {
+    return props.content.photos.map((photo) => ({ text: '', photo }))
+  }
+  return []
 })
-
-function photoFor(index: number): ExperienceMediaItem | null {
-  return props.content.photos[index] ?? null
-}
 
 const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
@@ -99,7 +124,7 @@ function open() {
   if (audio?.hasAudio) audio.play()
   // Conteúdo formatado (HTML) é exibido de uma vez, sem digitação.
   if (reduced || messageIsHtml.value) {
-    activeIndex.value = paragraphs.value.length
+    activeIndex.value = beats.value.length
     doneTyping.value = true
     return
   }
@@ -107,7 +132,8 @@ function open() {
 }
 
 function startTyping() {
-  const para = paragraphs.value[activeIndex.value] ?? ''
+  const beat = beats.value[activeIndex.value]
+  const para = beat?.text ?? ''
   const speed = Math.max(12, 24 * props.theme.speedMultiplier)
   let pos = 0
   const step = () => {
@@ -116,16 +142,15 @@ function startTyping() {
     if (pos < para.length) {
       timer = window.setTimeout(step, speed)
     } else {
-      // pausa antes do próximo parágrafo
-      timer = window.setTimeout(nextParagraph, 520)
+      timer = window.setTimeout(nextBeat, 520)
     }
   }
   step()
 }
 
-function nextParagraph() {
-  if (activeIndex.value >= paragraphs.value.length - 1) {
-    activeIndex.value = paragraphs.value.length
+function nextBeat() {
+  if (activeIndex.value >= beats.value.length - 1) {
+    activeIndex.value = beats.value.length
     doneTyping.value = true
     return
   }
