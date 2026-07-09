@@ -8,6 +8,8 @@
       </p>
     </header>
 
+    <p v-if="createError" class="tg-error">{{ createError }}</p>
+
     <div class="tg-filters">
       <button
         v-for="cat in categories"
@@ -90,6 +92,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { listTemplates, listTributeTypes } from '@/api/catalog'
 import { createTribute } from '@/api/tributes'
+import { resolveApiError } from '@/api/errors'
 import type { Template, TributeEffect, TributeType } from '@/api/types'
 import { listTemplateDefinitions } from '@/templates/registry'
 import { EXPERIENCE_LAYOUT_LABELS, type TemplateDefinition } from '@/templates/types'
@@ -108,6 +111,7 @@ const catalogTemplates = ref<Template[]>([])
 const types = ref<TributeType[]>([])
 const activeCategory = ref('todos')
 const creatingSlug = ref<string | null>(null)
+const createError = ref('')
 const previewDef = ref<TemplateDefinition | null>(null)
 
 const categories = computed(() => [
@@ -172,11 +176,13 @@ async function use(def: TemplateDefinition) {
   if (!type) return
 
   creatingSlug.value = def.slug
+  createError.value = ''
   try {
     const tribute = await createTribute(type.id, catalog.id)
     closePreview()
     await router.push(`/dashboard/tributes/${tribute.id}/edit`)
-  } catch {
+  } catch (err) {
+    createError.value = resolveApiError(err, 'Não foi possível criar a homenagem.')
     creatingSlug.value = null
   }
 }
@@ -200,6 +206,15 @@ onMounted(async () => {
 .tg-head .text-muted {
   margin-top: 8px;
   max-width: 60ch;
+}
+.tg-error {
+  margin-bottom: 16px;
+  padding: 11px 14px;
+  border-radius: var(--radius-md);
+  background: var(--error-soft);
+  color: var(--error);
+  font-size: 0.88rem;
+  font-weight: 500;
 }
 
 .tg-filters {

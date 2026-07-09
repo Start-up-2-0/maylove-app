@@ -55,6 +55,7 @@ import { ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import type { AxiosError } from 'axios'
 import { register } from '@/api/auth'
+import { resolveApiError } from '@/api/errors'
 import type { ApiErrorBody } from '@/api/types'
 import AuthLayout from '@/components/layout/AuthLayout.vue'
 
@@ -69,21 +70,16 @@ const success = ref('')
 function resolveRegisterError(err: unknown): string {
   const axiosErr = err as AxiosError<ApiErrorBody>
   const code = axiosErr.response?.data?.code
-  const message = axiosErr.response?.data?.message
 
   if (code === 'EMAIL_ALREADY_EXISTS') {
-    return message ?? 'Este e-mail já está cadastrado. Tente outro ou faça login.'
+    return resolveApiError(err, 'Este e-mail já está cadastrado. Tente outro ou faça login.')
   }
 
   if (code === 'VALIDATION_ERROR') {
-    return message ?? 'Verifique os dados do formulário.'
+    return resolveApiError(err, 'Verifique os dados do formulário.')
   }
 
-  if (message) {
-    return message
-  }
-
-  return 'Não foi possível criar a conta. Tente novamente.'
+  return resolveApiError(err, 'Não foi possível criar a conta. Tente novamente.')
 }
 
 async function submit() {

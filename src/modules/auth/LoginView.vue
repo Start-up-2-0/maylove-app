@@ -65,6 +65,7 @@
 import { ref } from 'vue'
 import { useRoute, useRouter, RouterLink } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { resolveApiError } from '@/api/errors'
 import AuthLayout from '@/components/layout/AuthLayout.vue'
 
 const auth = useAuthStore()
@@ -84,8 +85,8 @@ async function submit() {
     await auth.login(email.value, password.value)
     const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : '/dashboard'
     await router.push(redirect)
-  } catch {
-    error.value = 'Não foi possível entrar. Verifique e-mail e senha.'
+  } catch (err) {
+    error.value = resolveApiError(err, 'Não foi possível entrar. Verifique e-mail e senha.')
   } finally {
     loading.value = false
   }

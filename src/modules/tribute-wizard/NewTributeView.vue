@@ -203,6 +203,7 @@ import { computed, onMounted, ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { listTemplates, listTributeTypes } from '@/api/catalog'
 import { createTribute, updateTribute } from '@/api/tributes'
+import { resolveApiError } from '@/api/errors'
 import type { Template, TributeType } from '@/api/types'
 import { listTemplateDefinitions } from '@/templates/registry'
 import { categoriesWithTemplates } from '@/templates/categories'
@@ -310,8 +311,11 @@ async function submit() {
       },
     })
     await router.push(`/dashboard/tributes/${tribute.id}/edit`)
-  } catch {
-    submitError.value = 'Não foi possível criar a homenagem. Confirme seu e-mail e tente novamente.'
+  } catch (err) {
+    submitError.value = resolveApiError(
+      err,
+      'Não foi possível criar a homenagem. Tente novamente.',
+    )
   } finally {
     submitting.value = false
   }

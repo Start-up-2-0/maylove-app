@@ -9,6 +9,11 @@ async function bootstrap() {
   initTheme()
 
   if (import.meta.env.VITE_USE_MOCKS === 'true') {
+    if (import.meta.env.PROD) {
+      console.warn(
+        '[maylove] VITE_USE_MOCKS=true em produção — o app não usará a API real. Defina false no Railway.',
+      )
+    }
     const { startMocks } = await import('@/mocks/browser')
     await startMocks()
   }
