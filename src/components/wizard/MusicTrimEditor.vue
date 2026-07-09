@@ -141,6 +141,7 @@
 
 <script setup lang="ts">
 import { computed, onUnmounted, ref, watch } from 'vue'
+import { playFromSeconds, seekAudioTo } from '@/utils/audioPlayback'
 
 const props = withDefaults(
   defineProps<{
@@ -241,7 +242,10 @@ function secondsFromClientX(clientX: number): number {
 function seekPreview(seconds: number) {
   const clamped = Math.max(modelStart.value, Math.min(seconds, modelEnd.value))
   currentTime.value = clamped
-  if (audio) audio.currentTime = clamped
+  if (!audio) return
+  void seekAudioTo(audio, clamped).then(() => {
+    if (audio) currentTime.value = audio.currentTime
+  })
 }
 
 function applyDrag(clientX: number) {
@@ -299,7 +303,9 @@ function ensureAudio(): HTMLAudioElement | null {
   if (!props.audioUrl) return null
   if (!audio) {
     audio = new Audio(props.audioUrl)
+    audio.preload = 'auto'
     audio.addEventListener('timeupdate', onTimeUpdate)
+    audio.addEventListener('playing', onPlaying)
     audio.addEventListener('ended', () => {
       previewing.value = false
     })
@@ -307,6 +313,13 @@ function ensureAudio(): HTMLAudioElement | null {
     audio.src = props.audioUrl
   }
   return audio
+}
+
+function onPlaying() {
+  if (!audio || !previewing.value) return
+  if (audio.currentTime < modelStart.value - 0.1) {
+    void seekAudioTo(audio, modelStart.value)
+  }
 }
 
 function onTimeUpdate() {
@@ -319,7 +332,7 @@ function onTimeUpdate() {
   }
 }
 
-function togglePreview() {
+async function togglePreview() {
   const element = ensureAudio()
   if (!element) return
 
@@ -329,13 +342,25 @@ function togglePreview() {
     return
   }
 
-  element.currentTime = modelStart.value
-  currentTime.value = modelStart.value
   previewing.value = true
-  void element.play().catch(() => {
+  try {
+    await playFromSeconds(element, modelStart.value)
+    currentTime.value = element.currentTime
+  } catch {
     previewing.value = false
-  })
+  }
 }
+
+watch(
+  () => props.startSeconds,
+  (start) => {
+    if (previewing.value && audio) {
+      void seekAudioTo(audio, start).then(() => {
+        if (audio) currentTime.value = audio.currentTime
+      })
+    }
+  },
+)
 
 watch(
   () => props.audioUrl,

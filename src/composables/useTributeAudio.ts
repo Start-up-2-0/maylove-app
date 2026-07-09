@@ -1,4 +1,5 @@
 import { onMounted, onUnmounted, ref, watch } from 'vue'
+import { playFromSeconds, seekAudioTo } from '@/utils/audioPlayback'
 
 export interface TributeAudioOptions {
   loop?: () => boolean
@@ -17,7 +18,7 @@ export function useTributeAudio(
 
   function resolveStartAt(): number {
     const start = options.startAt?.() ?? 0
-    return Number.isFinite(start) && start > 0 ? start : 0
+    return Number.isFinite(start) && start >= 0 ? start : 0
   }
 
   function resolveEndAt(): number | null {
@@ -34,6 +35,7 @@ export function useTributeAudio(
 
     if (!audio) {
       audio = new Audio(url)
+      audio.preload = 'auto'
       audio.volume = 0.6
       audio.addEventListener('play', () => {
         playing.value = true
@@ -42,6 +44,7 @@ export function useTributeAudio(
       audio.addEventListener('pause', () => {
         playing.value = false
       })
+      audio.addEventListener('playing', onPlaying)
       audio.addEventListener('timeupdate', onTimeUpdate)
     } else if (audio.src !== url) {
       audio.src = url
@@ -51,17 +54,34 @@ export function useTributeAudio(
     return audio
   }
 
+  function onPlaying() {
+    if (!audio) return
+    const startAt = resolveStartAt()
+    if (startAt > 0 && audio.currentTime < startAt - 0.1) {
+      void seekAudioTo(audio, startAt)
+    }
+  }
+
   function onTimeUpdate() {
     if (!audio) return
+
+    const startAt = resolveStartAt()
     const endAt = resolveEndAt()
+
+    if (startAt > 0 && audio.currentTime < startAt - 0.05) {
+      audio.currentTime = startAt
+      return
+    }
+
     if (endAt === null || audio.currentTime < endAt) {
       return
     }
 
     if (options.loop?.() ?? true) {
-      audio.currentTime = resolveStartAt()
-      void audio.play().catch(() => {
-        playing.value = false
+      void seekAudioTo(audio, startAt).then(() => {
+        void audio?.play().catch(() => {
+          playing.value = false
+        })
       })
       return
     }
@@ -75,12 +95,22 @@ export function useTributeAudio(
     if (!element) return
 
     const startAt = resolveStartAt()
-    if (element.currentTime < startAt || (resolveEndAt() !== null && element.currentTime >= (resolveEndAt() ?? 0))) {
-      element.currentTime = startAt
-    }
+    const endAt = resolveEndAt()
 
     try {
-      await element.play()
+      if (
+        endAt !== null &&
+        element.currentTime >= endAt - 0.05
+      ) {
+        await playFromSeconds(element, startAt)
+      } else if (
+        startAt > 0 &&
+        (element.currentTime < startAt - 0.05 || element.currentTime === 0)
+      ) {
+        await playFromSeconds(element, startAt)
+      } else {
+        await element.play()
+      }
       blocked.value = false
     } catch {
       blocked.value = true
