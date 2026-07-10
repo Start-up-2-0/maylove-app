@@ -10,37 +10,25 @@
       <span class="mo-context__text">{{ copy.hint }}</span>
     </div>
 
-    <div v-if="photos.length < maxPhotos" class="mo-upload">
-      <p class="mo-upload__hint">
-        {{
-          photos.length
-            ? `Você tem ${photos.length} foto(s). Envie mais para montar as cenas.`
-            : 'Envie as fotos da apresentação. Depois associe cada uma às cenas abaixo.'
-        }}
+    <div v-if="!photos.length" class="mo-photos-banner mo-photos-banner--empty">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+        <path d="M12 16V4M8 8l4-4 4 4M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" stroke-linecap="round" />
+      </svg>
+      <p>
+        Nenhuma foto disponível. Volte à etapa <strong>Fotos</strong> para enviar as imagens antes de montar os
+        {{ copy.itemNounPlural }}.
       </p>
-      <label class="ml-dropzone" :class="{ 'ml-dropzone--disabled': uploading }">
-        <input
-          type="file"
-          accept="image/jpeg,image/png,image/webp"
-          multiple
-          class="hidden"
-          :disabled="uploading"
-          @change="onFilesSelected"
-        />
-        <span v-if="uploading" class="ml-spinner" />
-        <span v-else class="ml-dropzone__glyph" aria-hidden="true">
-          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8">
-            <path d="M12 16V4M8 8l4-4 4 4" stroke-linecap="round" stroke-linejoin="round" />
-            <path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" stroke-linecap="round" />
-          </svg>
-        </span>
-        <span v-if="uploading">Enviando {{ uploadLabel }}...</span>
-        <template v-else>
-          <span class="ml-dropzone__title">Clique para adicionar fotos</span>
-          <span class="ml-dropzone__hint">JPEG, PNG ou WebP · até {{ maxPhotos }} fotos</span>
-        </template>
-      </label>
-      <p v-if="uploadError" class="ml-alert ml-alert--danger mt-3">{{ uploadError }}</p>
+    </div>
+    <div v-else class="mo-photos-banner">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+        <rect x="3" y="5" width="18" height="14" rx="2" />
+        <circle cx="8.5" cy="10.5" r="1.5" />
+        <path d="M21 16l-5.5-5.5L5 19" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+      <p>
+        {{ photos.length }} foto(s) da etapa <strong>Fotos</strong>. Escolha qual imagem acompanha cada
+        {{ copy.itemNounLower }}.
+      </p>
     </div>
 
     <ol v-if="form.timeline.length" class="mo-list">
@@ -118,7 +106,7 @@
             </button>
           </div>
           <p v-else class="mo-photo__empty">
-            Nenhuma foto enviada ainda. Use o envio acima ou volte à etapa <strong>Fotos</strong>.
+            Nenhuma foto disponível. Volte à etapa <strong>Fotos</strong> para enviar imagens.
           </p>
         </div>
       </li>
@@ -138,30 +126,18 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
-import { confirmMedia, presignMedia } from '@/api/tributes'
+import { computed } from 'vue'
 import type { TributeMedia, TributeTimelineItem } from '@/api/types'
-import { resolveApiError } from '@/api/errors'
 import type { useTributeWizard } from '@/composables/useTributeWizard'
-import { uploadFile } from '@/storage/upload'
-import { inferImageMimeType } from '@/storage/mime'
 import { resolvePresentationSchema } from '@/templates/presentationSchema'
 import type { ExperienceLayout, TemplateDefinition } from '@/templates/types'
 import WizardStepHeader from '@/components/wizard/WizardStepHeader.vue'
 
 const props = defineProps<{
-  tributeId: string
   photos: TributeMedia[]
-  maxPhotos: number
   form: ReturnType<typeof useTributeWizard>['form']
   definition: TemplateDefinition
 }>()
-
-const emit = defineEmits<{ changed: [] }>()
-
-const uploading = ref(false)
-const uploadLabel = ref('')
-const uploadError = ref('')
 
 const schema = computed(() => resolvePresentationSchema(props.form.presentation, props.definition))
 
@@ -184,7 +160,7 @@ interface MomentCopy {
 const COPY_BY_LAYOUT: Partial<Record<ExperienceLayout, MomentCopy>> = {
   envelope: {
     title: 'Trechos da carta',
-    description: 'Cada trecho é digitado na carta, com uma foto aparecendo em seguida.',
+    description: 'Escreva cada trecho e escolha qual foto da etapa Fotos aparece com ele.',
     hint: 'Monte a sequência da carta: texto e foto para cada trecho, na ordem em que devem aparecer.',
     itemNoun: 'Trecho',
     itemNounLower: 'trecho',
@@ -200,7 +176,7 @@ const COPY_BY_LAYOUT: Partial<Record<ExperienceLayout, MomentCopy>> = {
   timeline: {
     title: 'Marcos da linha do tempo',
     description: 'Cada marco vira um ponto na linha do tempo, na ordem definida aqui.',
-    hint: 'Adicione datas importantes com uma foto e uma mensagem para cada momento.',
+    hint: 'Adicione datas e textos, escolhendo uma foto da etapa Fotos para cada marco.',
     itemNoun: 'Marco',
     itemNounLower: 'marco',
     itemNounPlural: 'marcos',
@@ -215,7 +191,7 @@ const COPY_BY_LAYOUT: Partial<Record<ExperienceLayout, MomentCopy>> = {
   album: {
     title: 'Páginas do álbum',
     description: 'Cada página combina uma foto e uma mensagem, folheadas em sequência.',
-    hint: 'Monte as páginas: escolha a foto e escreva a mensagem de cada uma.',
+    hint: 'Monte as páginas escolhendo fotos da etapa Fotos e escrevendo a mensagem de cada uma.',
     itemNoun: 'Página',
     itemNounLower: 'página',
     itemNounPlural: 'páginas',
@@ -230,7 +206,7 @@ const COPY_BY_LAYOUT: Partial<Record<ExperienceLayout, MomentCopy>> = {
   storytelling: {
     title: 'Capítulos da história',
     description: 'Cada capítulo é uma seção em tela cheia, revelada conforme a navegação.',
-    hint: 'Conte a história em capítulos: uma foto e um trecho de texto por vez.',
+    hint: 'Conte a história em capítulos: escolha uma foto da etapa Fotos e escreva o texto de cada um.',
     itemNoun: 'Capítulo',
     itemNounLower: 'capítulo',
     itemNounPlural: 'capítulos',
@@ -245,7 +221,7 @@ const COPY_BY_LAYOUT: Partial<Record<ExperienceLayout, MomentCopy>> = {
   cinematic: {
     title: 'Cenas da apresentação',
     description: 'Cada cena aparece em tela cheia, como os quadros de um trailer.',
-    hint: 'Defina as cenas: foto em destaque e a legenda que aparece sobre ela.',
+    hint: 'Defina as cenas escolhendo fotos da etapa Fotos e escrevendo as legendas.',
     itemNoun: 'Cena',
     itemNounLower: 'cena',
     itemNounPlural: 'cenas',
@@ -260,7 +236,7 @@ const COPY_BY_LAYOUT: Partial<Record<ExperienceLayout, MomentCopy>> = {
   proposal: {
     title: 'Passos até a pergunta',
     description: 'Cada passo aproxima o visitante do grande momento da pergunta.',
-    hint: 'Monte a sequência que leva ao pedido: uma foto e um texto por passo.',
+    hint: 'Monte a sequência escolhendo fotos da etapa Fotos e escrevendo o texto de cada passo.',
     itemNoun: 'Passo',
     itemNounLower: 'passo',
     itemNounPlural: 'passos',
@@ -314,72 +290,33 @@ function move(index: number, direction: -1 | 1) {
   const list = props.form.timeline
   ;[list[index], list[target]] = [list[target], list[index]]
 }
-
-async function onFilesSelected(event: Event) {
-  const input = event.target as HTMLInputElement
-  const files = Array.from(input.files ?? [])
-  input.value = ''
-  if (!files.length) return
-
-  uploading.value = true
-  uploadError.value = ''
-
-  try {
-    for (const file of files) {
-      if (props.photos.length >= props.maxPhotos) break
-      const mimeType = inferImageMimeType(file)
-      if (!mimeType) {
-        throw new Error('Formato não suportado. Use JPEG, PNG ou WebP.')
-      }
-
-      uploadLabel.value = file.name
-      const presign = await presignMedia(props.tributeId, {
-        media_type: 'photo',
-        filename: file.name,
-        mime_type: mimeType,
-        size_bytes: file.size,
-      })
-      await uploadFile(file, presign)
-      await confirmMedia(props.tributeId, presign.media_id)
-      emit('changed')
-    }
-  } catch (err) {
-    uploadError.value = resolveApiError(
-      err,
-      'Falha no upload. Verifique tamanho (máx. 50 MB) e formato (JPEG, PNG ou WebP).',
-    )
-  } finally {
-    uploading.value = false
-    uploadLabel.value = ''
-  }
-}
 </script>
 
 <style scoped>
-.mo-upload {
+.mo-photos-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
   margin-bottom: 20px;
-  padding: 16px;
   border-radius: var(--radius-md);
-  border: 1px dashed var(--border-strong);
   background: var(--surface-3);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 0.9rem;
+  line-height: 1.5;
 }
-.mo-upload__hint {
-  margin: 0 0 12px;
-  font-size: 0.88rem;
-  color: var(--muted);
+.mo-photos-banner svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--primary);
 }
-.mo-upload .ml-dropzone__title {
-  font-weight: 600;
+.mo-photos-banner p {
+  margin: 0;
 }
-.mo-upload .ml-dropzone__hint {
-  font-size: 0.82rem;
-  color: var(--subtle);
-}
-.hidden {
-  display: none;
-}
-.mt-3 {
-  margin-top: 12px;
+.mo-photos-banner--empty {
+  border-color: color-mix(in srgb, var(--primary) 30%, var(--border));
+  background: color-mix(in srgb, var(--primary) 6%, var(--surface-3));
 }
 
 .mo-context {

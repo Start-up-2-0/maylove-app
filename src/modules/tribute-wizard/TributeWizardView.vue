@@ -53,12 +53,9 @@
           />
           <MomentsStep
             v-else-if="currentStep === 'moments'"
-            :tribute-id="tributeId"
             :photos="photos"
-            :max-photos="tribute?.template.max_photos ?? 50"
             :form="form"
             :definition="definition"
-            @changed="onMediaChanged"
           />
           <TextsStep v-else-if="currentStep === 'texts'" :form="form" :definition="definition" />
           <AppearanceStep
