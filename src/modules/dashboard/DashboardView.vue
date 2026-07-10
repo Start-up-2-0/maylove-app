@@ -145,31 +145,33 @@
       </article>
     </section>
 
-    <div v-if="deleteTarget" class="delete-modal" role="dialog" aria-modal="true" aria-labelledby="delete-title">
-      <div class="delete-modal__backdrop" @click="cancelDelete" />
-      <div class="delete-modal__panel ml-card">
-        <h2 id="delete-title" class="delete-modal__title">Excluir homenagem?</h2>
-        <p class="text-muted delete-modal__text">
-          <strong>{{ deleteTarget.title || deleteTarget.honoree_name || 'Sem título' }}</strong>
-          será removida permanentemente, incluindo fotos, músicas e demais arquivos armazenados.
-        </p>
-        <p v-if="deleteError" class="delete-modal__error">{{ deleteError }}</p>
-        <div class="delete-modal__actions">
-          <button type="button" class="ml-btn ml-btn--secondary" :disabled="deletingId !== null" @click="cancelDelete">
-            Cancelar
-          </button>
-          <button
-            type="button"
-            class="ml-btn ml-btn--danger"
-            :disabled="deletingId !== null"
-            @click="executeDelete"
-          >
-            <span v-if="deletingId" class="ml-spinner ml-spinner--sm" />
-            Excluir definitivamente
-          </button>
+    <Teleport to="body">
+      <div v-if="deleteTarget" class="delete-modal" role="dialog" aria-modal="true" aria-labelledby="delete-title">
+        <div class="delete-modal__backdrop" @click="cancelDelete" />
+        <div class="delete-modal__panel ml-card">
+          <h2 id="delete-title" class="delete-modal__title">Excluir homenagem?</h2>
+          <p class="text-muted delete-modal__text">
+            <strong>{{ deleteTarget.title || deleteTarget.honoree_name || 'Sem título' }}</strong>
+            será removida permanentemente, incluindo fotos, músicas e demais arquivos armazenados.
+          </p>
+          <p v-if="deleteError" class="delete-modal__error">{{ deleteError }}</p>
+          <div class="delete-modal__actions">
+            <button type="button" class="ml-btn ml-btn--secondary" :disabled="deletingId !== null" @click="cancelDelete">
+              Cancelar
+            </button>
+            <button
+              type="button"
+              class="ml-btn ml-btn--danger"
+              :disabled="deletingId !== null"
+              @click="executeDelete"
+            >
+              <span v-if="deletingId" class="ml-spinner ml-spinner--sm" />
+              Excluir definitivamente
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+    </Teleport>
   </div>
 </template>
 
@@ -557,7 +559,7 @@ async function executeDelete() {
 .delete-modal {
   position: fixed;
   inset: 0;
-  z-index: 80;
+  z-index: 1000;
   display: grid;
   place-items: center;
   padding: 20px;
