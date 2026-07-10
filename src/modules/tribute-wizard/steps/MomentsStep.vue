@@ -98,9 +98,9 @@
             <button
               type="button"
               class="mo-photo__thumb mo-photo__thumb--none"
-              :class="{ 'mo-photo__thumb--active': !moment.photo_url }"
+              :class="{ 'mo-photo__thumb--active': !momentHasPhoto(moment) }"
               title="Sem foto"
-              @click="setPhoto(moment, '')"
+              @click="setPhoto(moment, null)"
             >
               <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M18 6 6 18M6 6l12 12" stroke-linecap="round" />
@@ -111,8 +111,8 @@
               :key="photo.id"
               type="button"
               class="mo-photo__thumb"
-              :class="{ 'mo-photo__thumb--active': moment.photo_url === photoUrl(photo) }"
-              @click="setPhoto(moment, photoUrl(photo))"
+              :class="{ 'mo-photo__thumb--active': isPhotoSelected(moment, photo) }"
+              @click="setPhoto(moment, photo)"
             >
               <img :src="photoUrl(photo)" alt="" loading="lazy" />
             </button>
@@ -280,12 +280,28 @@ function photoUrl(photo: TributeMedia): string {
   return photo.url || photo.url_thumbnail || ''
 }
 
-function setPhoto(moment: TributeTimelineItem, url: string) {
-  moment.photo_url = url || undefined
+function momentHasPhoto(moment: TributeTimelineItem): boolean {
+  return Boolean(moment.photo_media_id || moment.photo_url)
+}
+
+function isPhotoSelected(moment: TributeTimelineItem, photo: TributeMedia): boolean {
+  if (moment.photo_media_id) return moment.photo_media_id === photo.id
+  const url = photoUrl(photo)
+  return Boolean(url && moment.photo_url === url)
+}
+
+function setPhoto(moment: TributeTimelineItem, photo: TributeMedia | null) {
+  if (!photo) {
+    moment.photo_media_id = undefined
+    moment.photo_url = undefined
+    return
+  }
+  moment.photo_media_id = photo.id
+  moment.photo_url = photoUrl(photo) || undefined
 }
 
 function add() {
-  props.form.timeline.push({ title: '', date: '', description: '', photo_url: '' })
+  props.form.timeline.push({ title: '', date: '', description: '' })
 }
 
 function remove(index: number) {

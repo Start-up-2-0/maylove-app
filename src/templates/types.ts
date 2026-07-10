@@ -146,6 +146,7 @@ export interface ExperienceTimelineItem {
   title: string
   description?: string
   photoUrl?: string
+  photoMediaId?: string
 }
 
 export interface ExperienceEventInfo {

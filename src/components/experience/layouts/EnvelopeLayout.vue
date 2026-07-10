@@ -1,45 +1,55 @@
 <template>
-  <div class="env" :class="{ 'env--preview': mode === 'preview' }">
-    <!-- Estágio inicial: envelope fechado -->
-    <transition name="env-fade">
-      <div v-if="!opened" class="env-stage">
-        <p v-if="content.subtitle" class="env-stage__eyebrow exp-eyebrow">{{ content.subtitle }}</p>
-        <button class="env-envelope" :class="{ 'is-hover': true }" aria-label="Abrir carta" @click="open">
+  <div class="env" :class="{ 'env--preview': mode === 'preview', [`env--${phase}`]: true }">
+    <!-- Cena do envelope: aba → carta subindo → expansão -->
+    <div v-if="phase !== 'read'" class="env-scene">
+      <p v-if="phase === 'closed' && content.subtitle" class="env-scene__eyebrow exp-eyebrow">
+        {{ content.subtitle }}
+      </p>
+
+      <div class="env-envelope-wrap">
+        <button
+          class="env-envelope"
+          :class="envelopeClass"
+          :disabled="phase !== 'closed'"
+          aria-label="Abrir carta"
+          @click="open"
+        >
+          <span class="env-envelope__back" />
+          <span class="env-envelope__letter-peek" aria-hidden="true" />
           <span class="env-envelope__body" />
           <span class="env-envelope__flap" />
           <span class="env-envelope__seal">{{ initial }}</span>
         </button>
-        <p class="env-stage__hint">Para {{ content.honoreeName || 'você' }}</p>
+      </div>
+
+      <template v-if="phase === 'closed'">
+        <p class="env-scene__hint">Para {{ content.honoreeName || 'você' }}</p>
         <button class="env-open-btn" @click="open">
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8">
             <path d="M4 7l8 6 8-6M4 7h16v11H4z" stroke-linecap="round" stroke-linejoin="round" />
           </svg>
           Abrir carta
         </button>
-      </div>
-    </transition>
+      </template>
+    </div>
 
-    <!-- Carta revelada -->
-    <transition name="env-letter">
-      <article v-if="opened" class="letter">
+    <!-- Carta em leitura -->
+    <transition name="letter-reveal" @after-enter="onLetterEntered">
+      <article v-if="phase === 'read'" class="letter">
         <header class="letter__head">
           <p class="letter__place">Uma carta para você</p>
           <h1 class="letter__title">{{ content.title }}</h1>
         </header>
 
         <div class="letter__body">
-          <template v-if="messageIsHtml">
-            <RichText :text="content.message" class="letter__para" />
-            <p v-for="(para, i) in extraParagraphs" :key="`m${i}`" class="letter__para">{{ para }}</p>
-            <figure v-for="photo in content.photos" :key="photo.id" class="letter__photo">
-              <img :src="photo.url" :alt="content.title" loading="lazy" />
-            </figure>
-          </template>
-          <template v-for="(beat, i) in beats" v-else :key="i">
+          <RichText v-if="introHtml" :text="content.message" class="letter__para letter__intro" />
+
+          <template v-for="(beat, i) in beats" :key="i">
             <p v-if="beat.text && i <= activeIndex" class="letter__para">
-              {{ i < activeIndex ? beat.text : typedText }}<span v-if="i === activeIndex && !doneTyping" class="letter__caret" />
+              {{ i < activeIndex ? beat.text : typedText
+              }}<span v-if="i === activeIndex && !doneTyping" class="letter__caret" />
             </p>
-            <figure v-if="beat.photo && i < activeIndex" class="letter__photo">
+            <figure v-if="beat.photo && beatVisible(i)" class="letter__photo">
               <img :src="beat.photo.url" :alt="`Recordação ${i + 1}`" loading="lazy" />
             </figure>
           </template>
@@ -57,9 +67,10 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref } from 'vue'
-import type { ExperienceMediaItem, LayoutComponentProps } from '@/templates/types'
+import type { ExperienceMediaItem, ExperienceTimelineItem, LayoutComponentProps } from '@/templates/types'
 import { useExperienceAudio } from '@/composables/experienceAudio'
 import { containsHtml } from '@/utils/richText'
+import { plainTimelineText, resolveTimelinePhoto } from '@/utils/timeline'
 import ShareBar from '../shared/ShareBar.vue'
 import RichText from '../shared/RichText.vue'
 
@@ -68,44 +79,47 @@ interface LetterBeat {
   photo?: ExperienceMediaItem
 }
 
+type OpenPhase = 'closed' | 'flap' | 'rise' | 'expand' | 'read'
+
+const FLAP_MS = 680
+const RISE_MS = 1100
+const EXPAND_MS = 780
+
 const props = defineProps<LayoutComponentProps>()
 const audio = useExperienceAudio()
 
-const messageIsHtml = computed(() => containsHtml(props.content.message))
-const extraParagraphs = computed(() => props.content.messages.filter(Boolean))
-
-const opened = ref(false)
+const phase = ref<OpenPhase>('closed')
 const activeIndex = ref(0)
 const typedText = ref('')
 const doneTyping = ref(false)
+const readingStarted = ref(false)
 let timer: number | undefined
 
 const initial = computed(() => (props.content.senderName || props.content.honoreeName || 'M').charAt(0).toUpperCase())
-
-function resolvePhoto(photoUrl?: string): ExperienceMediaItem | undefined {
-  if (!photoUrl) return undefined
-  return props.content.photos.find((p) => p.url === photoUrl || p.thumbnail === photoUrl)
-}
+const introHtml = computed(() => (containsHtml(props.content.message) ? props.content.message : null))
+const envelopeClass = computed(() => ({
+  'env-envelope--flap': phase.value === 'flap',
+  'env-envelope--rise': phase.value === 'rise',
+  'env-envelope--expand': phase.value === 'expand',
+}))
 
 const beats = computed<LetterBeat[]>(() => {
   const timeline = props.content.timeline
   if (timeline.length) {
     const items: LetterBeat[] = []
-    const intro = (props.content.message || '').replace(/<[^>]*>/g, '').trim()
+    const intro = introHtml.value ? '' : plainTimelineText(props.content.message)
     if (intro) items.push({ text: intro })
     for (const item of timeline) {
-      const text = (item.description || item.title || '').trim()
-      const photo = resolvePhoto(item.photoUrl)
-      if (text || photo) items.push({ text, photo })
+      items.push(beatFromTimelineItem(item))
     }
-    return items
+    return items.filter((beat) => beat.text || beat.photo)
   }
 
   const base = (props.content.message || '')
     .split('\n')
-    .map((line) => line.trim())
+    .map((line) => plainTimelineText(line))
     .filter(Boolean)
-  const extra = props.content.messages.filter(Boolean)
+  const extra = props.content.messages.map((line) => plainTimelineText(line)).filter(Boolean)
   const all = [...base, ...extra]
   if (all.length) {
     return all.map((text, i) => ({ text, photo: props.content.photos[i] }))
@@ -118,22 +132,65 @@ const beats = computed<LetterBeat[]>(() => {
 
 const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
+function beatFromTimelineItem(item: ExperienceTimelineItem): LetterBeat {
+  const text = plainTimelineText(item.description || item.title || '')
+  const photo = resolveTimelinePhoto(props.content.photos, item)
+  return { text, photo }
+}
+
+function beatVisible(index: number): boolean {
+  const beat = beats.value[index]
+  if (!beat?.photo) return false
+  if (beat.text) return index < activeIndex.value
+  return index <= activeIndex.value
+}
+
 function open() {
-  if (opened.value) return
-  opened.value = true
+  if (phase.value !== 'closed') return
   if (audio?.hasAudio) audio.play()
-  // Conteúdo formatado (HTML) é exibido de uma vez, sem digitação.
-  if (reduced || messageIsHtml.value) {
+
+  if (reduced) {
+    phase.value = 'read'
+    readingStarted.value = true
+    beginReading()
+    return
+  }
+
+  phase.value = 'flap'
+  window.setTimeout(() => {
+    phase.value = 'rise'
+  }, FLAP_MS)
+  window.setTimeout(() => {
+    phase.value = 'expand'
+  }, FLAP_MS + RISE_MS)
+  window.setTimeout(() => {
+    phase.value = 'read'
+  }, FLAP_MS + RISE_MS + EXPAND_MS)
+}
+
+function onLetterEntered() {
+  if (readingStarted.value) return
+  readingStarted.value = true
+  beginReading()
+}
+
+function beginReading() {
+  if (!beats.value.some((beat) => beat.text)) {
     activeIndex.value = beats.value.length
     doneTyping.value = true
     return
   }
-  window.setTimeout(startTyping, 650)
+  window.setTimeout(startTyping, 320)
 }
 
 function startTyping() {
   const beat = beats.value[activeIndex.value]
   const para = beat?.text ?? ''
+  if (!para) {
+    timer = window.setTimeout(nextBeat, 380)
+    return
+  }
+
   const speed = Math.max(12, 24 * props.theme.speedMultiplier)
   let pos = 0
   const step = () => {
@@ -159,7 +216,9 @@ function nextBeat() {
   startTyping()
 }
 
-onBeforeUnmount(() => window.clearTimeout(timer))
+onBeforeUnmount(() => {
+  window.clearTimeout(timer)
+})
 </script>
 
 <style scoped>
@@ -174,35 +233,61 @@ onBeforeUnmount(() => window.clearTimeout(timer))
   min-height: var(--exp-stage, 620px);
 }
 
-/* ---------- Estágio do envelope ---------- */
-.env-stage {
+/* ---------- Cena do envelope ---------- */
+.env-scene {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 20px;
   text-align: center;
+  width: 100%;
 }
-.env-stage__eyebrow {
+.env-scene__eyebrow {
   font-style: normal;
+  animation: env-soft-in 0.6s var(--exp-ease) both;
+}
+.env-envelope-wrap {
+  perspective: 1100px;
+  width: clamp(220px, 42vw, 320px);
+  height: clamp(150px, 28vw, 214px);
 }
 .env-envelope {
   position: relative;
-  width: clamp(220px, 42vw, 320px);
-  height: clamp(150px, 28vw, 214px);
+  width: 100%;
+  height: 100%;
   border: none;
   background: none;
   cursor: pointer;
+  transform-style: preserve-3d;
   filter: drop-shadow(0 26px 48px color-mix(in srgb, var(--exp-primary) 40%, transparent));
-  transition: transform 0.4s var(--exp-ease);
+  transition:
+    transform 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.65s ease,
+    filter 0.65s ease;
 }
-.env-envelope:hover {
+.env-envelope:disabled {
+  cursor: default;
+}
+.env--closed .env-envelope:hover:not(:disabled) {
   transform: translateY(-6px) rotate(-1deg);
+}
+.env-envelope__back {
+  position: absolute;
+  inset: 0;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--exp-primary) 68%, #000 12%);
+  transform: translateZ(-2px);
 }
 .env-envelope__body {
   position: absolute;
   inset: 0;
   border-radius: 12px;
-  background: linear-gradient(160deg, color-mix(in srgb, var(--exp-primary) 92%, #fff) 0%, var(--exp-primary) 100%);
+  background: linear-gradient(
+    160deg,
+    color-mix(in srgb, var(--exp-primary) 92%, #fff) 0%,
+    var(--exp-primary) 100%
+  );
+  z-index: 2;
 }
 .env-envelope__body::after {
   content: '';
@@ -213,6 +298,20 @@ onBeforeUnmount(() => window.clearTimeout(timer))
     linear-gradient(45deg, transparent 49%, color-mix(in srgb, #000 12%, transparent) 50%, transparent 51%),
     linear-gradient(-45deg, transparent 49%, color-mix(in srgb, #000 12%, transparent) 50%, transparent 51%);
 }
+.env-envelope__letter-peek {
+  position: absolute;
+  left: 11%;
+  right: 11%;
+  bottom: 10%;
+  height: 72%;
+  border-radius: 4px 4px 0 0;
+  background: linear-gradient(180deg, #fffef9 0%, #f8f4ea 100%);
+  box-shadow: 0 -3px 14px rgba(0, 0, 0, 0.1);
+  z-index: 1;
+  transform: translateY(78%);
+  opacity: 0;
+  pointer-events: none;
+}
 .env-envelope__flap {
   position: absolute;
   top: 0;
@@ -222,15 +321,17 @@ onBeforeUnmount(() => window.clearTimeout(timer))
   transform-origin: top center;
   clip-path: polygon(0 0, 100% 0, 50% 100%);
   background: color-mix(in srgb, var(--exp-primary) 80%, #000 6%);
-  z-index: 3;
+  z-index: 4;
+  backface-visibility: hidden;
   animation: env-flap-idle 3.4s ease-in-out infinite;
+  transition: transform 0.68s cubic-bezier(0.33, 1, 0.68, 1);
 }
 .env-envelope__seal {
   position: absolute;
   top: 44%;
   left: 50%;
   transform: translate(-50%, -50%);
-  z-index: 2;
+  z-index: 5;
   display: grid;
   place-items: center;
   width: 46px;
@@ -241,16 +342,60 @@ onBeforeUnmount(() => window.clearTimeout(timer))
   color: #fff;
   background: color-mix(in srgb, var(--exp-accent) 88%, #000);
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+  transition:
+    opacity 0.4s ease,
+    transform 0.5s cubic-bezier(0.33, 1, 0.68, 1);
 }
+
+/* Fases da abertura */
+.env-envelope--flap .env-envelope__flap,
+.env-envelope--rise .env-envelope__flap,
+.env-envelope--expand .env-envelope__flap {
+  animation: none;
+  transform: rotateX(-168deg);
+}
+.env-envelope--flap .env-envelope__seal,
+.env-envelope--rise .env-envelope__seal,
+.env-envelope--expand .env-envelope__seal {
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.55);
+}
+.env-envelope--rise .env-envelope__letter-peek {
+  opacity: 1;
+  transform: translateY(-22%);
+  transition:
+    transform 1.05s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.45s ease;
+}
+.env-envelope--expand .env-envelope__letter-peek {
+  opacity: 0.25;
+  transform: translateY(-88%) scale(1.03);
+  transition:
+    transform 0.78s cubic-bezier(0.25, 1, 0.5, 1),
+    opacity 0.55s ease;
+}
+.env-envelope--expand {
+  opacity: 0;
+  transform: translateY(18px) scale(0.94);
+  filter: blur(1px);
+}
+
 @keyframes env-flap-idle {
-  0%, 100% { transform: rotateX(0deg); }
-  50% { transform: rotateX(14deg); }
+  0%,
+  100% {
+    transform: rotateX(0deg);
+  }
+  50% {
+    transform: rotateX(14deg);
+  }
 }
-.env-stage__hint {
+
+.env-scene__hint {
   font-family: var(--exp-font-display);
   font-style: italic;
   font-size: 1.2rem;
   color: var(--exp-muted);
+  animation: env-soft-in 0.7s var(--exp-ease) 0.1s both;
 }
 .env-open-btn {
   display: inline-flex;
@@ -266,6 +411,7 @@ onBeforeUnmount(() => window.clearTimeout(timer))
   cursor: pointer;
   box-shadow: 0 14px 30px -10px color-mix(in srgb, var(--exp-primary) 70%, transparent);
   transition: transform 0.25s var(--exp-ease);
+  animation: env-soft-in 0.8s var(--exp-ease) 0.15s both;
 }
 .env-open-btn:hover {
   transform: translateY(-2px);
@@ -302,6 +448,9 @@ onBeforeUnmount(() => window.clearTimeout(timer))
 .letter__body {
   min-height: 3rem;
 }
+.letter__intro {
+  margin-bottom: 1.4rem;
+}
 .letter__para {
   font-family: var(--exp-font-display);
   font-size: clamp(1.05rem, 2.6vw, 1.35rem);
@@ -319,8 +468,13 @@ onBeforeUnmount(() => window.clearTimeout(timer))
   animation: env-caret 0.9s step-end infinite;
 }
 @keyframes env-caret {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
 }
 .letter__photo {
   margin: 8px auto 22px;
@@ -330,6 +484,7 @@ onBeforeUnmount(() => window.clearTimeout(timer))
   border-radius: 4px;
   box-shadow: 0 14px 30px -14px rgba(0, 0, 0, 0.5);
   transform: rotate(-2deg);
+  animation: env-photo-in 0.75s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 .letter__photo:nth-of-type(even) {
   transform: rotate(2deg);
@@ -348,7 +503,7 @@ onBeforeUnmount(() => window.clearTimeout(timer))
   flex-direction: column;
   align-items: center;
   gap: 14px;
-  animation: env-fade-in 0.8s var(--exp-ease);
+  animation: env-soft-in 0.8s var(--exp-ease);
 }
 .letter__closing {
   font-family: var(--exp-font-display);
@@ -362,26 +517,48 @@ onBeforeUnmount(() => window.clearTimeout(timer))
   color: var(--exp-primary);
 }
 
-.env-fade-enter-active,
-.env-fade-leave-active {
-  transition: opacity 0.5s var(--exp-ease);
+.letter-reveal-enter-active {
+  transition:
+    opacity 0.9s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.9s cubic-bezier(0.22, 1, 0.36, 1);
 }
-.env-fade-enter-from,
-.env-fade-leave-to {
+.letter-reveal-enter-from {
   opacity: 0;
+  transform: translateY(72px) scale(0.9);
 }
-.env-letter-enter-active {
-  transition: opacity 0.7s var(--exp-ease), transform 0.7s var(--exp-ease);
+
+@keyframes env-soft-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
-.env-letter-enter-from {
-  opacity: 0;
-  transform: translateY(40px) scale(0.98);
+@keyframes env-photo-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px) rotate(-4deg) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: rotate(-2deg);
+  }
 }
-@keyframes env-fade-in {
-  from { opacity: 0; transform: translateY(12px); }
-  to { opacity: 1; transform: none; }
-}
+
 @media (prefers-reduced-motion: reduce) {
-  .env-envelope__flap { animation: none; }
+  .env-envelope__flap {
+    animation: none;
+  }
+  .env-envelope,
+  .env-envelope__letter-peek,
+  .env-envelope__seal,
+  .letter-reveal-enter-active,
+  .letter__photo {
+    transition: none !important;
+    animation: none !important;
+  }
 }
 </style>

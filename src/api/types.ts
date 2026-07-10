@@ -91,9 +91,10 @@ export interface MusicMediaStatus {
 
 export interface TributeTimelineItem {
   date?: string
-  title: string
+  title?: string
   description?: string
   photo_url?: string
+  photo_media_id?: string
 }
 
 export interface TributeEventInfo {

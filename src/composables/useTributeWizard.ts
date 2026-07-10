@@ -1,6 +1,7 @@
 import { computed, reactive, ref } from 'vue'
 import { fetchTribute, updateTribute } from '@/api/tributes'
 import type { TributeDetail, TributeEventInfo, TributeTimelineItem } from '@/api/types'
+import { fallbackTimelineTitle, timelineItemHasContent } from '@/utils/timeline'
 import { useAutosave } from './useAutosave'
 
 export function useTributeWizard(tributeId: string) {
@@ -57,11 +58,13 @@ export function useTributeWizard(tributeId: string) {
   // Momentos: descarta itens sem título (regra do backend) e normaliza campos.
   function cleanTimeline(): TributeTimelineItem[] {
     return form.timeline
-      .filter((item) => item.title?.trim())
+      .filter((item) => timelineItemHasContent(item))
       .map((item) => {
-        const entry: TributeTimelineItem = { title: item.title.trim() }
+        const title = item.title?.trim() || fallbackTimelineTitle(item.description)
+        const entry: TributeTimelineItem = { title }
         if (item.date?.trim()) entry.date = item.date.trim()
         if (item.description?.trim()) entry.description = item.description.trim()
+        if (item.photo_media_id?.trim()) entry.photo_media_id = item.photo_media_id.trim()
         if (item.photo_url?.trim()) entry.photo_url = item.photo_url.trim()
         return entry
       })

@@ -1,15 +1,21 @@
-import type { PublicTribute, TributeContentJson, TributeDetail, TributeMedia } from '@/api/types'
+import type { PublicTribute, TributeContentJson, TributeDetail, TributeMedia, TributeTimelineItem } from '@/api/types'
 import type { useTributeWizard } from './useTributeWizard'
 import type {
   AnimationEntrance,
   AnimationSpeed,
   ExperienceContent,
   ExperienceMediaItem,
+  ExperienceTimelineItem,
   ResolvedTheme,
   TemplateDefinition,
 } from '@/templates/types'
 import { getStyle } from '@/templates/styles'
 import { getBackground } from '@/templates/backgrounds'
+import {
+  fallbackTimelineTitle,
+  resolveTimelinePhoto,
+  timelineItemHasContent,
+} from '@/utils/timeline'
 
 type WizardForm = ReturnType<typeof useTributeWizard>['form']
 
@@ -178,27 +184,13 @@ export function resolveContent(def: TemplateDefinition, opts: ResolveOptions): E
             ? [message]
             : []
 
-  const formTimeline = form?.timeline?.filter(
-    (item) => item.title?.trim() || item.description?.trim() || item.photo_url?.trim(),
+  const formTimeline = form?.timeline?.filter((item) => timelineItemHasContent(item))
+  const timeline = buildTimeline(
+    formTimeline && formTimeline.length ? formTimeline : content.timeline,
+    photos,
+    useSample ? (sample.timeline ?? []) : [],
+    Boolean(formTimeline && formTimeline.length),
   )
-  const timeline =
-    formTimeline && formTimeline.length
-      ? formTimeline.map((item) => ({
-          date: item.date,
-          title: item.title,
-          description: item.description,
-          photoUrl: item.photo_url,
-        }))
-      : content.timeline && content.timeline.length
-        ? content.timeline.map((item) => ({
-            date: item.date,
-            title: item.title,
-            description: item.description,
-            photoUrl: item.photo_url,
-          }))
-        : useSample
-          ? (sample.timeline ?? [])
-          : []
 
   const formEvent = form?.event_info
   const hasFormEvent = Boolean(
@@ -284,6 +276,43 @@ export function resolveContent(def: TemplateDefinition, opts: ResolveOptions): E
     slug: detail?.slug || publicData?.slug || tribute?.slug || '',
     viewsCount: publicData ? publicData.views_count : null,
   }
+}
+
+function buildTimeline(
+  source: TributeTimelineItem[] | ExperienceTimelineItem[] | undefined,
+  photos: ExperienceMediaItem[],
+  sample: ExperienceTimelineItem[],
+  fromForm: boolean,
+): ExperienceTimelineItem[] {
+  if (source && source.length) {
+    return source.map((item) => mapTimelineItem(item, photos, fromForm))
+  }
+  return sample
+}
+
+function mapTimelineItem(
+  item: TributeTimelineItem | ExperienceTimelineItem,
+  photos: ExperienceMediaItem[],
+  fromForm: boolean,
+): ExperienceTimelineItem {
+  const photoMediaId =
+    'photo_media_id' in item ? item.photo_media_id : 'photoMediaId' in item ? item.photoMediaId : undefined
+  const rawPhotoUrl = 'photo_url' in item ? item.photo_url : 'photoUrl' in item ? item.photoUrl : undefined
+  const mapped: ExperienceTimelineItem = {
+    date: item.date,
+    title: item.title?.trim() || fallbackTimelineTitle(item.description),
+    description: item.description,
+    photoMediaId: photoMediaId || undefined,
+    photoUrl: rawPhotoUrl || undefined,
+  }
+  const resolved = resolveTimelinePhoto(photos, mapped)
+  if (resolved) {
+    mapped.photoUrl = resolved.url || resolved.thumbnail
+    if (!mapped.photoMediaId && !fromForm) {
+      mapped.photoMediaId = resolved.id
+    }
+  }
+  return mapped
 }
 
 function resolveMusicUrl(opts: ResolveOptions): string | null {
