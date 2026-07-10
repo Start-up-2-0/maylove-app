@@ -13,7 +13,7 @@
       <div
         class="template-swatch"
         :style="{
-          background: `linear-gradient(135deg, ${template.primary_color}, color-mix(in srgb, ${template.primary_color} 55%, white))`,
+          background: template.primary_color,
         }"
       />
       <div class="p-4">

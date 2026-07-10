@@ -104,7 +104,7 @@ function getSessionId(): string {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background: #fbf7f8;
+  background: var(--bg);
 }
 
 .public-state {
@@ -155,22 +155,22 @@ function getSessionId(): string {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  background: rgba(0, 0, 0, 0.03);
-  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  background: var(--primary-softer);
+  border-top: 1px solid color-mix(in srgb, var(--primary) 12%, var(--border));
 }
 .public-foot--dark {
-  background: rgba(255, 255, 255, 0.04);
-  border-top-color: rgba(255, 255, 255, 0.08);
+  background: color-mix(in srgb, var(--primary) 8%, transparent);
+  border-top-color: color-mix(in srgb, var(--primary) 18%, transparent);
 }
 .public-foot__brand {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  color: #7c6a74;
+  color: var(--muted);
   font-size: 0.9rem;
 }
 .public-foot--dark .public-foot__brand {
-  color: #b9a8bf;
+  color: color-mix(in srgb, var(--exp-text, #f5f2f7) 75%, transparent);
 }
 .public-foot__brand strong {
   color: inherit;
@@ -183,7 +183,7 @@ function getSessionId(): string {
   height: 26px;
   border-radius: 8px;
   color: #fff;
-  background: var(--gradient-brand, linear-gradient(135deg, #1d4ed8 0%, #e11d7a 55%, #dc2626 100%));
+  background: var(--primary);
   padding: 5px;
 }
 .public-foot__cta {

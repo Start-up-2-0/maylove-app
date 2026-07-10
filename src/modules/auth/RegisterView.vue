@@ -2,7 +2,7 @@
   <AuthLayout>
     <p class="eyebrow">Comece agora</p>
     <h1 class="auth-title">Criar conta</h1>
-    <p class="text-muted auth-sub">Crie homenagens digitais em poucos minutos.</p>
+    <p class="text-muted auth-sub">Comece a criar memórias especiais para quem você ama.</p>
 
     <form class="auth-form" @submit.prevent="submit">
       <div class="ml-field">

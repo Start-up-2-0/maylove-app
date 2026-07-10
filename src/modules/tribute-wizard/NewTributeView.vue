@@ -8,10 +8,10 @@
     </RouterLink>
 
     <header class="new-head">
-      <p class="eyebrow">Criar</p>
+      <p class="eyebrow">Começar</p>
       <h1 class="section-title">Nova homenagem</h1>
       <p class="text-muted">
-        Escolha a ocasião, selecione um modelo feito para ela e comece a personalizar.
+        Escolha a ocasião, o modelo e dê vida a uma lembrança feita com o coração.
       </p>
     </header>
 
@@ -21,7 +21,7 @@
         <span class="step-num">1</span>
         <div>
           <h2 class="step-title">Escolha a ocasião</h2>
-          <p class="text-muted step-desc">Cada categoria tem modelos pensados para o tema.</p>
+          <p class="text-muted step-desc">Para quem é essa homenagem especial?</p>
         </div>
       </div>
 
@@ -484,7 +484,7 @@ onMounted(async () => {
   height: 42px;
   flex-shrink: 0;
   border-radius: 10px;
-  background: linear-gradient(135deg, var(--tpl-c1), var(--tpl-c2));
+  background: var(--tpl-c1, var(--primary));
 }
 .tpl-option__info {
   display: flex;
@@ -665,7 +665,7 @@ onMounted(async () => {
   width: 100%;
   height: 30px;
   border-radius: 8px;
-  background: linear-gradient(135deg, var(--tpl-c1), var(--tpl-c2));
+  background: var(--tpl-c1, var(--primary));
   margin-bottom: 4px;
 }
 .style-option__emoji {

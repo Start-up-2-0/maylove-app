@@ -310,9 +310,8 @@ function formatDate(value: string | null): string {
   gap: 16px;
   padding: 28px;
   margin-bottom: 20px;
-  background:
-    radial-gradient(600px 200px at 100% 0%, var(--primary-softer), transparent 70%),
-    var(--surface);
+  background: color-mix(in srgb, var(--primary-softer) 55%, var(--surface));
+  border-color: color-mix(in srgb, var(--primary) 12%, var(--border));
 }
 .hero-stat__main {
   display: flex;
@@ -326,7 +325,7 @@ function formatDate(value: string | null): string {
   height: 58px;
   border-radius: 17px;
   color: #fff;
-  background: linear-gradient(150deg, var(--primary-hover), var(--primary-strong));
+  background: var(--primary);
   box-shadow: var(--shadow-primary);
 }
 .hero-stat__label {

@@ -2,7 +2,7 @@
   <AuthLayout>
     <p class="eyebrow">Bem-vindo de volta</p>
     <h1 class="auth-title">Entrar</h1>
-    <p class="text-muted auth-sub">Acesse seu painel e gerencie suas homenagens.</p>
+    <p class="text-muted auth-sub">Retome suas homenagens e continue escrevendo histórias de amor.</p>
 
     <form class="auth-form" @submit.prevent="submit">
       <div class="ml-field">

@@ -1,10 +1,10 @@
 <template>
   <div class="view ml-fade-up">
     <header class="tg-head">
-      <p class="eyebrow">Biblioteca</p>
+      <p class="eyebrow">Inspiração</p>
       <h1 class="section-title">Modelos de homenagem</h1>
       <p class="text-muted">
-        Escolha um modelo pronto, veja um exemplo ao vivo e comece a personalizar em segundos.
+        Encontre o modelo perfeito para contar sua história de amor, gratidão ou saudade.
       </p>
     </header>
 
@@ -263,11 +263,7 @@ onMounted(async () => {
   overflow: hidden;
 }
 .tg-card__banner::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(120% 90% at 20% 10%, rgba(255, 255, 255, 0.25) 0%, transparent 55%);
-  pointer-events: none;
+  display: none;
 }
 .tg-card__cat {
   font-size: 0.68rem;
@@ -290,7 +286,7 @@ onMounted(async () => {
   letter-spacing: 0.04em;
   padding: 4px 10px;
   border-radius: 999px;
-  background: rgba(0, 0, 0, 0.28);
+  background: color-mix(in srgb, var(--primary-strong) 72%, transparent);
   color: #fff;
   backdrop-filter: blur(6px);
 }

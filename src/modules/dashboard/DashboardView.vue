@@ -2,10 +2,10 @@
   <div class="view ml-fade-up">
     <header class="dash-head">
       <div>
-        <p class="eyebrow">Painel</p>
+        <p class="eyebrow">Seu espaço</p>
         <h1 class="section-title">Suas homenagens</h1>
         <p class="text-muted dash-head__sub">
-          Olá, {{ firstName }}. Acompanhe views e status de cada projeto.
+          Olá, {{ firstName }}. Cada projeto aqui guarda um pedaço de amor para compartilhar.
         </p>
       </div>
       <RouterLink to="/dashboard/tributes/new" class="ml-btn ml-btn--primary ml-btn--lg">
@@ -66,8 +66,8 @@
           <path d="M12 21s-7.5-4.6-10-9.2C.6 8.9 2 5.5 5.2 5.1 7 4.9 8.7 5.8 12 8.6c3.3-2.8 5-3.7 6.8-3.5C22 5.5 23.4 8.9 22 11.8 19.5 16.4 12 21 12 21Z" stroke-linecap="round" stroke-linejoin="round" />
         </svg>
       </span>
-      <h2>Nenhuma homenagem ainda</h2>
-      <p class="text-muted">Crie sua primeira homenagem digital em poucos passos.</p>
+      <h2>Sua primeira homenagem espera por você</h2>
+      <p class="text-muted">Transforme memórias em um presente digital cheio de carinho.</p>
       <RouterLink to="/dashboard/tributes/new" class="ml-btn ml-btn--primary ml-btn--lg">
         Começar agora
       </RouterLink>
@@ -230,15 +230,15 @@ const stats = computed(() => {
     {
       label: 'Rascunhos',
       value: drafts,
-      tint: 'var(--violet-soft)',
-      color: 'var(--violet)',
+      tint: 'var(--red-soft)',
+      color: 'var(--red)',
       icon: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20h9" stroke-linecap="round"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     },
     {
       label: 'Views totais',
       value: views,
-      tint: 'var(--gold-soft)',
-      color: 'var(--gold)',
+      tint: 'var(--rose-soft)',
+      color: 'var(--primary)',
       icon: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>',
     },
   ]
@@ -273,7 +273,7 @@ function tributeLink(tribute: TributeSummary): string {
 function bannerStyle(tribute: TributeSummary): Record<string, string> {
   const color = tribute.color_primary || '#e11d7a'
   return {
-    background: `linear-gradient(135deg, ${color}, color-mix(in srgb, ${color} 55%, #2a1520))`,
+    background: color,
   }
 }
 
@@ -362,6 +362,8 @@ async function executeDelete() {
   align-items: center;
   gap: 14px;
   padding: 18px 20px;
+  background: var(--surface);
+  border-color: color-mix(in srgb, var(--primary) 8%, var(--border));
 }
 .stat__icon {
   display: grid;
@@ -450,8 +452,8 @@ async function executeDelete() {
   border-radius: 999px;
   font-size: 0.78rem;
   font-weight: 600;
-  color: #fff;
-  background: rgba(0, 0, 0, 0.24);
+  color: var(--primary-strong);
+  background: rgba(255, 255, 255, 0.88);
   backdrop-filter: blur(4px);
 }
 .tribute-card__body {
@@ -610,6 +612,8 @@ async function executeDelete() {
   flex-direction: column;
   align-items: center;
   gap: 8px;
+  background: color-mix(in srgb, var(--primary-softer) 50%, var(--surface));
+  border-color: color-mix(in srgb, var(--primary) 14%, var(--border));
 }
 .empty__glyph {
   display: grid;

@@ -83,18 +83,15 @@ const markVariant = computed(() => {
 }
 
 .logo__accent {
-  background: var(--gradient-brand, linear-gradient(135deg, #1d4ed8 0%, #e11d7a 55%, #dc2626 100%));
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: var(--primary);
 }
 
 .logo--dark .logo__text {
   color: #faf8fa;
 }
 
-.logo--sidebar {
-  color: var(--sidebar-text);
+.logo--dark .logo__accent {
+  color: #ffffff;
 }
 
 .logo--sidebar .logo__text {
@@ -102,13 +99,10 @@ const markVariant = computed(() => {
 }
 
 .logo--sidebar .logo__accent {
-  background: linear-gradient(135deg, #60a5fa 0%, #f472b6 55%, #f87171 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: var(--primary);
 }
 
 .logo--sidebar .logo__mark {
-  color: #f472b6;
+  color: var(--primary);
 }
 </style>

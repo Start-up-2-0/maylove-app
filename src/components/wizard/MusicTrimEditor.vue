@@ -408,12 +408,8 @@ onUnmounted(() => {
   padding: 16px 18px 14px;
   border-radius: 20px;
   border: 1px solid color-mix(in srgb, var(--primary) 18%, var(--border));
-  background:
-    radial-gradient(90% 120% at 0% 0%, color-mix(in srgb, var(--primary) 10%, transparent), transparent 50%),
-    linear-gradient(180deg, color-mix(in srgb, var(--surface-3) 88%, #000) 0%, var(--surface-2) 100%);
-  box-shadow:
-    inset 0 1px 0 color-mix(in srgb, #fff 6%, transparent),
-    0 16px 36px -26px rgba(0, 0, 0, 0.55);
+  background: var(--primary-softer);
+  box-shadow: var(--shadow-sm);
 }
 
 .spotify-trim__hint {
@@ -445,9 +441,8 @@ onUnmounted(() => {
 .spotify-trim__cover--fallback {
   display: grid;
   place-items: center;
-  background:
-    linear-gradient(145deg, color-mix(in srgb, var(--primary) 42%, #1a121f), #100a12);
-  color: color-mix(in srgb, var(--primary) 75%, #fff);
+  background: var(--primary-soft);
+  color: var(--primary-strong);
 }
 
 .spotify-trim__eq {

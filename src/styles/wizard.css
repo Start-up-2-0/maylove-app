@@ -28,9 +28,9 @@
   gap: 12px;
   margin: 24px calc(-1 * var(--wizard-pad-x, clamp(16px, 3vw, 48px))) 0;
   padding: 16px var(--wizard-pad-x, clamp(16px, 3vw, 48px));
-  background: color-mix(in srgb, var(--bg) 82%, transparent);
-  border-top: 1px solid var(--border);
-  backdrop-filter: blur(14px);
+  background: color-mix(in srgb, var(--primary-softer) 75%, var(--surface));
+  border-top: 1px solid color-mix(in srgb, var(--primary) 12%, var(--border));
+  backdrop-filter: blur(10px);
 }
 
 .wizard-footer-inner {
@@ -88,7 +88,7 @@
 }
 
 .wizard-step-pill.active {
-  background: var(--gradient-brand, linear-gradient(135deg, #1d4ed8 0%, #e11d7a 55%, #dc2626 100%));
+  background: var(--primary, #e11d7a);
   border-color: transparent;
   color: #fff;
   box-shadow: var(--shadow-primary);
@@ -122,7 +122,7 @@
 .wizard-progress__fill {
   height: 100%;
   border-radius: 999px;
-  background: var(--gradient-brand, linear-gradient(135deg, #1d4ed8 0%, #e11d7a 55%, #dc2626 100%));
+  background: var(--primary, #e11d7a);
   transition: width var(--dur-lg, 0.32s) var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1));
 }
 

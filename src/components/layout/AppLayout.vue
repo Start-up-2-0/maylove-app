@@ -7,7 +7,7 @@
 
     <aside class="sidebar" :class="{ 'sidebar--open': drawerOpen }">
       <div class="sidebar__brand">
-        <Logo to="/dashboard" variant="sidebar" size="md" @click="drawerOpen = false" />
+        <Logo to="/dashboard" variant="light" size="md" @click="drawerOpen = false" />
         <button class="sidebar__close" aria-label="Fechar menu" @click="drawerOpen = false">
           <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M6 6l12 12M18 6L6 18" stroke-linecap="round" />
@@ -86,7 +86,7 @@
             <path d="M4 7h16M4 12h16M4 17h16" stroke-linecap="round" />
           </svg>
         </button>
-        <Logo to="/dashboard" variant="sidebar" size="sm" class="brand--compact" />
+        <Logo to="/dashboard" variant="light" size="sm" class="brand--compact" />
         <button class="app-topbar__theme app-topbar__cta" :aria-label="isDark ? 'Tema claro' : 'Tema escuro'" @click="toggle">
           <svg v-if="isDark" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8">
             <circle cx="12" cy="12" r="4" />
@@ -161,8 +161,9 @@ async function logout() {
   flex-direction: column;
   padding: 22px 16px;
   color: var(--sidebar-text);
-  background: linear-gradient(180deg, var(--sidebar-bg-2), var(--sidebar-bg));
+  background: var(--sidebar-bg);
   border-right: 1px solid var(--sidebar-border);
+  box-shadow: 4px 0 24px -12px rgba(225, 29, 122, 0.08);
 }
 
 .sidebar__brand {
@@ -189,7 +190,7 @@ async function logout() {
   height: 34px;
   border-radius: 11px;
   color: #fff;
-  background: linear-gradient(150deg, var(--primary-hover), var(--primary-strong));
+  background: var(--primary);
   box-shadow: var(--shadow-primary);
 }
 .brand__accent {
@@ -205,7 +206,7 @@ async function logout() {
   border-radius: 8px;
 }
 .sidebar__close:hover {
-  color: #fff;
+  color: var(--primary-strong);
   background: var(--sidebar-hover);
 }
 
@@ -247,13 +248,13 @@ async function logout() {
   flex-shrink: 0;
 }
 .nav-item:hover {
-  color: #fff;
+  color: var(--primary-strong);
   background: var(--sidebar-hover);
 }
 .nav-item--active {
-  color: #fff;
+  color: var(--primary-strong);
   background: var(--sidebar-active);
-  box-shadow: inset 0 0 0 1px rgba(225, 29, 122, 0.3);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 18%, var(--sidebar-border));
 }
 .nav-item--active .nav-item__icon {
   color: var(--primary);
@@ -280,7 +281,7 @@ async function logout() {
     color var(--dur) var(--ease);
 }
 .sidebar__theme:hover {
-  color: #fff;
+  color: var(--primary-strong);
   background: var(--sidebar-hover);
 }
 .sidebar__theme-icon {
@@ -298,7 +299,7 @@ async function logout() {
   margin-top: 10px;
   padding: 10px;
   border-radius: var(--radius-md);
-  background: var(--sidebar-hover);
+  background: #ffffff;
   border: 1px solid var(--sidebar-border);
 }
 .user-card {
@@ -319,7 +320,7 @@ async function logout() {
   font-size: 0.85rem;
   text-transform: uppercase;
   color: #fff;
-  background: linear-gradient(150deg, var(--violet), var(--primary));
+  background: var(--primary);
 }
 .user-card__meta {
   display: flex;
@@ -356,8 +357,8 @@ async function logout() {
     color var(--dur) var(--ease);
 }
 .user-card__logout:hover {
-  color: #fff;
-  background: rgba(209, 67, 91, 0.25);
+  color: var(--primary-strong);
+  background: var(--primary-soft);
 }
 
 /* ---------- Main ---------- */
@@ -374,7 +375,7 @@ async function logout() {
   position: sticky;
   top: 0;
   z-index: 40;
-  background: color-mix(in srgb, var(--bg) 82%, transparent);
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--border);
 }
