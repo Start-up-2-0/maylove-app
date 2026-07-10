@@ -81,7 +81,7 @@ export const db = {
     const id = nextId('tribute')
     const tribute = buildTribute({
       id,
-      slug: `homenagem-${id.slice(-6)}`,
+      slug: `homenagem-${crypto.randomUUID()}`,
       status: 'draft',
       typeIndex,
       templateIndex,
@@ -103,7 +103,6 @@ export const db = {
       'message',
       'closing_message',
       'special_date',
-      'slug',
       'color_primary',
     ]
     for (const key of assignable) {

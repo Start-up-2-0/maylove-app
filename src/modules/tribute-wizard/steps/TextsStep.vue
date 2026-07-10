@@ -46,9 +46,9 @@
         </div>
 
         <div class="ml-field span-2">
-          <label class="ml-label" for="t-slug">Slug público</label>
-          <input id="t-slug" v-model="form.slug" class="ml-input" placeholder="para-maria" />
-          <span class="ml-hint">O endereço será /h/{{ form.slug || 'sua-homenagem' }}</span>
+          <span class="ml-label">Link público</span>
+          <p class="public-link">/h/{{ form.slug || 'homenagem-…' }}</p>
+          <span class="ml-hint">Gerado automaticamente ao criar a homenagem — cada link é único.</span>
         </div>
       </div>
     </section>
@@ -211,6 +211,17 @@ const presentationEmoji = computed(() => schema.value.presentationEmoji)
 }
 .span-2 {
   grid-column: 1 / -1;
+}
+.public-link {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface-3);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.9rem;
+  color: var(--text);
+  word-break: break-all;
 }
 
 @media (max-width: 560px) {

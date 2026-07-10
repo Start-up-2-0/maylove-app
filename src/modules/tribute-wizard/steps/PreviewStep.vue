@@ -71,8 +71,7 @@ const photoCount = computed(() => (props.tribute?.media ?? []).filter((m) => m.m
 
 const musicLabel = computed(() => {
   if (props.form.music_source === 'none') return 'Sem música'
-  if (props.form.music_source === 'library') return 'Biblioteca'
-  return 'Upload'
+  return 'YouTube'
 })
 </script>
 

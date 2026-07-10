@@ -77,7 +77,6 @@ export function useTributeWizard(tributeId: string) {
     message: form.message || null,
     closing_message: form.closing_message || null,
     special_date: form.special_date || null,
-    slug: form.slug || null,
     color_primary: form.color_primary,
     music_source: form.music_source,
     music_track_id: form.music_source === 'library' ? form.music_track_id : null,
