@@ -1,7 +1,6 @@
 import { setupWorker } from 'msw/browser'
+import { persistAuthSession } from '@/utils/authSession'
 import { handlers } from './handlers'
-
-const TOKEN_STORAGE_KEY = 'maylove_access_token'
 
 export const worker = setupWorker(...handlers)
 
@@ -10,8 +9,13 @@ export const worker = setupWorker(...handlers)
  * O GET /auth/me mockado devolve o usuario fake, entao isAuthenticated fica true.
  */
 export async function startMocks(): Promise<void> {
-  if (!localStorage.getItem(TOKEN_STORAGE_KEY)) {
-    localStorage.setItem(TOKEN_STORAGE_KEY, 'mock-access-token')
+  const { readStoredSession } = await import('@/utils/authSession')
+  if (!readStoredSession().token) {
+    persistAuthSession({
+      token: 'mock-access-token',
+      expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
+      refreshExpiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+    })
   }
 
   await worker.start({

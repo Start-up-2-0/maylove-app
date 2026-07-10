@@ -1,12 +1,31 @@
 import { defineStore } from 'pinia'
-import { clearStoredTokens, setStoredTokens } from '@/api/client'
+import { clearStoredTokens, refreshAuthSession } from '@/api/client'
 import * as authApi from '@/api/auth'
-import type { User } from '@/api/types'
+import type { AuthPayload, User } from '@/api/types'
+import { startSessionRefreshScheduler, stopSessionRefreshScheduler } from '@/composables/useSessionRefresh'
+import {
+  clearAuthSession,
+  getAccessToken,
+  isAccessTokenExpired,
+  isRefreshSessionExpired,
+  persistAuthSession,
+  readStoredSession,
+} from '@/utils/authSession'
+
+function applyAuthPayload(payload: AuthPayload): void {
+  persistAuthSession({
+    token: payload.token,
+    expiresAt: payload.expiresAt ?? new Date(Date.now() + 15 * 60 * 1000).toISOString(),
+    refreshExpiresAt:
+      payload.refreshExpiresAt ?? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+  })
+  startSessionRefreshScheduler()
+}
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
     user: null as User | null,
-    token: localStorage.getItem('maylove_access_token'),
+    token: getAccessToken(),
     loading: false,
     initialized: false,
   }),
@@ -14,16 +33,50 @@ export const useAuthStore = defineStore('auth', {
     isAuthenticated: (state) => Boolean(state.token && state.user),
   },
   actions: {
-    async bootstrap() {
-      if (!this.token) {
-        this.initialized = true
-        return
+    hydrateFromStorage() {
+      const stored = readStoredSession()
+      this.token = stored.token ?? null
+    },
+
+    async tryRestoreSession(): Promise<boolean> {
+      if (isRefreshSessionExpired()) {
+        clearAuthSession()
+        this.token = null
+        return false
       }
+
+      const hasToken = Boolean(getAccessToken())
+      if (hasToken && !isAccessTokenExpired()) {
+        this.token = getAccessToken()
+        startSessionRefreshScheduler()
+        return true
+      }
+
+      try {
+        const session = await refreshAuthSession()
+        this.token = session.token
+        return true
+      } catch {
+        clearAuthSession()
+        this.token = null
+        return false
+      }
+    },
+
+    async bootstrap() {
+      this.hydrateFromStorage()
 
       this.loading = true
       try {
+        const restored = await this.tryRestoreSession()
+        if (!restored) {
+          this.user = null
+          return
+        }
+
         this.user = await authApi.fetchMe()
       } catch {
+        stopSessionRefreshScheduler()
         clearStoredTokens()
         this.token = null
         this.user = null
@@ -32,26 +85,32 @@ export const useAuthStore = defineStore('auth', {
         this.initialized = true
       }
     },
+
     async login(email: string, password: string) {
       const payload = await authApi.login({ email, password })
-      setStoredTokens(payload.token, payload.refresh_token)
+      applyAuthPayload(payload)
       this.token = payload.token
       this.user = payload.user
     },
+
     async logout() {
       try {
         await authApi.logout()
       } finally {
+        stopSessionRefreshScheduler()
         clearStoredTokens()
         this.token = null
         this.user = null
       }
     },
+
     async verifyEmail(token: string) {
       const payload = await authApi.verifyEmail(token)
-      setStoredTokens(payload.token, payload.refresh_token)
-      this.token = payload.token
-      this.user = payload.user
+      if (payload.token) {
+        applyAuthPayload(payload)
+        this.token = payload.token
+        this.user = payload.user
+      }
     },
   },
 })

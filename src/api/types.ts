@@ -24,7 +24,10 @@ export interface User {
 
 export interface AuthPayload {
   token: string
+  refreshToken?: string
   refresh_token?: string
+  expiresAt?: string
+  refreshExpiresAt?: string
   user: User
 }
 

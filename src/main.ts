@@ -3,6 +3,8 @@ import { createPinia } from 'pinia'
 import App from './App.vue'
 import router from './router'
 import { initTheme } from './composables/useTheme'
+import { startSessionRefreshScheduler } from '@/composables/useSessionRefresh'
+import { useAuthStore } from '@/stores/auth'
 import './styles/main.css'
 
 async function bootstrap() {
@@ -18,7 +20,16 @@ async function bootstrap() {
     await startMocks()
   }
 
-  createApp(App).use(createPinia()).use(router).mount('#app')
+  const pinia = createPinia()
+  const app = createApp(App).use(pinia).use(router)
+
+  const auth = useAuthStore(pinia)
+  auth.hydrateFromStorage()
+  if (auth.token) {
+    startSessionRefreshScheduler()
+  }
+
+  app.mount('#app')
 }
 
 void bootstrap()

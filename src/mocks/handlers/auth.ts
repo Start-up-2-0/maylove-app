@@ -3,9 +3,14 @@ import type { AuthPayload } from '@/api/types'
 import { mockUser } from '../fixtures'
 import { api, ok } from './helpers'
 
+function futureIso(minutes: number): string {
+  return new Date(Date.now() + minutes * 60 * 1000).toISOString()
+}
+
 const authPayload: AuthPayload = {
   token: 'mock-access-token',
-  refresh_token: 'mock-refresh-token',
+  expiresAt: futureIso(15),
+  refreshExpiresAt: futureIso(30 * 24 * 60),
   user: mockUser,
 }
 
@@ -20,5 +25,12 @@ export const authHandlers = [
 
   http.get(api('/auth/verify-email'), () => ok(authPayload, 'E-mail confirmado.')),
 
-  http.post(api('/auth/refresh'), () => ok(authPayload)),
+  http.post(api('/auth/refresh'), () =>
+    ok({
+      token: 'mock-access-token',
+      refreshToken: '',
+      expiresAt: futureIso(15),
+      refreshExpiresAt: futureIso(30 * 24 * 60),
+    }),
+  ),
 ]
