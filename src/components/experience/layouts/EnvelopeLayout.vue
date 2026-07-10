@@ -7,19 +7,28 @@
       </p>
 
       <div class="env-envelope-wrap">
-        <button
+        <div
           class="env-envelope"
           :class="envelopeClass"
-          :disabled="phase !== 'closed'"
+          role="button"
+          tabindex="0"
+          :aria-disabled="phase !== 'closed'"
           aria-label="Abrir carta"
           @click="open"
+          @keydown.enter.prevent="open"
+          @keydown.space.prevent="open"
         >
-          <span class="env-envelope__back" />
-          <span class="env-envelope__letter-peek" aria-hidden="true" />
-          <span class="env-envelope__body" />
-          <span class="env-envelope__flap" />
-          <span class="env-envelope__seal">{{ initial }}</span>
-        </button>
+          <div class="env-envelope__inner">
+            <span class="env-envelope__back" />
+            <span class="env-envelope__folds" aria-hidden="true" />
+            <span class="env-envelope__letter" aria-hidden="true" />
+            <span class="env-envelope__pocket" aria-hidden="true" />
+            <span class="env-envelope__flap" aria-hidden="true">
+              <span class="env-envelope__flap-face" />
+            </span>
+            <span class="env-envelope__seal">{{ initial }}</span>
+          </div>
+        </div>
       </div>
 
       <template v-if="phase === 'closed'">
@@ -81,9 +90,9 @@ interface LetterBeat {
 
 type OpenPhase = 'closed' | 'flap' | 'rise' | 'expand' | 'read'
 
-const FLAP_MS = 680
-const RISE_MS = 1100
-const EXPAND_MS = 780
+const FLAP_MS = 900
+const RISE_MS = 1400
+const EXPAND_MS = 900
 
 const props = defineProps<LayoutComponentProps>()
 const audio = useExperienceAudio()
@@ -241,143 +250,204 @@ onBeforeUnmount(() => {
   gap: 20px;
   text-align: center;
   width: 100%;
+  overflow: visible;
 }
 .env-scene__eyebrow {
   font-style: normal;
   animation: env-soft-in 0.6s var(--exp-ease) both;
 }
 .env-envelope-wrap {
-  perspective: 1100px;
+  perspective: 1400px;
+  perspective-origin: 50% 35%;
   width: clamp(220px, 42vw, 320px);
-  height: clamp(150px, 28vw, 214px);
+  height: clamp(168px, 30vw, 236px);
+  overflow: visible;
+  margin-bottom: clamp(40px, 10vw, 90px);
 }
 .env-envelope {
   position: relative;
   width: 100%;
   height: 100%;
-  border: none;
-  background: none;
   cursor: pointer;
-  transform-style: preserve-3d;
+  outline: none;
   filter: drop-shadow(0 26px 48px color-mix(in srgb, var(--exp-primary) 40%, transparent));
+  transition: filter 0.6s ease;
+}
+.env-envelope[aria-disabled='true'] {
+  cursor: default;
+  pointer-events: none;
+}
+.env--closed .env-envelope:hover:not([aria-disabled='true']) {
+  filter: drop-shadow(0 30px 52px color-mix(in srgb, var(--exp-primary) 48%, transparent));
+}
+.env-envelope:focus-visible .env-envelope__inner {
+  outline: 2px solid color-mix(in srgb, var(--exp-accent) 70%, #fff);
+  outline-offset: 4px;
+  border-radius: 14px;
+}
+.env-envelope__inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
   transition:
     transform 0.55s cubic-bezier(0.22, 1, 0.36, 1),
-    opacity 0.65s ease,
-    filter 0.65s ease;
+    opacity 0.55s ease;
 }
-.env-envelope:disabled {
-  cursor: default;
-}
-.env--closed .env-envelope:hover:not(:disabled) {
+.env--closed .env-envelope:hover:not([aria-disabled='true']) .env-envelope__inner {
   transform: translateY(-6px) rotate(-1deg);
 }
+
+/* Fundo do envelope */
 .env-envelope__back {
   position: absolute;
   inset: 0;
   border-radius: 12px;
-  background: color-mix(in srgb, var(--exp-primary) 68%, #000 12%);
-  transform: translateZ(-2px);
-}
-.env-envelope__body {
-  position: absolute;
-  inset: 0;
-  border-radius: 12px;
   background: linear-gradient(
-    160deg,
-    color-mix(in srgb, var(--exp-primary) 92%, #fff) 0%,
+    165deg,
+    color-mix(in srgb, var(--exp-primary) 88%, #fff) 0%,
     var(--exp-primary) 100%
   );
-  z-index: 2;
+  box-shadow: inset 0 -8px 24px color-mix(in srgb, #000 10%, transparent);
+  transform: translateZ(0);
 }
-.env-envelope__body::after {
-  content: '';
+.env-envelope__folds {
   position: absolute;
   inset: 0;
   border-radius: 12px;
-  background:
-    linear-gradient(45deg, transparent 49%, color-mix(in srgb, #000 12%, transparent) 50%, transparent 51%),
-    linear-gradient(-45deg, transparent 49%, color-mix(in srgb, #000 12%, transparent) 50%, transparent 51%);
-}
-.env-envelope__letter-peek {
-  position: absolute;
-  left: 11%;
-  right: 11%;
-  bottom: 10%;
-  height: 72%;
-  border-radius: 4px 4px 0 0;
-  background: linear-gradient(180deg, #fffef9 0%, #f8f4ea 100%);
-  box-shadow: 0 -3px 14px rgba(0, 0, 0, 0.1);
   z-index: 1;
-  transform: translateY(78%);
+  pointer-events: none;
+  background:
+    linear-gradient(45deg, transparent 49.2%, color-mix(in srgb, #000 14%, transparent) 50%, transparent 50.8%),
+    linear-gradient(-45deg, transparent 49.2%, color-mix(in srgb, #000 14%, transparent) 50%, transparent 50.8%);
+  opacity: 0.55;
+}
+
+/* Carta dentro do envelope — sobe por cima do bolso frontal */
+.env-envelope__letter {
+  position: absolute;
+  left: 10%;
+  right: 10%;
+  bottom: 10%;
+  height: 78%;
+  border-radius: 4px 4px 0 0;
+  background: linear-gradient(180deg, #fffef9 0%, #f6f1e6 100%);
+  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.12);
+  z-index: 2;
+  transform: translateY(62%);
   opacity: 0;
   pointer-events: none;
+  transition:
+    transform 1.15s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.35s ease;
 }
+
+/* Bolso frontal — só a parte de baixo, deixa a carta aparecer no topo */
+.env-envelope__pocket {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  border-radius: 12px;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    color-mix(in srgb, var(--exp-primary) 78%, #000 8%) 38%,
+    var(--exp-primary) 100%
+  );
+  clip-path: polygon(0 46%, 50% 68%, 100% 46%, 100% 100%, 0 100%);
+  box-shadow: inset 0 6px 18px color-mix(in srgb, #000 12%, transparent);
+  transition: opacity 0.55s ease;
+}
+
+/* Aba superior — abre em 3D */
 .env-envelope__flap {
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
-  height: 58%;
-  transform-origin: top center;
+  height: 56%;
+  z-index: 5;
+  transform-style: preserve-3d;
+  transform-origin: 50% 0;
+  transition: transform 0.85s cubic-bezier(0.33, 1, 0.68, 1);
+  animation: env-flap-idle 3.6s ease-in-out infinite;
+}
+.env-envelope__flap-face {
+  position: absolute;
+  inset: 0;
   clip-path: polygon(0 0, 100% 0, 50% 100%);
-  background: color-mix(in srgb, var(--exp-primary) 80%, #000 6%);
-  z-index: 4;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--exp-primary) 72%, #fff) 0%,
+    color-mix(in srgb, var(--exp-primary) 86%, #000 6%) 100%
+  );
+  box-shadow: 0 10px 20px color-mix(in srgb, #000 18%, transparent);
   backface-visibility: hidden;
-  animation: env-flap-idle 3.4s ease-in-out infinite;
-  transition: transform 0.68s cubic-bezier(0.33, 1, 0.68, 1);
+  transform: translateZ(2px);
 }
 .env-envelope__seal {
   position: absolute;
-  top: 44%;
+  top: 46%;
   left: 50%;
   transform: translate(-50%, -50%);
-  z-index: 5;
+  z-index: 6;
   display: grid;
   place-items: center;
-  width: 46px;
-  height: 46px;
+  width: 48px;
+  height: 48px;
   border-radius: 999px;
   font-family: var(--exp-font-display);
   font-size: 1.3rem;
   color: #fff;
   background: color-mix(in srgb, var(--exp-accent) 88%, #000);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.28);
   transition:
-    opacity 0.4s ease,
-    transform 0.5s cubic-bezier(0.33, 1, 0.68, 1);
+    opacity 0.45s ease,
+    transform 0.55s cubic-bezier(0.33, 1, 0.68, 1);
 }
 
-/* Fases da abertura */
+/* Fase 1: aba abre — carta começa a aparecer no vão */
+.env-envelope--flap .env-envelope__letter {
+  opacity: 0.45;
+  transform: translateY(42%);
+}
 .env-envelope--flap .env-envelope__flap,
 .env-envelope--rise .env-envelope__flap,
 .env-envelope--expand .env-envelope__flap {
   animation: none;
-  transform: rotateX(-168deg);
+  transform: rotateX(-175deg);
 }
 .env-envelope--flap .env-envelope__seal,
 .env-envelope--rise .env-envelope__seal,
 .env-envelope--expand .env-envelope__seal {
   opacity: 0;
-  transform: translate(-50%, -50%) scale(0.55);
+  transform: translate(-50%, -50%) scale(0.5);
 }
-.env-envelope--rise .env-envelope__letter-peek {
+
+/* Fase 2: carta sobe e fica visível acima do bolso */
+.env-envelope--rise .env-envelope__letter {
   opacity: 1;
-  transform: translateY(-22%);
-  transition:
-    transform 1.05s cubic-bezier(0.22, 1, 0.36, 1),
-    opacity 0.45s ease;
+  transform: translateY(-18%);
+  z-index: 8;
 }
-.env-envelope--expand .env-envelope__letter-peek {
-  opacity: 0.25;
-  transform: translateY(-88%) scale(1.03);
-  transition:
-    transform 0.78s cubic-bezier(0.25, 1, 0.5, 1),
-    opacity 0.55s ease;
+.env-envelope--rise .env-envelope__pocket {
+  opacity: 1;
 }
-.env-envelope--expand {
+
+/* Fase 3: envelope recua, carta continua subindo */
+.env-envelope--expand .env-envelope__letter {
+  opacity: 1;
+  transform: translateY(-72%) scale(1.04);
+  z-index: 10;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.18);
+}
+.env-envelope--expand .env-envelope__back,
+.env-envelope--expand .env-envelope__folds,
+.env-envelope--expand .env-envelope__pocket,
+.env-envelope--expand .env-envelope__flap,
+.env-envelope--expand .env-envelope__seal {
   opacity: 0;
-  transform: translateY(18px) scale(0.94);
-  filter: blur(1px);
+  transition: opacity 0.65s ease;
 }
 
 @keyframes env-flap-idle {
@@ -386,7 +456,7 @@ onBeforeUnmount(() => {
     transform: rotateX(0deg);
   }
   50% {
-    transform: rotateX(14deg);
+    transform: rotateX(16deg);
   }
 }
 
@@ -524,7 +594,7 @@ onBeforeUnmount(() => {
 }
 .letter-reveal-enter-from {
   opacity: 0;
-  transform: translateY(72px) scale(0.9);
+  transform: translateY(-24px) scale(0.94);
 }
 
 @keyframes env-soft-in {
@@ -552,9 +622,11 @@ onBeforeUnmount(() => {
   .env-envelope__flap {
     animation: none;
   }
-  .env-envelope,
-  .env-envelope__letter-peek,
+  .env-envelope__inner,
+  .env-envelope__letter,
   .env-envelope__seal,
+  .env-envelope__flap,
+  .env-envelope__pocket,
   .letter-reveal-enter-active,
   .letter__photo {
     transition: none !important;
