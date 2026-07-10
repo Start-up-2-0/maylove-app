@@ -34,7 +34,7 @@ export const TEMPLATE_STYLES: TemplateStyle[] = [
     description: 'Tons rosados, manuscrito e um clima apaixonado.',
     emoji: '💗',
     overrides: {
-      primaryColor: '#d94f7a',
+      primaryColor: '#e11d7a',
       accentColor: '#f2a5c0',
       fontDisplay: "'Dancing Script', cursive",
       fontBody: "'Hanken Grotesk', sans-serif",

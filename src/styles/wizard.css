@@ -83,12 +83,12 @@
 }
 
 .wizard-step-pill:hover:not(:disabled) {
-  border-color: var(--primary, #d94f7a);
-  color: var(--primary-strong, #c13a67);
+  border-color: var(--primary, #e11d7a);
+  color: var(--primary-strong, #be185d);
 }
 
 .wizard-step-pill.active {
-  background: linear-gradient(180deg, var(--primary-hover, #e05c86), var(--primary, #d94f7a));
+  background: var(--gradient-brand, linear-gradient(135deg, #1d4ed8 0%, #e11d7a 55%, #dc2626 100%));
   border-color: transparent;
   color: #fff;
   box-shadow: var(--shadow-primary);
@@ -99,12 +99,12 @@
 }
 
 .wizard-step-pill.done {
-  color: var(--primary-strong, #c13a67);
-  border-color: color-mix(in srgb, var(--primary, #d94f7a) 40%, var(--border, #efe4e9));
+  color: var(--primary-strong, #be185d);
+  border-color: color-mix(in srgb, var(--primary, #e11d7a) 40%, var(--border, #ebe6ef));
 }
 .wizard-step-pill.done .wizard-step-pill__num {
-  background: var(--primary-soft, #fdeaf0);
-  color: var(--primary-strong, #c13a67);
+  background: var(--primary-soft, #fce7f3);
+  color: var(--primary-strong, #be185d);
 }
 
 .wizard-step-pill:disabled {
@@ -122,7 +122,7 @@
 .wizard-progress__fill {
   height: 100%;
   border-radius: 999px;
-  background: linear-gradient(90deg, var(--violet, #7c5cff), var(--primary, #d94f7a));
+  background: var(--gradient-brand, linear-gradient(135deg, #1d4ed8 0%, #e11d7a 55%, #dc2626 100%));
   transition: width var(--dur-lg, 0.32s) var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1));
 }
 
@@ -151,8 +151,8 @@
 }
 
 .template-carousel-item.active {
-  border-color: var(--color-maylove);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-maylove) 22%, transparent);
+  border-color: var(--color-brand, #e11d7a);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-brand, #e11d7a) 22%, transparent);
 }
 
 .template-swatch {

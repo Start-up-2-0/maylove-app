@@ -3,14 +3,7 @@
     <!-- Painel de branding -->
     <aside class="auth__brand">
       <div class="auth__brand-inner">
-        <RouterLink to="/" class="auth__logo">
-          <span class="auth__logo-mark" aria-hidden="true">
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-              <path d="M12 21s-7.5-4.6-10-9.2C.6 8.9 2 5.5 5.2 5.1 7 4.9 8.7 5.8 12 8.6c3.3-2.8 5-3.7 6.8-3.5C22 5.5 23.4 8.9 22 11.8 19.5 16.4 12 21 12 21Z" />
-            </svg>
-          </span>
-          May<span class="auth__logo-accent">Love</span>
-        </RouterLink>
+        <Logo to="/" variant="dark" size="lg" />
 
         <div class="auth__pitch">
           <h2 class="auth__headline">
@@ -47,7 +40,7 @@
 </template>
 
 <script setup lang="ts">
-import { RouterLink } from 'vue-router'
+import Logo from '@/components/brand/Logo.vue'
 
 const features = [
   'Editor guiado em poucos passos',
@@ -70,9 +63,9 @@ const features = [
   padding: 48px;
   display: flex;
   background:
-    radial-gradient(700px 400px at 80% 0%, rgba(217, 79, 122, 0.55) 0%, transparent 60%),
-    radial-gradient(600px 500px at 0% 100%, rgba(124, 92, 255, 0.4) 0%, transparent 55%),
-    linear-gradient(160deg, #2a1826, #1c1420);
+    radial-gradient(700px 400px at 80% 0%, rgba(225, 29, 122, 0.5) 0%, transparent 60%),
+    radial-gradient(600px 500px at 0% 100%, rgba(29, 78, 216, 0.45) 0%, transparent 55%),
+    linear-gradient(160deg, #17141f, #0f0d12);
 }
 .auth__brand::after {
   content: '';

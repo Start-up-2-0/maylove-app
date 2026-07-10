@@ -27,12 +27,8 @@
 
       <footer class="public-foot" :class="{ 'public-foot--dark': theme.mode === 'dark' }">
         <RouterLink to="/register" class="public-foot__brand">
-          <span class="public-foot__mark" aria-hidden="true">
-            <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor">
-              <path d="M12 21s-7.5-4.6-10-9.2C.6 8.9 2 5.5 5.2 5.1 7 4.9 8.7 5.8 12 8.6c3.3-2.8 5-3.7 6.8-3.5C22 5.5 23.4 8.9 22 11.8 19.5 16.4 12 21 12 21Z" />
-            </svg>
-          </span>
-          Feito com <strong>MayLove</strong>
+          <LogoMark :size="15" variant="mono" class="public-foot__mark" />
+          Feito com <strong>MayLov</strong>
         </RouterLink>
         <RouterLink to="/register" class="public-foot__cta">Crie a sua homenagem →</RouterLink>
       </footer>
@@ -48,6 +44,7 @@ import type { PublicTribute } from '@/api/types'
 import ExperienceRenderer from '@/components/experience/ExperienceRenderer.vue'
 import { getTemplateDefinition } from '@/templates/registry'
 import { resolveContent, resolveTheme } from '@/composables/useExperienceContent'
+import LogoMark from '@/components/brand/LogoMark.vue'
 
 const route = useRoute()
 const tribute = ref<PublicTribute | null>(null)
@@ -186,12 +183,13 @@ function getSessionId(): string {
   height: 26px;
   border-radius: 8px;
   color: #fff;
-  background: linear-gradient(150deg, #e86b92, #d94f7a);
+  background: var(--gradient-brand, linear-gradient(135deg, #1d4ed8 0%, #e11d7a 55%, #dc2626 100%));
+  padding: 5px;
 }
 .public-foot__cta {
   font-size: 0.9rem;
   font-weight: 600;
-  color: #d94f7a;
+  color: #e11d7a;
   transition: opacity 0.2s ease;
 }
 .public-foot__cta:hover {

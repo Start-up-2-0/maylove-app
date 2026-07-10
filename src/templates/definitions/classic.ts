@@ -13,7 +13,7 @@ export const classicTemplate: TemplateDefinition = {
   tributeTypeSlug: 'homenagem',
   description: 'Layout elegante e atemporal para qualquer ocasião.',
   theme: {
-    primaryColor: '#d94f7a',
+    primaryColor: '#e11d7a',
     fontDisplay: "'Fraunces', serif",
     fontBody: "'Hanken Grotesk', sans-serif",
     background: 'linear-gradient(180deg, #fff7fb 0%, #fdf6f2 100%)',

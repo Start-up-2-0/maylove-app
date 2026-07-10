@@ -271,7 +271,7 @@ function tributeLink(tribute: TributeSummary): string {
 }
 
 function bannerStyle(tribute: TributeSummary): Record<string, string> {
-  const color = tribute.color_primary || '#d94f7a'
+  const color = tribute.color_primary || '#e11d7a'
   return {
     background: `linear-gradient(135deg, ${color}, color-mix(in srgb, ${color} 55%, #2a1520))`,
   }

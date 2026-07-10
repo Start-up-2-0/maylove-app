@@ -38,7 +38,7 @@
   font-weight: 700;
   letter-spacing: 0.24em;
   text-transform: uppercase;
-  color: var(--exp-primary, #d94f7a);
+  color: var(--exp-primary, #e11d7a);
 }
 
 /* ---------- Animacao de entrada (diretiva v-reveal) ---------- */

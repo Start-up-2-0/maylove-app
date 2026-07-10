@@ -58,8 +58,8 @@ const toggle = shared ? shared.toggle : fallback!.toggle
   border-radius: 999px;
   border: none;
   color: #fff;
-  background: var(--exp-primary, #d94f7a);
-  box-shadow: 0 12px 30px -8px color-mix(in srgb, var(--exp-primary, #d94f7a) 60%, transparent);
+  background: var(--exp-primary, #e11d7a);
+  box-shadow: 0 12px 30px -8px color-mix(in srgb, var(--exp-primary, #e11d7a) 60%, transparent);
   transition: transform 0.2s ease;
 }
 .music-float:hover {

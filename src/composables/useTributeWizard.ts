@@ -16,7 +16,7 @@ export function useTributeWizard(tributeId: string) {
     closing_message: '',
     special_date: '',
     slug: '',
-    color_primary: '#d94f7a',
+    color_primary: '#e11d7a',
     music_source: 'none' as 'none' | 'library' | 'upload',
     music_track_id: null as string | null,
     effects: [] as string[],

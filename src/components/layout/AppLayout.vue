@@ -7,18 +7,7 @@
 
     <aside class="sidebar" :class="{ 'sidebar--open': drawerOpen }">
       <div class="sidebar__brand">
-        <RouterLink to="/dashboard" class="brand" @click="drawerOpen = false">
-          <span class="brand__mark" aria-hidden="true">
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-              <path
-                d="M12 21s-7.5-4.6-10-9.2C.6 8.9 2 5.5 5.2 5.1 7 4.9 8.7 5.8 12 8.6c3.3-2.8 5-3.7 6.8-3.5C22 5.5 23.4 8.9 22 11.8 19.5 16.4 12 21 12 21Z"
-              />
-            </svg>
-          </span>
-          <span class="brand__text">
-            May<span class="brand__accent">Love</span>
-          </span>
-        </RouterLink>
+        <Logo to="/dashboard" variant="sidebar" size="md" @click="drawerOpen = false" />
         <button class="sidebar__close" aria-label="Fechar menu" @click="drawerOpen = false">
           <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M6 6l12 12M18 6L6 18" stroke-linecap="round" />
@@ -97,9 +86,7 @@
             <path d="M4 7h16M4 12h16M4 17h16" stroke-linecap="round" />
           </svg>
         </button>
-        <RouterLink to="/dashboard" class="brand brand--compact">
-          May<span class="brand__accent">Love</span>
-        </RouterLink>
+        <Logo to="/dashboard" variant="sidebar" size="sm" class="brand--compact" />
         <button class="app-topbar__theme app-topbar__cta" :aria-label="isDark ? 'Tema claro' : 'Tema escuro'" @click="toggle">
           <svg v-if="isDark" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8">
             <circle cx="12" cy="12" r="4" />
@@ -130,6 +117,7 @@ import { computed, ref, watch } from 'vue'
 import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useTheme } from '@/composables/useTheme'
+import Logo from '@/components/brand/Logo.vue'
 
 const auth = useAuthStore()
 const router = useRouter()
@@ -147,7 +135,7 @@ watch(
 
 const initials = computed(() => {
   const name = auth.user?.name?.trim()
-  if (!name) return 'ML'
+  if (!name) return 'Mv'
   const parts = name.split(/\s+/)
   return (parts[0]?.[0] ?? '') + (parts[1]?.[0] ?? '')
 })
@@ -265,7 +253,7 @@ async function logout() {
 .nav-item--active {
   color: #fff;
   background: var(--sidebar-active);
-  box-shadow: inset 0 0 0 1px rgba(217, 79, 122, 0.3);
+  box-shadow: inset 0 0 0 1px rgba(225, 29, 122, 0.3);
 }
 .nav-item--active .nav-item__icon {
   color: var(--primary);

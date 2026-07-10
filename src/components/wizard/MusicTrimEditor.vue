@@ -162,7 +162,7 @@ const props = withDefaults(
   }>(),
   {
     title: 'Sua trilha',
-    artist: 'MayLove',
+    artist: 'MayLov',
     sourceLabel: null,
     coverUrl: null,
   },

@@ -21,7 +21,7 @@ const props = withDefaults(
     accent?: string
     density?: number
   }>(),
-  { accent: '#d94f7a', density: 14 },
+  { accent: '#e11d7a', density: 14 },
 )
 
 interface Particle {

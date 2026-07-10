@@ -1,4 +1,4 @@
-const PALETTE = ['#d94f7a', '#8b5cf6', '#f59e0b', '#0ea5e9', '#10b981', '#ef4444']
+const PALETTE = ['#e11d7a', '#1d4ed8', '#f59e0b', '#0ea5e9', '#10b981', '#dc2626']
 
 function encodeSvg(svg: string): string {
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`

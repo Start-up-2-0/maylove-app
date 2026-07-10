@@ -60,8 +60,8 @@ async function copyLink() {
   transition: border-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
 }
 .share__btn:hover {
-  border-color: var(--exp-primary, #d94f7a);
-  color: var(--exp-primary, #d94f7a);
+  border-color: var(--exp-primary, #e11d7a);
+  color: var(--exp-primary, #e11d7a);
   transform: translateY(-1px);
 }
 </style>

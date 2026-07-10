@@ -210,7 +210,7 @@ const trimArtist = computed(() => {
   if (selectedTrack.value) return selectedTrack.value.artist
   if (youtubeUrl.value.trim()) return 'YouTube'
   if (uploadedName.value) return 'Arquivo enviado'
-  return 'MayLove'
+  return 'MayLov'
 })
 
 const trimSourceLabel = computed(() => {

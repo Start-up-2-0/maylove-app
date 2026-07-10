@@ -1,6 +1,6 @@
-# MayLove App
+# MayLov App
 
-Frontend Vue 3 do MayLove (dashboard, auth e página pública).
+Frontend Vue 3 do MayLov (dashboard, auth e página pública).
 
 ## Stack
 

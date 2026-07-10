@@ -351,7 +351,7 @@ watch(
 )
 
 const palette = [
-  '#d94f7a',
+  '#e11d7a',
   '#e0245e',
   '#f59e0b',
   '#6d28d9',
