@@ -413,9 +413,6 @@ onBeforeUnmount(() => {
   height: var(--pack-h);
   overflow: hidden;
   border-radius: 14px;
-  perspective: 1200px;
-  perspective-origin: 50% 28%;
-  isolation: isolate;
 }
 .env-mail--release .env-mail__box,
 .env-stage--reading .env-mail__box {
@@ -461,6 +458,7 @@ onBeforeUnmount(() => {
   z-index: 1;
   overflow: hidden;
   pointer-events: none;
+  transform: translateZ(0);
 }
 .env-mail__tunnel--free {
   overflow: visible;
@@ -519,6 +517,8 @@ onBeforeUnmount(() => {
   right: 0;
   height: 52%;
   z-index: 3;
+  perspective: 1200px;
+  perspective-origin: 50% 0;
   transform-style: preserve-3d;
   pointer-events: none;
 }
@@ -545,7 +545,7 @@ onBeforeUnmount(() => {
 }
 .env-mail__flap-face--back {
   background: linear-gradient(180deg, var(--mail-lining) 0%, color-mix(in srgb, var(--mail-lining) 85%, #000 10%) 100%);
-  transform: rotateX(180deg);
+  transform: rotateX(180deg) translateZ(0.1px);
 }
 .env-mail:not(.env-mail--animating) .env-mail__flap {
   animation: mail-flap-idle 5s ease-in-out infinite;
@@ -627,7 +627,6 @@ onBeforeUnmount(() => {
   border: 1px solid color-mix(in srgb, var(--exp-border) 16%, transparent);
   border-radius: 4px 4px 2px 2px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
-  transform: translateZ(0);
 }
 .letter--rising .letter__surface--peek {
   animation: letter-card-depth var(--mail-rise-dur) var(--mail-ease-lift) var(--mail-rise-delay) forwards;
@@ -779,6 +778,7 @@ onBeforeUnmount(() => {
 @keyframes flap-wrap-vanish {
   to {
     opacity: 0;
+    visibility: hidden;
   }
 }
 
@@ -840,15 +840,12 @@ onBeforeUnmount(() => {
 @keyframes letter-card-depth {
   0% {
     box-shadow: 0 1px 6px rgba(0, 0, 0, 0.05);
-    transform: translateZ(0);
   }
   45% {
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
-    transform: translateZ(2px);
   }
   100% {
     box-shadow: 0 14px 28px rgba(0, 0, 0, 0.16);
-    transform: translateZ(4px);
   }
 }
 
@@ -893,11 +890,9 @@ onBeforeUnmount(() => {
     background: #fffefb;
     background-image: none;
     box-shadow: 0 8px 24px -12px rgba(0, 0, 0, 0.14);
-    transform: rotateX(5deg);
   }
   35% {
     box-shadow: 0 16px 36px -16px rgba(0, 0, 0, 0.2);
-    transform: rotateX(2deg);
   }
   100% {
     height: auto;
@@ -913,7 +908,6 @@ onBeforeUnmount(() => {
       transparent 33px,
       color-mix(in srgb, var(--exp-primary) 10%, transparent) 34px
     );
-    transform: rotateX(0deg);
   }
 }
 
