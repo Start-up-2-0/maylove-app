@@ -37,54 +37,61 @@
           <div class="env-mail__box">
             <span class="env-mail__body" />
 
-            <article
-              class="letter"
-              :class="{
-                'letter--emerging': animating && !unfolding,
-                'letter--unfolding': unfolding && !reading,
-                'letter--reading': reading,
-              }"
-              :aria-hidden="!reading"
+            <div
+              class="env-mail__cavity"
+              :class="{ 'env-mail__cavity--release': releasing || unfolding || reading }"
             >
-              <div
-                class="letter__surface"
+              <article
+                class="letter"
                 :class="{
-                  'letter__surface--paper': !unfolding && !reading,
-                  'letter__surface--unfolding': unfolding && !reading,
-                  'letter__surface--ready': reading,
+                  'letter--emerging': animating && !unfolding,
+                  'letter--unfolding': unfolding && !reading,
+                  'letter--reading': reading,
                 }"
+                :aria-hidden="!reading"
               >
-                <header class="letter__head">
-                  <p class="letter__place">Uma carta para você</p>
-                  <h1 class="letter__title">{{ content.title }}</h1>
-                </header>
+                <div
+                  class="letter__surface"
+                  :class="{
+                    'letter__surface--paper': !unfolding && !reading,
+                    'letter__surface--unfolding': unfolding && !reading,
+                    'letter__surface--ready': reading,
+                  }"
+                >
+                  <header class="letter__head">
+                    <p class="letter__place">Uma carta para você</p>
+                    <h1 class="letter__title">{{ content.title }}</h1>
+                  </header>
 
-                <div class="letter__body">
-                  <RichText v-if="introHtml" :text="content.message" class="letter__para letter__intro" />
+                  <div class="letter__body">
+                    <RichText v-if="introHtml" :text="content.message" class="letter__para letter__intro" />
 
-                  <template v-for="(beat, i) in beats" :key="i">
-                    <p v-if="beat.text && i <= activeIndex" class="letter__para">
-                      {{ i < activeIndex ? beat.text : typedText
-                      }}<span v-if="i === activeIndex && !doneTyping" class="letter__caret" />
-                    </p>
-                    <figure v-if="beat.photo && beatVisible(i)" class="letter__photo">
-                      <img :src="beat.photo.url" :alt="`Recordação ${i + 1}`" loading="lazy" />
-                    </figure>
-                  </template>
+                    <template v-for="(beat, i) in beats" :key="i">
+                      <p v-if="beat.text && i <= activeIndex" class="letter__para">
+                        {{ i < activeIndex ? beat.text : typedText
+                        }}<span v-if="i === activeIndex && !doneTyping" class="letter__caret" />
+                      </p>
+                      <figure v-if="beat.photo && beatVisible(i)" class="letter__photo">
+                        <img :src="beat.photo.url" :alt="`Recordação ${i + 1}`" loading="lazy" />
+                      </figure>
+                    </template>
+                  </div>
+
+                  <footer v-if="showLetterFooter" class="letter__foot">
+                    <RichText
+                      v-if="content.includeClosingMessage && content.closingMessage"
+                      :text="content.closingMessage"
+                      class="letter__closing"
+                    />
+                    <p v-if="signatureLabel" class="letter__sign">{{ signatureLabel }}</p>
+                    <ShareBar v-if="mode === 'full' && shareUrl" :url="shareUrl" :text="content.title" />
+                  </footer>
                 </div>
+              </article>
+            </div>
 
-                <footer v-if="showLetterFooter" class="letter__foot">
-                  <RichText
-                    v-if="content.includeClosingMessage && content.closingMessage"
-                    :text="content.closingMessage"
-                    class="letter__closing"
-                  />
-                  <p v-if="signatureLabel" class="letter__sign">{{ signatureLabel }}</p>
-                  <ShareBar v-if="mode === 'full' && shareUrl" :url="shareUrl" :text="content.title" />
-                </footer>
-              </div>
-            </article>
-
+            <span class="env-mail__wing env-mail__wing--left" aria-hidden="true" />
+            <span class="env-mail__wing env-mail__wing--right" aria-hidden="true" />
             <span class="env-mail__pocket" aria-hidden="true" />
             <span class="env-mail__flap" aria-hidden="true" />
             <span class="env-mail__seal">{{ initial }}</span>
@@ -119,10 +126,10 @@ interface LetterBeat {
   photo?: ExperienceMediaItem
 }
 
-const RELEASE_MS = 3600
-const SHELL_MS = 4200
-const UNFOLD_START_MS = 3600
-const OPEN_DURATION_MS = 7200
+const RELEASE_MS = 4200
+const SHELL_MS = 4800
+const UNFOLD_START_MS = 4200
+const OPEN_DURATION_MS = 7600
 
 const props = defineProps<LayoutComponentProps>()
 const audio = useExperienceAudio()
@@ -412,23 +419,68 @@ onBeforeUnmount(() => {
 }
 
 .env-mail--animating .env-mail__flap {
+  z-index: 4;
+}
+.env-mail--animating .env-mail__pocket,
+.env-mail--animating .env-mail__wing {
   z-index: 3;
 }
-.env-mail--animating .env-mail__pocket {
-  z-index: 2;
-}
-.env-mail--animating .letter--emerging {
+.env-mail--animating .env-mail__cavity {
   z-index: 1;
+}
+
+/* Cavidade interna — carta só aparece pelo slot central */
+.env-mail__cavity {
+  position: absolute;
+  left: 20%;
+  right: 20%;
+  top: 24%;
+  bottom: 0;
+  z-index: 1;
+  overflow: hidden;
+  clip-path: polygon(8% 100%, 92% 100%, 76% 0, 24% 0);
+  pointer-events: none;
+}
+.env-mail__cavity--release {
+  clip-path: none;
+  overflow: visible;
+  left: 10%;
+  right: 10%;
+  top: auto;
+  bottom: 0;
+  z-index: 5;
+}
+
+/* Laterais opacas — evitam “raio-x” nas quinas superiores */
+.env-mail__wing {
+  position: absolute;
+  top: 0;
+  z-index: 3;
+  height: 56%;
+  width: 50%;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--mail-flap) 96%, #fff 4%) 0%,
+    color-mix(in srgb, var(--mail-flap) 88%, #000 6%) 100%
+  );
+}
+.env-mail__wing--left {
+  left: 0;
+  clip-path: polygon(0 0, 0 50%, 50% 72%, 50% 0);
+}
+.env-mail__wing--right {
+  right: 0;
+  clip-path: polygon(100% 0, 100% 50%, 50% 72%, 50% 0);
 }
 
 .env-mail__pocket {
   position: absolute;
   inset: 0;
-  z-index: 2;
+  z-index: 3;
   background: linear-gradient(
     180deg,
-    transparent 0%,
-    color-mix(in srgb, var(--mail-flap) 88%, #000 6%) 44%,
+    color-mix(in srgb, var(--mail-flap) 90%, #000 4%) 38%,
     var(--mail-ink) 100%
   );
   clip-path: polygon(0 50%, 50% 72%, 100% 50%, 100% 100%, 0 100%);
@@ -476,13 +528,13 @@ onBeforeUnmount(() => {
 /* Carta — entre o corpo e o bolso, sobe e expande no mesmo elemento */
 .letter {
   position: absolute;
-  left: 10%;
-  right: 10%;
+  left: 0;
+  right: 0;
   bottom: 0;
   z-index: 1;
   opacity: 0;
   pointer-events: none;
-  transform: translateY(62%);
+  transform: translateY(72%);
   transform-origin: center bottom;
   perspective: 900px;
 }
@@ -493,6 +545,7 @@ onBeforeUnmount(() => {
 
 .env-stage--reading .env-mail__body,
 .env-stage--reading .env-mail__pocket,
+.env-stage--reading .env-mail__wing,
 .env-stage--reading .env-mail__flap,
 .env-stage--reading .env-mail__seal {
   display: none;
@@ -501,7 +554,7 @@ onBeforeUnmount(() => {
 .letter--emerging {
   opacity: 1;
   will-change: transform;
-  animation: letter-emerge 2.75s var(--mail-ease-pop) 0.7s forwards;
+  animation: letter-emerge 3.2s var(--mail-ease-pop) 0.7s forwards;
 }
 .letter--unfolding {
   opacity: 1;
@@ -538,6 +591,7 @@ onBeforeUnmount(() => {
 
 .env-mail--shell-hidden .env-mail__body,
 .env-mail--shell-hidden .env-mail__pocket,
+.env-mail--shell-hidden .env-mail__wing,
 .env-mail--shell-hidden .env-mail__flap,
 .env-mail--shell-hidden .env-mail__seal {
   opacity: 0;
@@ -597,7 +651,7 @@ onBeforeUnmount(() => {
   transform-origin: center bottom;
 }
 .letter--emerging .letter__surface--paper {
-  animation: paper-rise-unfold 2.75s var(--mail-ease-pop) 0.7s forwards;
+  animation: paper-rise-unfold 3.2s var(--mail-ease-pop) 0.7s forwards;
 }
 .letter__surface--unfolding {
   transform-origin: center top;
@@ -614,10 +668,11 @@ onBeforeUnmount(() => {
 }
 /* bolso permanece como máscara até a carta sair */
 .env-mail--animating .env-mail__body {
-  animation: mail-fade 0.7s ease 3.4s forwards;
+  animation: mail-fade 0.7s ease 4.1s forwards;
 }
-.env-mail--animating .env-mail__pocket {
-  animation: mail-fade 0.7s ease 3.5s forwards;
+.env-mail--animating .env-mail__pocket,
+.env-mail--animating .env-mail__wing {
+  animation: mail-fade 0.7s ease 4.2s forwards;
 }
 
 @keyframes mail-flap-idle {
@@ -668,22 +723,22 @@ onBeforeUnmount(() => {
   }
 }
 
-/* fase 2: carta sobe por trás do bolso (como no gif) */
+/* fase 2: carta sobe por trás do bolso — só visível pelo slot */
 @keyframes letter-emerge {
   0% {
-    transform: translateY(46%);
+    transform: translateY(64%);
   }
-  30% {
-    transform: translateY(24%);
+  28% {
+    transform: translateY(38%);
   }
-  58% {
-    transform: translateY(4%);
+  52% {
+    transform: translateY(14%);
   }
-  82% {
-    transform: translateY(-18%);
+  76% {
+    transform: translateY(-12%);
   }
   100% {
-    transform: translateY(-30%);
+    transform: translateY(calc(-1 * var(--pack-h) * 0.52));
   }
 }
 
@@ -712,15 +767,15 @@ onBeforeUnmount(() => {
 /* fase 3: centralizar carta após sair do envelope */
 @keyframes letter-to-center {
   0% {
-    left: 10%;
-    right: 10%;
-    transform: translateY(-30%);
+    left: 0;
+    right: 0;
+    transform: translateY(calc(-1 * var(--pack-h) * 0.52));
   }
   100% {
     left: 50%;
     right: auto;
     width: min(680px, calc(100vw - 48px));
-    transform: translateX(-50%) translateY(calc(var(--pack-h) * -0.52));
+    transform: translateX(-50%) translateY(calc(var(--pack-h) * -0.58));
   }
 }
 
@@ -916,6 +971,7 @@ onBeforeUnmount(() => {
   .env-mail--animating .env-mail__flap,
   .env-mail--animating .env-mail__seal,
   .env-mail--animating .env-mail__pocket,
+  .env-mail--animating .env-mail__wing,
   .env-mail--animating .env-mail__body,
   .letter--emerging,
   .letter--unfolding,
