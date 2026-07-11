@@ -120,10 +120,10 @@ interface LetterBeat {
   photo?: ExperienceMediaItem
 }
 
-const RELEASE_MS = 1600
-const SHELL_MS = 5200
-const UNFOLD_START_MS = 6200
-const OPEN_DURATION_MS = 9200
+const RELEASE_MS = 1400
+const SHELL_MS = 4800
+const UNFOLD_START_MS = 5600
+const OPEN_DURATION_MS = 8600
 
 const props = defineProps<LayoutComponentProps>()
 const audio = useExperienceAudio()
@@ -413,7 +413,7 @@ onBeforeUnmount(() => {
 
 .env-mail--animating .env-mail__pocket {
   z-index: 1;
-  animation: mail-pocket-recede 1.2s var(--mail-ease-hand) 1.05s forwards;
+  animation: mail-pocket-recede 1s var(--mail-ease-hand) 0.85s forwards;
 }
 .env-mail--animating .letter--pulling {
   z-index: 2;
@@ -500,9 +500,9 @@ onBeforeUnmount(() => {
   will-change: transform, clip-path;
   clip-path: polygon(10% 38%, 90% 38%, 90% 100%, 10% 100%);
   animation:
-    letter-slot-open 4.8s var(--mail-ease-hand) 0.65s forwards,
-    letter-emerge 3.8s var(--mail-ease-hand) 0.65s forwards,
-    letter-center 1.45s var(--mail-ease) 4.45s forwards;
+    letter-slot-open 4.4s var(--mail-ease-hand) 0.45s forwards,
+    letter-emerge 3.4s var(--mail-ease-hand) 0.45s forwards,
+    letter-center 1.45s var(--mail-ease) 3.85s forwards;
 }
 .letter--settled {
   opacity: 1;
@@ -644,7 +644,7 @@ onBeforeUnmount(() => {
 }
 /* fase 2: bolso recua cedo — animação definida acima com z-index */
 .env-mail--animating .env-mail__body {
-  animation: mail-fade 1.15s ease-out 4.2s forwards;
+  animation: mail-fade 1.15s ease-out 3.6s forwards;
 }
 
 @keyframes mail-flap-idle {
@@ -726,31 +726,31 @@ onBeforeUnmount(() => {
   }
 }
 
-/* fase 2: carta saindo — sobe cedo e fica visível acima do bolso */
+/* fase 2: carta saindo — sobe cedo e fica visível logo após a aba abrir */
 @keyframes letter-emerge {
   0%,
-  6% {
+  4% {
     opacity: 0;
-    transform: translateY(28%);
+    transform: translateY(22%);
   }
-  14% {
+  10% {
     opacity: 1;
-    transform: translateY(20%);
+    transform: translateY(14%);
   }
-  32% {
-    transform: translateY(4%);
+  22% {
+    transform: translateY(-6%);
   }
-  48% {
-    transform: translateY(-24%);
+  38% {
+    transform: translateY(-34%);
   }
-  64% {
-    transform: translateY(-52%);
+  55% {
+    transform: translateY(-62%);
   }
-  80% {
-    transform: translateY(-78%);
+  72% {
+    transform: translateY(-86%);
   }
   100% {
-    transform: translateY(-102%);
+    transform: translateY(-112%);
   }
 }
 
@@ -759,7 +759,7 @@ onBeforeUnmount(() => {
   0% {
     left: 11%;
     right: 11%;
-    transform: translateY(-102%);
+    transform: translateY(-112%);
   }
   100% {
     left: 50%;
