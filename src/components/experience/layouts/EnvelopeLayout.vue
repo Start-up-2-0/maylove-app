@@ -50,8 +50,7 @@
                 v-if="animating || unfolding || reading"
                 class="letter"
                 :class="{
-                  'letter--rising': animating && !unfolding,
-                  'letter--unfolding': unfolding && !reading,
+                  'letter--emerging': unfolding && !reading,
                   'letter--reading': reading,
                 }"
                 :aria-hidden="!reading"
@@ -64,12 +63,6 @@
                     'letter__surface--ready': reading,
                   }"
                 >
-                  <span
-                    v-if="animating && !unfolding"
-                    class="letter__peek-mark"
-                    aria-hidden="true"
-                  >{{ initial }}</span>
-
                   <header class="letter__head">
                     <p class="letter__place">Uma carta para você</p>
                     <h1 class="letter__title">{{ content.title }}</h1>
@@ -150,9 +143,9 @@ interface LetterBeat {
 }
 
 /* Timeline cinematográfica: ~6s total */
+const EMERGE_START_MS = 900
 const RELEASE_MS = 3200
 const SHELL_MS = 3600
-const UNFOLD_START_MS = 3000
 const OPEN_DURATION_MS = 6000
 
 const props = defineProps<LayoutComponentProps>()
@@ -252,7 +245,8 @@ function open() {
   animating.value = true
   unfoldTimer = window.setTimeout(() => {
     unfolding.value = true
-  }, UNFOLD_START_MS)
+    onLetterReady()
+  }, EMERGE_START_MS)
   releaseTimer = window.setTimeout(() => {
     releasing.value = true
   }, RELEASE_MS)
@@ -263,7 +257,6 @@ function open() {
     animating.value = false
     unfolding.value = false
     reading.value = true
-    onLetterReady()
   }, OPEN_DURATION_MS)
 }
 
@@ -279,7 +272,7 @@ function beginReading() {
     doneTyping.value = true
     return
   }
-  window.setTimeout(startTyping, 650)
+  window.setTimeout(startTyping, 280)
 }
 
 function startTyping() {
@@ -334,7 +327,7 @@ onBeforeUnmount(() => {
   --mail-ease-settle: cubic-bezier(0.22, 0.68, 0.36, 1);
   --mail-ease-soft: cubic-bezier(0.33, 0, 0.14, 1);
   --mail-rise-delay: 0.9s;
-  --mail-rise-dur: 1.8s;
+  --mail-emerge-dur: 4.2s;
   --mail-flap-delay: 0.22s;
   --mail-flap-dur: 1s;
   --mail-shell-fade-delay: 2.95s;
@@ -607,15 +600,12 @@ onBeforeUnmount(() => {
   transform-origin: center bottom;
   will-change: transform;
 }
-.letter--rising {
-  animation: letter-lift var(--mail-rise-dur) var(--mail-ease-lift) var(--mail-rise-delay) forwards;
-}
-.letter--unfolding {
+.letter--emerging {
   opacity: 1;
   visibility: visible;
   position: absolute;
   z-index: 1;
-  animation: letter-continue 1s var(--mail-ease-settle) forwards;
+  animation: letter-emerge var(--mail-emerge-dur) var(--mail-ease-lift) forwards;
 }
 .letter--reading {
   position: relative;
@@ -630,56 +620,38 @@ onBeforeUnmount(() => {
   animation: letter-reading-settle 0.5s var(--mail-ease-soft) forwards;
 }
 
-.letter--rising .letter__head,
-.letter--rising .letter__body,
-.letter--rising .letter__foot,
-.letter--unfolding .letter__body,
-.letter--unfolding .letter__foot {
-  display: none;
+.letter--emerging .letter__body {
+  display: block;
 }
 
-/* cartão branco da fase gif — mesma superfície, recortada */
+/* cartão recolhido antes da emergência */
 .letter__surface--peek {
   height: calc(var(--pack-h) * 0.5);
   min-height: calc(var(--pack-h) * 0.5);
   max-height: calc(var(--pack-h) * 0.5);
   padding: 0;
   overflow: hidden;
-  display: grid;
-  place-items: center;
   background: #fffefb;
   background-image: none;
   border: 1px solid color-mix(in srgb, var(--exp-border) 16%, transparent);
   border-radius: 4px 4px 2px 2px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
 }
-.letter--rising .letter__surface--peek {
-  animation: letter-card-depth var(--mail-rise-dur) var(--mail-ease-lift) var(--mail-rise-delay) forwards;
-}
-.letter__peek-mark {
-  display: grid;
-  place-items: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 999px;
-  font-family: var(--exp-font-display);
-  font-size: 1.05rem;
-  color: #fff;
-  background: color-mix(in srgb, var(--exp-accent) 88%, var(--exp-primary));
+.letter__surface--peek .letter__head,
+.letter__surface--peek .letter__body,
+.letter__surface--peek .letter__foot {
+  display: none;
 }
 
-.letter--unfolding .letter__head {
-  position: absolute;
-  top: clamp(14px, 2.5vw, 24px);
-  left: clamp(14px, 2.5vw, 24px);
-  right: clamp(14px, 2.5vw, 24px);
+.letter--emerging .letter__head {
   display: block;
   opacity: 0;
-  margin: 0;
-  animation: env-soft-in 0.7s var(--exp-ease) 0.45s forwards;
+  margin: 0 0 12px;
+  animation: env-soft-in 0.55s var(--exp-ease) 0.1s forwards;
 }
 .letter__surface--ready .letter__head {
   position: static;
+  margin-bottom: 28px;
 }
 
 .letter__surface--unfolding {
@@ -694,7 +666,7 @@ onBeforeUnmount(() => {
   border-radius: 4px 4px 2px 2px;
   box-shadow: 0 8px 24px -12px rgba(0, 0, 0, 0.14);
   transform-origin: center top;
-  animation: surface-unfold 1.8s var(--mail-ease-soft) 0.22s forwards;
+  animation: surface-unfold var(--mail-emerge-dur) var(--mail-ease-soft) forwards;
 }
 .letter__surface {
   width: 100%;
@@ -837,56 +809,25 @@ onBeforeUnmount(() => {
   }
 }
 
-/* Fase 2 — carta puxada até o topo do envelope */
-@keyframes letter-lift {
+/* Fase 2+3 — subida, pausa no topo e centralização contínuas */
+@keyframes letter-emerge {
   0% {
+    left: 0;
+    right: 0;
+    width: auto;
     transform: translate3d(0, 8%, 0);
   }
   14% {
-    transform: translate3d(0, 4%, 0);
-  }
-  28% {
     transform: translate3d(0, 0, 0);
   }
-  52% {
-    transform: translate3d(0, calc(var(--pack-h) * -0.2), 0);
+  42% {
+    transform: translate3d(0, calc(var(--pack-h) * -0.22), 0);
   }
-  72% {
-    transform: translate3d(0, calc(var(--pack-h) * -0.36), 0);
+  58% {
+    transform: translate3d(0, calc(var(--pack-h) * -0.5), 0);
   }
-  88% {
-    transform: translate3d(0, calc(var(--pack-h) * -0.46), 0);
-  }
-  100% {
-    transform: translate3d(0, calc(-1 * var(--pack-h) * 0.5), 0);
-  }
-}
-
-@keyframes letter-card-depth {
-  0% {
-    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.05);
-  }
-  45% {
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
-  }
-  100% {
-    box-shadow: 0 14px 28px rgba(0, 0, 0, 0.16);
-  }
-}
-
-/* Fase 3 — pausa no topo + deslize elegante para o centro */
-@keyframes letter-continue {
-  0% {
-    left: 27%;
-    right: 27%;
-    width: auto;
-    transform: translate3d(0, calc(-1 * var(--pack-h) * 0.5), 0);
-  }
-  18% {
-    left: 27%;
-    right: 27%;
-    width: auto;
-    transform: translate3d(0, calc(-1 * var(--pack-h) * 0.5), 0);
+  68% {
+    transform: translate3d(0, calc(var(--pack-h) * -0.5), 0);
   }
   100% {
     left: 50%;
@@ -936,8 +877,19 @@ onBeforeUnmount(() => {
   }
 }
 
-.letter__surface--ready .letter__head,
-.letter__surface--ready .letter__body,
+.letter--emerging .letter__title {
+  font-size: clamp(1.15rem, 3.2vw, 1.65rem);
+}
+.letter--emerging .letter__para {
+  font-size: clamp(0.88rem, 2.1vw, 1.05rem);
+  line-height: 1.65;
+  margin-bottom: 0.65rem;
+}
+.letter--emerging .letter__place {
+  font-size: 0.62rem;
+  margin-bottom: 6px;
+}
+
 .letter__surface--ready .letter__foot {
   animation: env-soft-in 0.55s var(--exp-ease) both;
 }
@@ -1093,8 +1045,7 @@ onBeforeUnmount(() => {
   .env-mail--animating .env-mail__shade,
   .env-mail--animating .env-mail__wing,
   .env-mail--animating .env-mail__back,
-  .letter--rising,
-  .letter--unfolding,
+  .letter--emerging,
   .letter--reading,
   .letter__surface--unfolding,
   .letter__photo {
