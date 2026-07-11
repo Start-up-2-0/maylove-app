@@ -120,10 +120,10 @@ interface LetterBeat {
   photo?: ExperienceMediaItem
 }
 
-const RELEASE_MS = 2800
-const SHELL_MS = 5600
-const UNFOLD_START_MS = 7000
-const OPEN_DURATION_MS = 10200
+const RELEASE_MS = 1600
+const SHELL_MS = 5200
+const UNFOLD_START_MS = 6200
+const OPEN_DURATION_MS = 9200
 
 const props = defineProps<LayoutComponentProps>()
 const audio = useExperienceAudio()
@@ -411,6 +411,13 @@ onBeforeUnmount(() => {
     linear-gradient(-45deg, transparent 49%, color-mix(in srgb, #000 16%, transparent) 50%, transparent 51%);
 }
 
+.env-mail--animating .env-mail__pocket {
+  z-index: 1;
+  animation: mail-pocket-recede 1.2s var(--mail-ease-hand) 1.05s forwards;
+}
+.env-mail--animating .letter--pulling {
+  z-index: 2;
+}
 .env-mail__pocket {
   position: absolute;
   inset: 0;
@@ -491,11 +498,11 @@ onBeforeUnmount(() => {
 .letter--pulling {
   opacity: 1;
   will-change: transform, clip-path;
-  clip-path: polygon(14% 44%, 86% 44%, 86% 100%, 14% 100%);
+  clip-path: polygon(10% 38%, 90% 38%, 90% 100%, 10% 100%);
   animation:
-    letter-slot-open 5.2s var(--mail-ease-hand) 0.85s forwards,
-    letter-emerge 4.5s var(--mail-ease-hand) 0.85s forwards,
-    letter-center 1.45s var(--mail-ease) 5.35s forwards;
+    letter-slot-open 4.8s var(--mail-ease-hand) 0.65s forwards,
+    letter-emerge 3.8s var(--mail-ease-hand) 0.65s forwards,
+    letter-center 1.45s var(--mail-ease) 4.45s forwards;
 }
 .letter--settled {
   opacity: 1;
@@ -591,15 +598,16 @@ onBeforeUnmount(() => {
 }
 .letter__surface--paper {
   position: relative;
-  height: calc(var(--pack-h) * 0.56);
-  min-height: calc(var(--pack-h) * 0.56);
+  height: calc(var(--pack-h) * 0.62);
+  min-height: calc(var(--pack-h) * 0.62);
   padding: 0;
   border: none;
-  border-radius: 4px 4px 0 0;
-  background: linear-gradient(180deg, #fffff8 0%, #f7f0e4 55%, #efe6d8 100%);
+  border-radius: 5px 5px 0 0;
+  background: linear-gradient(180deg, #ffffff 0%, #faf6ee 100%);
   box-shadow:
-    0 -6px 18px rgba(0, 0, 0, 0.14),
-    inset 0 1px 0 rgba(255, 255, 255, 0.95);
+    0 -8px 22px rgba(0, 0, 0, 0.18),
+    0 2px 0 rgba(255, 255, 255, 0.95),
+    inset 0 1px 0 rgba(255, 255, 255, 1);
   background-image: none;
   overflow: hidden;
 }
@@ -607,12 +615,19 @@ onBeforeUnmount(() => {
   content: '';
   position: absolute;
   top: 0;
-  left: 10%;
-  right: 10%;
-  height: 3px;
+  left: 8%;
+  right: 8%;
+  height: 4px;
   border-radius: 2px;
-  background: color-mix(in srgb, var(--exp-primary) 18%, #d9cfc0);
-  opacity: 0.85;
+  background: color-mix(in srgb, var(--exp-primary) 22%, #c8baa8);
+}
+.letter__surface--paper::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 3px 0 8px rgba(0, 0, 0, 0.04);
+  pointer-events: none;
 }
 .letter__surface--unfolding {
   transform-origin: center top;
@@ -627,12 +642,9 @@ onBeforeUnmount(() => {
 .env-mail--animating .env-mail__flap {
   animation: mail-flap-open 1.4s var(--mail-ease-hand) 0.65s forwards;
 }
-/* fase 2: carta saindo — bolso some devagar enquanto a carta sobe */
-.env-mail--animating .env-mail__pocket {
-  animation: mail-fade 1.1s ease-out 2.9s forwards;
-}
+/* fase 2: bolso recua cedo — animação definida acima com z-index */
 .env-mail--animating .env-mail__body {
-  animation: mail-fade 1.15s ease-out 4.6s forwards;
+  animation: mail-fade 1.15s ease-out 4.2s forwards;
 }
 
 @keyframes mail-flap-idle {
@@ -689,48 +701,56 @@ onBeforeUnmount(() => {
   }
 }
 
+@keyframes mail-pocket-recede {
+  0% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(8%);
+  }
+}
+
 @keyframes letter-slot-open {
   0%,
-  48% {
-    clip-path: polygon(14% 44%, 86% 44%, 86% 100%, 14% 100%);
+  42% {
+    clip-path: polygon(10% 38%, 90% 38%, 90% 100%, 10% 100%);
   }
-  68% {
-    clip-path: polygon(8% 26%, 92% 26%, 92% 100%, 8% 100%);
+  62% {
+    clip-path: polygon(6% 22%, 94% 22%, 94% 100%, 6% 100%);
   }
-  88%,
+  82%,
   100% {
     clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%);
   }
 }
 
-/* fase 2: carta saindo — sobe o suficiente para ultrapassar o bolso */
+/* fase 2: carta saindo — sobe cedo e fica visível acima do bolso */
 @keyframes letter-emerge {
   0%,
-  8% {
+  6% {
     opacity: 0;
-    transform: translateY(38%) translateX(0);
+    transform: translateY(28%);
   }
   14% {
     opacity: 1;
-    transform: translateY(30%) translateX(0);
+    transform: translateY(20%);
   }
-  28% {
-    transform: translateY(16%) translateX(0.5px);
+  32% {
+    transform: translateY(4%);
   }
-  42% {
-    transform: translateY(2%) translateX(-0.5px);
+  48% {
+    transform: translateY(-24%);
   }
-  56% {
-    transform: translateY(-18%) translateX(0);
+  64% {
+    transform: translateY(-52%);
   }
-  70% {
-    transform: translateY(-42%) translateX(0.4px);
-  }
-  84% {
-    transform: translateY(-68%) translateX(-0.4px);
+  80% {
+    transform: translateY(-78%);
   }
   100% {
-    transform: translateY(-92%) translateX(0);
+    transform: translateY(-102%);
   }
 }
 
@@ -739,7 +759,7 @@ onBeforeUnmount(() => {
   0% {
     left: 11%;
     right: 11%;
-    transform: translateY(-92%);
+    transform: translateY(-102%);
   }
   100% {
     left: 50%;
@@ -752,8 +772,8 @@ onBeforeUnmount(() => {
 /* fase 4: abrir a carta — desdobramento leve */
 @keyframes surface-unfold {
   0% {
-    height: calc(var(--pack-h) * 0.56);
-    min-height: calc(var(--pack-h) * 0.56);
+    height: calc(var(--pack-h) * 0.62);
+    min-height: calc(var(--pack-h) * 0.62);
     padding: 0;
     border: none;
     border-radius: 4px 4px 2px 2px;
