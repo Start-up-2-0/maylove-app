@@ -14,6 +14,7 @@
         :class="{
           'env-pack--animating': animating,
           'env-pack--fading': animating,
+          'env-pack--gone': envelopeGone,
         }"
         role="button"
         tabindex="0"
@@ -24,14 +25,16 @@
         @keydown.enter.prevent="open"
         @keydown.space.prevent="open"
       >
-        <div class="env-pack__box">
+        <div
+          class="env-pack__box"
+          :class="{ 'env-pack__box--release': releasing }"
+        >
           <span class="env-pack__body" />
 
           <article
             class="letter"
             :class="{
               'letter--rising': animating,
-              'letter--above': letterAbovePocket,
               'letter--open': reading,
             }"
             :aria-hidden="!reading"
@@ -71,6 +74,7 @@
           <span class="env-pack__pocket" aria-hidden="true" />
           <span class="env-pack__flap" aria-hidden="true" />
           <span class="env-pack__seal">{{ initial }}</span>
+          <span class="env-pack__veil" aria-hidden="true" />
         </div>
       </div>
     </div>
@@ -101,14 +105,17 @@ interface LetterBeat {
   photo?: ExperienceMediaItem
 }
 
-const READING_START_MS = 3200
+const READING_START_MS = 3300
+const RELEASE_MS = 2400
+const ENVELOPE_GONE_MS = 2900
 
 const props = defineProps<LayoutComponentProps>()
 const audio = useExperienceAudio()
 
 const animating = ref(false)
 const reading = ref(false)
-const letterAbovePocket = ref(false)
+const releasing = ref(false)
+const envelopeGone = ref(false)
 const opening = computed(() => animating.value || reading.value)
 const sealed = computed(() => !animating.value && !reading.value)
 const activeIndex = ref(0)
@@ -117,7 +124,8 @@ const doneTyping = ref(false)
 const readingStarted = ref(false)
 let timer: number | undefined
 let readingTimer: number | undefined
-let pocketTimer: number | undefined
+let releaseTimer: number | undefined
+let envelopeTimer: number | undefined
 
 const initial = computed(() => (props.content.senderName || props.content.honoreeName || 'M').charAt(0).toUpperCase())
 const signatureLabel = computed(() => props.content.signature || props.content.senderName || '')
@@ -194,9 +202,12 @@ function open() {
   }
 
   animating.value = true
-  pocketTimer = window.setTimeout(() => {
-    letterAbovePocket.value = true
-  }, 1850)
+  releaseTimer = window.setTimeout(() => {
+    releasing.value = true
+  }, RELEASE_MS)
+  envelopeTimer = window.setTimeout(() => {
+    envelopeGone.value = true
+  }, ENVELOPE_GONE_MS)
   readingTimer = window.setTimeout(() => {
     animating.value = false
     reading.value = true
@@ -254,7 +265,8 @@ function nextBeat() {
 
 onBeforeUnmount(() => {
   window.clearTimeout(timer)
-  window.clearTimeout(pocketTimer)
+  window.clearTimeout(releaseTimer)
+  window.clearTimeout(envelopeTimer)
   window.clearTimeout(readingTimer)
 })
 </script>
@@ -290,12 +302,11 @@ onBeforeUnmount(() => {
   cursor: default;
   filter: none;
 }
-.env-stage--reading .env-pack__body,
-.env-stage--reading .env-pack__pocket,
-.env-stage--reading .env-pack__flap,
-.env-stage--reading .env-pack__seal {
+
+.env-pack--gone {
   opacity: 0;
   visibility: hidden;
+  pointer-events: none;
 }
 
 .env-scene__eyebrow {
@@ -375,8 +386,14 @@ onBeforeUnmount(() => {
   height: var(--pack-h);
   overflow: hidden;
   border-radius: 14px;
+  isolation: isolate;
 }
-.env-pack--animating .env-pack__box,
+.env-pack--animating .env-pack__box {
+  overflow: hidden;
+}
+.env-pack__box--release {
+  overflow: visible;
+}
 .env-stage--reading .env-pack__box {
   overflow: visible;
 }
@@ -426,25 +443,31 @@ onBeforeUnmount(() => {
 .letter--rising {
   opacity: 1;
   z-index: 1;
-  animation: letter-rise 2.2s var(--pack-ease) 1s forwards;
-}
-.letter--rising.letter--above {
-  z-index: 5;
+  animation: letter-rise 2.15s var(--pack-ease) 1s forwards;
 }
 .letter--open {
   opacity: 1;
   pointer-events: auto;
-  z-index: 6;
+  z-index: 2;
   left: 50%;
   right: auto;
   width: calc(var(--pack-w) * 0.78);
-  transform: translateX(-50%) translateY(calc(var(--pack-h) * -0.48));
+  transform: translateX(-50%) translateY(calc(var(--pack-h) * -0.42));
   animation: letter-expand 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 .letter--rising .letter__head,
 .letter--rising .letter__body,
 .letter--rising .letter__foot {
   visibility: hidden;
+}
+.letter--rising .letter__surface {
+  min-height: calc(var(--pack-h) * 0.5);
+  padding: 0;
+  border: none;
+  border-radius: 4px 4px 0 0;
+  background: linear-gradient(180deg, #fffef9 0%, #f3ecdf 100%);
+  box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.1);
+  background-image: none;
 }
 .env-pack__pocket {
   position: absolute;
@@ -491,15 +514,34 @@ onBeforeUnmount(() => {
   transform: translate(-50%, -50%);
 }
 
+/* Máscara frontal — carta permanece atrás até o envelope abrir */
+.env-pack__veil {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  border-radius: 14px;
+  opacity: 0;
+  background: linear-gradient(
+    180deg,
+    var(--pack-flap) 0%,
+    var(--pack-flap) 48%,
+    color-mix(in srgb, var(--pack-flap) 88%, #000 6%) 48%,
+    var(--pack-ink) 100%
+  );
+  clip-path: polygon(0 0, 100% 0, 100% 50%, 50% 72%, 0 50%);
+}
+.env-pack--animating .env-pack__veil {
+  opacity: 1;
+  animation: pack-veil-hide 0.8s ease 2.35s forwards;
+}
+
 /* Idle: leve respiração da aba */
 .env-pack:not(.env-pack--animating) .env-pack__flap {
   animation: pack-flap-idle 3.5s ease-in-out infinite;
 }
 
 /* ===== Sequência de abertura (2D, sem desmontar peças) ===== */
-.env-pack--animating .env-pack__box {
-  overflow: visible;
-}
 .env-pack--animating .env-pack__seal {
   animation: pack-seal 0.45s var(--pack-ease) forwards;
 }
@@ -507,13 +549,13 @@ onBeforeUnmount(() => {
   animation: pack-flap-open 0.95s var(--pack-ease) 0.15s forwards;
 }
 .env-pack--animating .env-pack__pocket {
-  animation: pack-pocket-hide 0.8s ease 1.85s forwards;
+  animation: pack-pocket-hide 0.75s ease 2.3s forwards;
 }
 .env-pack--animating .env-pack__body {
-  animation: pack-body-hide 0.75s ease 2.15s forwards;
+  animation: pack-body-hide 0.7s ease 2.55s forwards;
 }
 .env-pack--fading {
-  animation: pack-fade-out 0.9s ease 2.05s forwards;
+  animation: pack-fade-out 0.85s ease 2.45s forwards;
 }
 
 @keyframes pack-flap-idle {
@@ -561,19 +603,19 @@ onBeforeUnmount(() => {
 
 @keyframes letter-rise {
   0% {
-    opacity: 0.4;
-    transform: translateY(72%);
+    opacity: 0.35;
+    transform: translateY(78%);
   }
-  20% {
+  22% {
     opacity: 1;
-    transform: translateY(48%);
+    transform: translateY(52%);
   }
-  65% {
-    transform: translateY(4%);
+  70% {
+    transform: translateY(8%);
   }
   100% {
     opacity: 1;
-    transform: translateY(-48%);
+    transform: translateY(-38%);
   }
 }
 
@@ -582,7 +624,7 @@ onBeforeUnmount(() => {
     left: 50%;
     right: auto;
     width: calc(var(--pack-w) * 0.78);
-    transform: translateX(-50%) translateY(calc(var(--pack-h) * -0.48));
+    transform: translateX(-50%) translateY(calc(var(--pack-h) * -0.42));
   }
   to {
     left: 50%;
@@ -593,6 +635,12 @@ onBeforeUnmount(() => {
 }
 
 @keyframes pack-pocket-hide {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes pack-veil-hide {
   to {
     opacity: 0;
   }
@@ -739,6 +787,7 @@ onBeforeUnmount(() => {
   .env-pack--animating .env-pack__seal,
   .env-pack--animating .env-pack__pocket,
   .env-pack--animating .env-pack__body,
+  .env-pack--animating .env-pack__veil,
   .env-pack--fading,
   .letter--rising,
   .letter--open,
