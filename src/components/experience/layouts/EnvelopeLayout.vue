@@ -104,7 +104,7 @@
 
             <!-- z:2 face frontal opaca -->
             <span class="env-mail__shade" aria-hidden="true" />
-            <span class="env-mail__pocket" aria-hidden="true" />
+            <span v-if="animating && !shellHidden" class="env-mail__pocket" aria-hidden="true" />
             <span class="env-mail__wing env-mail__wing--l" aria-hidden="true" />
             <span class="env-mail__wing env-mail__wing--r" aria-hidden="true" />
 
@@ -432,7 +432,7 @@ onBeforeUnmount(() => {
   right: 27%;
   top: 0;
   height: 50%;
-  z-index: 2;
+  z-index: 3;
   background: var(--mail-face);
   pointer-events: none;
 }
@@ -480,7 +480,7 @@ onBeforeUnmount(() => {
   right: 0;
   bottom: 0;
   height: 52%;
-  z-index: 5;
+  z-index: 3;
   pointer-events: none;
   background-color: var(--mail-face);
   border-radius: 0 0 14px 14px;
@@ -496,7 +496,7 @@ onBeforeUnmount(() => {
   background: color-mix(in srgb, #000 10%, transparent);
 }
 
-/* bolso central opaco — esconde carta atrás da face frontal */
+/* bolso central opaco — só durante animação, esconde carta no bolso */
 .env-mail__pocket {
   position: absolute;
   left: 27%;
@@ -513,7 +513,7 @@ onBeforeUnmount(() => {
 .env-mail__wing {
   position: absolute;
   top: 0;
-  z-index: 5;
+  z-index: 3;
   width: 27%;
   height: 50%;
   pointer-events: none;
@@ -526,6 +526,11 @@ onBeforeUnmount(() => {
 .env-mail__wing--r {
   right: 0;
   border-radius: 0 14px 0 0;
+}
+
+.env-mail--animating:not(.env-mail--release) .env-mail__shade,
+.env-mail--animating:not(.env-mail--release) .env-mail__wing {
+  z-index: 5;
 }
 
 /* z:3 — aba com faces frontal e interior (dobradiça 3D) */
@@ -570,12 +575,12 @@ onBeforeUnmount(() => {
   animation: mail-flap-idle 5s ease-in-out infinite;
 }
 
-/* z:4 — selo */
+/* z:6 — selo sempre acima do bolso e da aba */
 .env-mail__seal {
   position: absolute;
   top: 50%;
   left: 50%;
-  z-index: 4;
+  z-index: 6;
   display: grid;
   place-items: center;
   width: 50px;
@@ -583,6 +588,7 @@ onBeforeUnmount(() => {
   border-radius: 999px;
   font-family: var(--exp-font-display);
   font-size: 1.35rem;
+  line-height: 1;
   color: #fff;
   background: color-mix(in srgb, var(--exp-accent) 92%, #000);
   box-shadow: 0 8px 18px rgba(0, 0, 0, 0.28);
