@@ -42,7 +42,7 @@
               <div
                 class="letter__surface"
                 :class="{
-                  'letter__surface--paper': animating && !releasing,
+                  'letter__surface--paper': animating,
                   'letter__surface--ready': reading,
                 }"
               >
@@ -478,6 +478,7 @@ onBeforeUnmount(() => {
   pointer-events: auto;
   transform: translateX(-50%) translateY(0);
   clip-path: none;
+  animation: none;
 }
 .letter--pulling .letter__head,
 .letter--pulling .letter__body,
@@ -530,7 +531,7 @@ onBeforeUnmount(() => {
 }
 .letter__surface--paper {
   height: calc(var(--pack-h) * 0.52);
-  min-height: 0;
+  min-height: calc(var(--pack-h) * 0.52);
   padding: 0;
   border: none;
   border-radius: 4px 4px 0 0;
@@ -538,19 +539,6 @@ onBeforeUnmount(() => {
   box-shadow: 0 -2px 14px rgba(0, 0, 0, 0.1);
   background-image: none;
   overflow: hidden;
-}
-.env-mail--release .letter__surface:not(.letter__surface--ready) {
-  min-height: calc(var(--pack-h) * 0.88);
-  padding: clamp(28px, 5vw, 56px) clamp(22px, 5vw, 52px);
-  border: 1px solid var(--exp-border);
-  border-radius: 6px;
-  background: var(--exp-surface, #fff);
-  box-shadow: 0 30px 70px -30px rgba(0, 0, 0, 0.4);
-  background-image: repeating-linear-gradient(
-    transparent,
-    transparent 33px,
-    color-mix(in srgb, var(--exp-primary) 10%, transparent) 34px
-  );
 }
 
 /* Sequência de abertura */
@@ -561,7 +549,7 @@ onBeforeUnmount(() => {
   animation: mail-flap-open 0.85s var(--mail-ease) 0.15s forwards;
 }
 .env-mail--animating .env-mail__pocket {
-  animation: mail-fade 0.55s ease 1.95s forwards;
+  animation: mail-fade 0.5s ease 1.75s forwards;
 }
 .env-mail--animating .env-mail__body {
   animation: mail-fade 0.55s ease 2.35s forwards;
