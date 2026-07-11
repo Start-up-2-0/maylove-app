@@ -42,7 +42,7 @@
               <div
                 class="letter__surface"
                 :class="{
-                  'letter__surface--paper': animating,
+                  'letter__surface--paper': animating && !releasing,
                   'letter__surface--ready': reading,
                 }"
               >
@@ -111,7 +111,7 @@ interface LetterBeat {
   photo?: ExperienceMediaItem
 }
 
-const OPEN_DURATION_MS = 3400
+const OPEN_DURATION_MS = 3500
 
 const props = defineProps<LayoutComponentProps>()
 const audio = useExperienceAudio()
@@ -208,10 +208,10 @@ function open() {
   animating.value = true
   releaseTimer = window.setTimeout(() => {
     releasing.value = true
-  }, 2100)
+  }, 2300)
   shellTimer = window.setTimeout(() => {
     shellHidden.value = true
-  }, 2650)
+  }, 2800)
   readingTimer = window.setTimeout(() => {
     animating.value = false
     reading.value = true
@@ -231,7 +231,7 @@ function beginReading() {
     doneTyping.value = true
     return
   }
-  window.setTimeout(startTyping, 400)
+  window.setTimeout(startTyping, 550)
 }
 
 function startTyping() {
@@ -337,6 +337,9 @@ onBeforeUnmount(() => {
   filter: drop-shadow(0 26px 46px color-mix(in srgb, var(--exp-primary) 44%, transparent));
   transition: transform 0.25s var(--mail-ease), filter 0.35s ease;
 }
+.env-mail--animating:hover {
+  transform: none;
+}
 
 .env-mail__box {
   position: relative;
@@ -345,6 +348,7 @@ onBeforeUnmount(() => {
   overflow: hidden;
   border-radius: 14px;
   isolation: isolate;
+  perspective: 820px;
 }
 .env-mail--animating .env-mail__box {
   overflow: hidden;
@@ -403,6 +407,8 @@ onBeforeUnmount(() => {
   background: var(--mail-flap);
   clip-path: polygon(0 0, 100% 0, 50% 100%);
   transform-origin: 50% 0;
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
   box-shadow: 0 8px 18px color-mix(in srgb, #000 16%, transparent);
   pointer-events: none;
 }
@@ -441,6 +447,11 @@ onBeforeUnmount(() => {
   transform: translateY(70%);
   transform-origin: center bottom;
 }
+.env-mail--shell-hidden {
+  filter: none;
+  transition: filter 0.5s ease;
+}
+
 .env-stage--reading .env-mail__body,
 .env-stage--reading .env-mail__pocket,
 .env-stage--reading .env-mail__flap,
@@ -450,10 +461,10 @@ onBeforeUnmount(() => {
 
 .letter--pulling {
   opacity: 1;
-  clip-path: polygon(12% 44%, 88% 44%, 88% 100%, 12% 100%);
+  clip-path: polygon(16% 46%, 84% 46%, 84% 100%, 16% 100%);
   animation:
-    letter-pull 3.4s var(--mail-ease) forwards,
-    letter-slot-open 3.4s var(--mail-ease) forwards;
+    letter-pull 3.1s var(--mail-ease) 0.4s forwards,
+    letter-slot-open 3.1s var(--mail-ease) 0.4s forwards;
 }
 .letter--reading {
   position: absolute;
@@ -467,6 +478,11 @@ onBeforeUnmount(() => {
   pointer-events: auto;
   transform: translateX(-50%) translateY(0);
   clip-path: none;
+}
+.letter--pulling .letter__head,
+.letter--pulling .letter__body,
+.letter--pulling .letter__foot {
+  display: none;
 }
 
 .env-mail--shell-hidden .env-mail__body,
@@ -489,26 +505,52 @@ onBeforeUnmount(() => {
   min-height: auto;
   height: auto;
 }
-.env-stage--reading .env-mail__body,
-.env-stage--reading .env-mail__pocket,
-.env-stage--reading .env-mail__flap,
-.env-stage--reading .env-mail__seal {
-  display: none;
-}
 
+.letter__surface {
+  width: 100%;
+  min-height: calc(var(--pack-h) * 0.88);
+  padding: clamp(28px, 5vw, 56px) clamp(22px, 5vw, 52px);
+  border-radius: 6px;
+  background: var(--exp-surface, #fff);
+  border: 1px solid var(--exp-border);
+  box-shadow: 0 30px 70px -30px rgba(0, 0, 0, 0.4);
+  background-image: repeating-linear-gradient(
+    transparent,
+    transparent 33px,
+    color-mix(in srgb, var(--exp-primary) 10%, transparent) 34px
+  );
+  transition:
+    background 0.45s ease,
+    background-image 0.45s ease,
+    padding 0.55s var(--mail-ease),
+    min-height 0.55s var(--mail-ease),
+    border 0.4s ease,
+    box-shadow 0.5s ease,
+    border-radius 0.4s ease;
+}
 .letter__surface--paper {
-  min-height: calc(var(--pack-h) * 0.82);
+  height: calc(var(--pack-h) * 0.52);
+  min-height: 0;
   padding: 0;
   border: none;
   border-radius: 4px 4px 0 0;
   background: linear-gradient(180deg, #fffef9 0%, #f3ecdf 100%);
   box-shadow: 0 -2px 14px rgba(0, 0, 0, 0.1);
   background-image: none;
+  overflow: hidden;
 }
-.letter__surface--paper .letter__head,
-.letter__surface--paper .letter__body,
-.letter__surface--paper .letter__foot {
-  visibility: hidden;
+.env-mail--release .letter__surface:not(.letter__surface--ready) {
+  min-height: calc(var(--pack-h) * 0.88);
+  padding: clamp(28px, 5vw, 56px) clamp(22px, 5vw, 52px);
+  border: 1px solid var(--exp-border);
+  border-radius: 6px;
+  background: var(--exp-surface, #fff);
+  box-shadow: 0 30px 70px -30px rgba(0, 0, 0, 0.4);
+  background-image: repeating-linear-gradient(
+    transparent,
+    transparent 33px,
+    color-mix(in srgb, var(--exp-primary) 10%, transparent) 34px
+  );
 }
 
 /* Sequência de abertura */
@@ -516,13 +558,13 @@ onBeforeUnmount(() => {
   animation: mail-seal-break 0.5s var(--mail-ease) forwards;
 }
 .env-mail--animating .env-mail__flap {
-  animation: mail-flap-open 0.9s var(--mail-ease) 0.2s forwards;
+  animation: mail-flap-open 0.85s var(--mail-ease) 0.15s forwards;
 }
 .env-mail--animating .env-mail__pocket {
-  animation: mail-fade 0.65s ease 2.05s forwards;
+  animation: mail-fade 0.55s ease 1.95s forwards;
 }
 .env-mail--animating .env-mail__body {
-  animation: mail-fade 0.6s ease 2.35s forwards;
+  animation: mail-fade 0.55s ease 2.35s forwards;
 }
 
 @keyframes mail-flap-idle {
@@ -537,11 +579,15 @@ onBeforeUnmount(() => {
 
 @keyframes mail-flap-open {
   0% {
-    transform: scaleY(1);
+    transform: rotateX(0deg);
     opacity: 1;
   }
+  65% {
+    transform: rotateX(140deg);
+    opacity: 0.55;
+  }
   100% {
-    transform: scaleY(0);
+    transform: rotateX(168deg);
     opacity: 0;
   }
 }
@@ -561,64 +607,53 @@ onBeforeUnmount(() => {
 
 @keyframes letter-slot-open {
   0%,
-  24% {
-    clip-path: polygon(12% 44%, 88% 44%, 88% 100%, 12% 100%);
+  28% {
+    clip-path: polygon(16% 46%, 84% 46%, 84% 100%, 16% 100%);
   }
-  58% {
-    clip-path: polygon(8% 20%, 92% 20%, 92% 100%, 8% 100%);
+  56% {
+    clip-path: polygon(10% 26%, 90% 26%, 90% 100%, 10% 100%);
   }
-  78%,
+  74%,
   100% {
     clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%);
   }
 }
 
 @keyframes letter-pull {
-  0% {
+  0%,
+  16% {
     opacity: 0;
-    transform: translateY(70%);
+    transform: translateY(68%);
   }
-  12% {
-    opacity: 0.6;
-  }
-  22% {
+  26% {
     opacity: 1;
-    transform: translateY(48%);
+    transform: translateY(46%);
   }
-  52% {
+  56% {
     transform: translateY(2%);
   }
-  68% {
-    transform: translateY(-18%);
-  }
-  82% {
+  72% {
     left: 11%;
     right: 11%;
-    transform: translateY(-28%);
+    transform: translateY(-20%);
+  }
+  86% {
+    left: 11%;
+    right: 11%;
+    bottom: 0;
+    top: auto;
+    transform: translateY(-26%);
   }
   100% {
     left: 50%;
     right: auto;
+    bottom: auto;
+    top: 0;
     width: min(680px, calc(100vw - 48px));
     transform: translateX(-50%) translateY(0);
   }
 }
 
-/* Carta de leitura */
-.letter__surface {
-  width: 100%;
-  min-height: calc(var(--pack-h) * 0.88);
-  padding: clamp(28px, 5vw, 56px) clamp(22px, 5vw, 52px);
-  border-radius: 6px;
-  background: var(--exp-surface, #fff);
-  border: 1px solid var(--exp-border);
-  box-shadow: 0 30px 70px -30px rgba(0, 0, 0, 0.4);
-  background-image: repeating-linear-gradient(
-    transparent,
-    transparent 33px,
-    color-mix(in srgb, var(--exp-primary) 10%, transparent) 34px
-  );
-}
 .letter__surface--ready .letter__head,
 .letter__surface--ready .letter__body,
 .letter__surface--ready .letter__foot {
