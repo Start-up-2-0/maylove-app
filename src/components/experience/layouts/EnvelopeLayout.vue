@@ -34,7 +34,7 @@
           @keydown.enter.prevent="open"
           @keydown.space.prevent="open"
         >
-          <div class="env-mail__box">
+          <div class="env-mail__box" :class="{ 'env-mail__box--sealed': sealed }">
             <!-- z:0 fundo / interior rosa -->
             <span class="env-mail__back" aria-hidden="true" />
 
@@ -422,6 +422,18 @@ onBeforeUnmount(() => {
   overflow: visible;
   height: auto;
   min-height: var(--pack-h);
+}
+
+.env-mail__box--sealed::after {
+  content: '';
+  position: absolute;
+  left: 27%;
+  right: 27%;
+  top: 0;
+  height: 50%;
+  z-index: 2;
+  background: var(--mail-face);
+  pointer-events: none;
 }
 
 /* z:0 — fundo com forro rosa (visível quando aba abre) */
