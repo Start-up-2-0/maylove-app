@@ -467,16 +467,17 @@ onBeforeUnmount(() => {
     letter-slot-open 3.1s var(--mail-ease) 0.4s forwards;
 }
 .letter--reading {
-  position: absolute;
-  left: 50%;
+  position: relative;
+  left: auto;
   right: auto;
   bottom: auto;
-  top: 0;
+  top: auto;
   z-index: 5;
   width: min(680px, calc(100vw - 48px));
+  margin: 0 auto;
   opacity: 1;
   pointer-events: auto;
-  transform: translateX(-50%) translateY(0);
+  transform: none;
   clip-path: none;
   animation: none;
 }
@@ -505,6 +506,8 @@ onBeforeUnmount(() => {
   width: 100%;
   min-height: auto;
   height: auto;
+  display: flex;
+  justify-content: center;
 }
 
 .letter__surface {
