@@ -53,20 +53,20 @@
                 }"
                 :aria-hidden="!reading"
               >
-                <!-- fase gif: cartão branco simples -->
-                <div v-if="animating && !unfolding" class="letter__card">
-                  <span class="letter__card-mark" aria-hidden="true">{{ initial }}</span>
-                </div>
-
-                <!-- fase leitura -->
                 <div
-                  v-else
                   class="letter__surface"
                   :class="{
+                    'letter__surface--peek': animating && !unfolding,
                     'letter__surface--unfolding': unfolding && !reading,
                     'letter__surface--ready': reading,
                   }"
                 >
+                  <span
+                    v-if="animating && !unfolding"
+                    class="letter__peek-mark"
+                    aria-hidden="true"
+                  >{{ initial }}</span>
+
                   <header class="letter__head">
                     <p class="letter__place">Uma carta para você</p>
                     <h1 class="letter__title">{{ content.title }}</h1>
@@ -602,8 +602,7 @@ onBeforeUnmount(() => {
   margin: 0 auto;
   opacity: 1;
   pointer-events: auto;
-  transform: none;
-  animation: none;
+  animation: letter-reading-settle 0.5s var(--mail-ease-soft) forwards;
 }
 
 .letter--rising .letter__head,
@@ -614,25 +613,26 @@ onBeforeUnmount(() => {
   display: none;
 }
 
-/* cartão branco da fase gif */
-.letter__card {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
+/* cartão branco da fase gif — mesma superfície, recortada */
+.letter__surface--peek {
   height: calc(var(--pack-h) * 0.5);
+  min-height: calc(var(--pack-h) * 0.5);
+  max-height: calc(var(--pack-h) * 0.5);
+  padding: 0;
+  overflow: hidden;
   display: grid;
   place-items: center;
   background: #fffefb;
+  background-image: none;
   border: 1px solid color-mix(in srgb, var(--exp-border) 16%, transparent);
   border-radius: 4px 4px 2px 2px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
   transform: translateZ(0);
 }
-.letter--rising .letter__card {
+.letter--rising .letter__surface--peek {
   animation: letter-card-depth var(--mail-rise-dur) var(--mail-ease-lift) var(--mail-rise-delay) forwards;
 }
-.letter__card-mark {
+.letter__peek-mark {
   display: grid;
   place-items: center;
   width: 40px;
@@ -645,21 +645,40 @@ onBeforeUnmount(() => {
 }
 
 .letter--unfolding .letter__head {
+  position: absolute;
+  top: clamp(14px, 2.5vw, 24px);
+  left: clamp(14px, 2.5vw, 24px);
+  right: clamp(14px, 2.5vw, 24px);
   display: block;
   opacity: 0;
+  margin: 0;
   animation: env-soft-in 0.7s var(--exp-ease) 0.45s forwards;
+}
+.letter__surface--ready .letter__head {
+  position: static;
 }
 
 .letter__surface--unfolding {
-  transform-origin: center top;
+  height: calc(var(--pack-h) * 0.5);
+  min-height: calc(var(--pack-h) * 0.5);
+  max-height: calc(var(--pack-h) * 0.5);
+  padding: clamp(14px, 2.5vw, 24px);
   overflow: hidden;
+  background: #fffefb;
+  background-image: none;
+  border: 1px solid color-mix(in srgb, var(--exp-border) 16%, transparent);
+  border-radius: 4px 4px 2px 2px;
+  box-shadow: 0 8px 24px -12px rgba(0, 0, 0, 0.14);
+  transform-origin: center top;
   animation: surface-unfold 2.9s var(--mail-ease-soft) 0.35s forwards;
 }
 .letter__surface {
   width: 100%;
+  border-radius: 6px;
+}
+.letter__surface--ready {
   min-height: calc(var(--pack-h) * 0.88);
   padding: clamp(28px, 5vw, 56px) clamp(22px, 5vw, 52px);
-  border-radius: 6px;
   background: var(--exp-surface, #fff);
   border: 1px solid var(--exp-border);
   box-shadow: 0 30px 70px -30px rgba(0, 0, 0, 0.4);
@@ -856,10 +875,20 @@ onBeforeUnmount(() => {
 }
 
 /* Fase 4 — abrir carta de leitura */
+@keyframes letter-reading-settle {
+  from {
+    transform: translate3d(-50%, calc(var(--pack-h) * -0.52), 0);
+  }
+  to {
+    transform: none;
+  }
+}
+
 @keyframes surface-unfold {
   0% {
     height: calc(var(--pack-h) * 0.5);
     min-height: calc(var(--pack-h) * 0.5);
+    max-height: calc(var(--pack-h) * 0.5);
     padding: clamp(14px, 2.5vw, 24px);
     background: #fffefb;
     background-image: none;
@@ -873,9 +902,11 @@ onBeforeUnmount(() => {
   100% {
     height: auto;
     min-height: calc(var(--pack-h) * 0.88);
+    max-height: none;
     padding: clamp(28px, 5vw, 56px) clamp(22px, 5vw, 52px);
     background: var(--exp-surface, #fff);
     border: 1px solid var(--exp-border);
+    border-radius: 6px;
     box-shadow: 0 28px 64px -32px rgba(0, 0, 0, 0.32);
     background-image: repeating-linear-gradient(
       transparent,
@@ -1045,6 +1076,7 @@ onBeforeUnmount(() => {
   .env-mail--animating .env-mail__back,
   .letter--rising,
   .letter--unfolding,
+  .letter--reading,
   .letter__surface--unfolding,
   .letter__photo {
     animation: none !important;
