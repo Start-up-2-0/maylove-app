@@ -837,31 +837,28 @@ onBeforeUnmount(() => {
   }
 }
 
-/* Fase 2 — carta puxada para fora (acelera → desacelera) */
+/* Fase 2 — carta puxada até o topo do envelope */
 @keyframes letter-lift {
   0% {
-    transform: translate3d(0, 12%, 0);
+    transform: translate3d(0, 8%, 0);
   }
-  10% {
-    transform: translate3d(0, 10%, 0);
+  14% {
+    transform: translate3d(0, 4%, 0);
   }
-  24% {
-    transform: translate3d(0, 6%, 0);
-  }
-  42% {
+  28% {
     transform: translate3d(0, 0, 0);
   }
-  62% {
-    transform: translate3d(0, -14%, 0);
+  52% {
+    transform: translate3d(0, calc(var(--pack-h) * -0.2), 0);
   }
-  80% {
-    transform: translate3d(0, -26%, 0);
+  72% {
+    transform: translate3d(0, calc(var(--pack-h) * -0.36), 0);
   }
-  92% {
-    transform: translate3d(0, -29%, 0);
+  88% {
+    transform: translate3d(0, calc(var(--pack-h) * -0.46), 0);
   }
   100% {
-    transform: translate3d(0, calc(-1 * var(--pack-h) * 0.3), 0);
+    transform: translate3d(0, calc(-1 * var(--pack-h) * 0.5), 0);
   }
 }
 
@@ -877,32 +874,32 @@ onBeforeUnmount(() => {
   }
 }
 
-/* Fase 3 — pausa + deslize elegante para o centro */
+/* Fase 3 — pausa no topo + deslize elegante para o centro */
 @keyframes letter-continue {
   0% {
     left: 27%;
     right: 27%;
     width: auto;
-    transform: translate3d(0, calc(-1 * var(--pack-h) * 0.3), 0);
+    transform: translate3d(0, calc(-1 * var(--pack-h) * 0.5), 0);
   }
   18% {
     left: 27%;
     right: 27%;
     width: auto;
-    transform: translate3d(0, calc(-1 * var(--pack-h) * 0.3), 0);
+    transform: translate3d(0, calc(-1 * var(--pack-h) * 0.5), 0);
   }
   100% {
     left: 50%;
     right: auto;
     width: min(680px, calc(100vw - 48px));
-    transform: translate3d(-50%, calc(var(--pack-h) * -0.52), 0);
+    transform: translate3d(-50%, calc(var(--pack-h) * -0.58), 0);
   }
 }
 
 /* Fase 4 — abrir carta de leitura */
 @keyframes letter-reading-settle {
   from {
-    transform: translate3d(-50%, calc(var(--pack-h) * -0.52), 0);
+    transform: translate3d(-50%, calc(var(--pack-h) * -0.58), 0);
   }
   to {
     transform: none;
