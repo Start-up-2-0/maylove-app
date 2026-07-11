@@ -35,16 +35,18 @@
           @keydown.space.prevent="open"
         >
           <div class="env-mail__box">
-            <span class="env-mail__body" />
+            <!-- z:0 fundo / interior rosa -->
+            <span class="env-mail__back" aria-hidden="true" />
 
+            <!-- z:1 carta — sobe dentro do slot, atrás do bolso -->
             <div
-              class="env-mail__cavity"
-              :class="{ 'env-mail__cavity--release': releasing || unfolding || reading }"
+              class="env-mail__slot"
+              :class="{ 'env-mail__slot--free': releasing || unfolding || reading }"
             >
               <article
                 class="letter"
                 :class="{
-                  'letter--emerging': animating && !unfolding,
+                  'letter--rising': animating && !unfolding,
                   'letter--unfolding': unfolding && !reading,
                   'letter--reading': reading,
                 }"
@@ -53,11 +55,15 @@
                 <div
                   class="letter__surface"
                   :class="{
-                    'letter__surface--paper': !unfolding && !reading,
+                    'letter__surface--peek': animating && !unfolding,
                     'letter__surface--unfolding': unfolding && !reading,
                     'letter__surface--ready': reading,
                   }"
                 >
+                  <span v-if="animating && !unfolding && !reading" class="letter__peek-mark" aria-hidden="true">
+                    {{ initial }}
+                  </span>
+
                   <header class="letter__head">
                     <p class="letter__place">Uma carta para você</p>
                     <h1 class="letter__title">{{ content.title }}</h1>
@@ -90,10 +96,13 @@
               </article>
             </div>
 
-            <span class="env-mail__wing env-mail__wing--left" aria-hidden="true" />
-            <span class="env-mail__wing env-mail__wing--right" aria-hidden="true" />
-            <span class="env-mail__pocket" aria-hidden="true" />
+            <!-- z:2 bolso frontal opaco (máscara sólida, como no gif) -->
+            <span class="env-mail__front" aria-hidden="true" />
+
+            <!-- z:3 aba -->
             <span class="env-mail__flap" aria-hidden="true" />
+
+            <!-- z:4 selo -->
             <span class="env-mail__seal">{{ initial }}</span>
           </div>
         </div>
@@ -126,10 +135,11 @@ interface LetterBeat {
   photo?: ExperienceMediaItem
 }
 
-const RELEASE_MS = 4200
-const SHELL_MS = 4800
-const UNFOLD_START_MS = 4200
-const OPEN_DURATION_MS = 7600
+/* Timeline fiel ao gif: selo → aba (termina ~1.3s) → carta sobe → sai → abre */
+const RELEASE_MS = 4100
+const SHELL_MS = 4600
+const UNFOLD_START_MS = 4300
+const OPEN_DURATION_MS = 7800
 
 const props = defineProps<LayoutComponentProps>()
 const audio = useExperienceAudio()
@@ -305,11 +315,13 @@ onBeforeUnmount(() => {
   --pack-w: clamp(252px, 46vw, 320px);
   --pack-h: clamp(178px, 32vw, 220px);
   --mail-ease: cubic-bezier(0.22, 0.68, 0.36, 1);
-  --mail-ease-hand: cubic-bezier(0.33, 0, 0.14, 1);
+  --mail-ease-flap: cubic-bezier(0.45, 0.05, 0.25, 1);
+  --mail-ease-rise: cubic-bezier(0.34, 1.12, 0.64, 1);
   --mail-ease-soft: cubic-bezier(0.4, 0, 0.2, 1);
-  --mail-ease-pop: cubic-bezier(0.34, 1.15, 0.64, 1);
   --mail-ink: color-mix(in srgb, var(--exp-primary) 82%, #000 10%);
+  --mail-face: color-mix(in srgb, var(--exp-primary) 78%, #000 8%);
   --mail-flap: color-mix(in srgb, var(--exp-primary) 70%, #000 12%);
+  --mail-lining: color-mix(in srgb, var(--exp-accent) 72%, var(--exp-primary) 28%);
 
   position: relative;
   display: flex;
@@ -335,9 +347,6 @@ onBeforeUnmount(() => {
 }
 .env-stage--animating {
   min-height: calc(var(--pack-h) + clamp(200px, 38vw, 320px));
-}
-.env-mail--release {
-  transition: width 1.4s var(--mail-ease-hand), filter 0.8s ease;
 }
 .env-stage--reading {
   min-height: auto;
@@ -376,117 +385,85 @@ onBeforeUnmount(() => {
   transform: none;
 }
 
+/* ── Envelope box ───────────────────────────────────────── */
 .env-mail__box {
   position: relative;
   width: var(--pack-w);
-  min-height: var(--pack-h);
+  height: var(--pack-h);
   overflow: hidden;
   border-radius: 14px;
   isolation: isolate;
-  perspective: 820px;
-}
-.env-mail--animating .env-mail__box {
-  overflow: hidden;
+  perspective: 900px;
 }
 .env-mail--release .env-mail__box,
 .env-stage--reading .env-mail__box {
   overflow: visible;
+  height: auto;
+  min-height: var(--pack-h);
 }
 
-/* Camadas do envelope */
-.env-mail__body {
+/* z:0 — fundo com forro rosa (visível quando aba abre) */
+.env-mail__back {
   position: absolute;
   inset: 0;
   z-index: 0;
   border-radius: 14px;
   background: linear-gradient(
-    175deg,
-    color-mix(in srgb, var(--exp-primary) 92%, #fff) 0%,
-    var(--exp-primary) 48%,
-    var(--mail-ink) 100%
+    180deg,
+    var(--mail-lining) 0%,
+    color-mix(in srgb, var(--mail-lining) 88%, #000 8%) 42%,
+    var(--exp-primary) 100%
   );
-  box-shadow: inset 0 -12px 28px color-mix(in srgb, #000 14%, transparent);
-}
-.env-mail__body::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: 14px;
-  opacity: 0.45;
-  background:
-    linear-gradient(45deg, transparent 49%, color-mix(in srgb, #000 16%, transparent) 50%, transparent 51%),
-    linear-gradient(-45deg, transparent 49%, color-mix(in srgb, #000 16%, transparent) 50%, transparent 51%);
+  box-shadow: inset 0 -10px 24px color-mix(in srgb, #000 12%, transparent);
 }
 
-.env-mail--animating .env-mail__flap {
-  z-index: 4;
-}
-.env-mail--animating .env-mail__pocket,
-.env-mail--animating .env-mail__wing {
-  z-index: 3;
-}
-.env-mail--animating .env-mail__cavity {
-  z-index: 1;
-}
-
-/* Cavidade interna — carta só aparece pelo slot central */
-.env-mail__cavity {
+/* z:1 — slot interno: carta só existe aqui, sem raio-x */
+.env-mail__slot {
   position: absolute;
-  left: 20%;
-  right: 20%;
-  top: 24%;
+  left: 13%;
+  right: 13%;
+  top: 0;
   bottom: 0;
   z-index: 1;
   overflow: hidden;
-  clip-path: polygon(8% 100%, 92% 100%, 76% 0, 24% 0);
   pointer-events: none;
 }
-.env-mail__cavity--release {
-  clip-path: none;
+.env-mail__slot--free {
   overflow: visible;
-  left: 10%;
-  right: 10%;
-  top: auto;
-  bottom: 0;
+  left: 0;
+  right: 0;
   z-index: 5;
 }
 
-/* Laterais opacas — evitam “raio-x” nas quinas superiores */
-.env-mail__wing {
+/* z:2 — bolso frontal 100% opaco (cobre carta por baixo) */
+.env-mail__front {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background: var(--mail-face);
+  clip-path: polygon(0 50%, 50% 72%, 100% 50%, 100% 100%, 0 100%);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 18%, transparent);
+}
+.env-mail__front::before,
+.env-mail__front::after {
+  content: '';
   position: absolute;
   top: 0;
-  z-index: 3;
-  height: 56%;
   width: 50%;
-  pointer-events: none;
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--mail-flap) 96%, #fff 4%) 0%,
-    color-mix(in srgb, var(--mail-flap) 88%, #000 6%) 100%
-  );
+  height: 56%;
+  background: var(--mail-face);
 }
-.env-mail__wing--left {
+.env-mail__front::before {
   left: 0;
   clip-path: polygon(0 0, 0 50%, 50% 72%, 50% 0);
 }
-.env-mail__wing--right {
+.env-mail__front::after {
   right: 0;
   clip-path: polygon(100% 0, 100% 50%, 50% 72%, 50% 0);
 }
 
-.env-mail__pocket {
-  position: absolute;
-  inset: 0;
-  z-index: 3;
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--mail-flap) 90%, #000 4%) 38%,
-    var(--mail-ink) 100%
-  );
-  clip-path: polygon(0 50%, 50% 72%, 100% 50%, 100% 100%, 0 100%);
-  pointer-events: none;
-}
-
+/* z:3 — aba triangular */
 .env-mail__flap {
   position: absolute;
   top: 0;
@@ -499,13 +476,14 @@ onBeforeUnmount(() => {
   transform-origin: 50% 0;
   transform-style: preserve-3d;
   backface-visibility: hidden;
-  box-shadow: 0 8px 18px color-mix(in srgb, #000 16%, transparent);
+  box-shadow: 0 6px 14px color-mix(in srgb, #000 14%, transparent);
   pointer-events: none;
 }
 .env-mail:not(.env-mail--animating) .env-mail__flap {
   animation: mail-flap-idle 4.5s ease-in-out infinite;
 }
 
+/* z:4 — selo */
 .env-mail__seal {
   position: absolute;
   top: 50%;
@@ -525,60 +503,44 @@ onBeforeUnmount(() => {
   pointer-events: none;
 }
 
-/* Carta — entre o corpo e o bolso, sobe e expande no mesmo elemento */
+/* ── Carta ──────────────────────────────────────────────── */
 .letter {
   position: absolute;
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: 1;
   opacity: 0;
   pointer-events: none;
-  transform: translateY(72%);
+  transform: translateY(92%);
   transform-origin: center bottom;
-  perspective: 900px;
 }
-.env-mail--shell-hidden {
-  filter: none;
-  transition: filter 0.9s ease;
-}
-
-.env-stage--reading .env-mail__body,
-.env-stage--reading .env-mail__pocket,
-.env-stage--reading .env-mail__wing,
-.env-stage--reading .env-mail__flap,
-.env-stage--reading .env-mail__seal {
-  display: none;
-}
-
-.letter--emerging {
+.letter--rising {
   opacity: 1;
-  will-change: transform;
-  animation: letter-emerge 3.2s var(--mail-ease-pop) 0.7s forwards;
+  animation: letter-rise 2.8s var(--mail-ease-rise) 1.35s forwards;
 }
 .letter--unfolding {
   opacity: 1;
-  z-index: 5;
-  animation: letter-to-center 0.85s var(--mail-ease) forwards;
+  position: absolute;
+  z-index: 6;
+  animation: letter-center 0.9s var(--mail-ease) forwards;
 }
 .letter--reading {
   position: relative;
   left: auto;
   right: auto;
   bottom: auto;
-  top: auto;
-  z-index: 5;
+  z-index: 6;
   width: min(680px, calc(100vw - 48px));
   margin: 0 auto;
   opacity: 1;
   pointer-events: auto;
   transform: none;
-  clip-path: none;
   animation: none;
 }
-.letter--emerging .letter__head,
-.letter--emerging .letter__body,
-.letter--emerging .letter__foot,
+
+.letter--rising .letter__head,
+.letter--rising .letter__body,
+.letter--rising .letter__foot,
 .letter--unfolding .letter__body,
 .letter--unfolding .letter__foot {
   display: none;
@@ -586,36 +548,44 @@ onBeforeUnmount(() => {
 .letter--unfolding .letter__head {
   display: block;
   opacity: 0;
-  animation: env-soft-in 0.7s var(--exp-ease) 0.5s forwards;
+  animation: env-soft-in 0.7s var(--exp-ease) 0.45s forwards;
 }
 
-.env-mail--shell-hidden .env-mail__body,
-.env-mail--shell-hidden .env-mail__pocket,
-.env-mail--shell-hidden .env-mail__wing,
-.env-mail--shell-hidden .env-mail__flap,
-.env-mail--shell-hidden .env-mail__seal {
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
-  transition:
-    opacity 0.85s ease,
-    visibility 0.85s ease;
+/* Papel pequeno durante subida (como cartão do gif) */
+.letter__surface--peek {
+  display: grid;
+  place-items: center;
+  height: calc(var(--pack-h) * 0.34);
+  min-height: calc(var(--pack-h) * 0.34);
+  padding: 0;
+  border-radius: 6px 6px 3px 3px;
+  background: #fffefb;
+  border: 1px solid color-mix(in srgb, var(--exp-border) 28%, transparent);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  background-image: none;
+  overflow: hidden;
+  transform-origin: center bottom;
+}
+.letter--rising .letter__surface--peek {
+  animation: paper-unfold-rise 2.8s var(--mail-ease-rise) 1.35s forwards;
+}
+.letter__peek-mark {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  font-family: var(--exp-font-display);
+  font-size: 1.1rem;
+  color: #fff;
+  background: color-mix(in srgb, var(--exp-accent) 88%, var(--exp-primary));
 }
 
-.env-stage--reading .env-mail {
-  width: min(680px, 100%);
-  padding-top: 0;
-  filter: none;
-  transform: none;
+.letter__surface--unfolding {
+  transform-origin: center top;
+  overflow: hidden;
+  animation: surface-unfold 2.4s var(--mail-ease-soft) forwards;
 }
-.env-stage--reading .env-mail__box {
-  width: 100%;
-  min-height: auto;
-  height: auto;
-  display: flex;
-  justify-content: center;
-}
-
 .letter__surface {
   width: 100%;
   min-height: calc(var(--pack-h) * 0.88);
@@ -629,91 +599,73 @@ onBeforeUnmount(() => {
     transparent 33px,
     color-mix(in srgb, var(--exp-primary) 10%, transparent) 34px
   );
-  transition:
-    background 0.45s ease,
-    background-image 0.45s ease,
-    padding 0.55s var(--mail-ease),
-    min-height 0.55s var(--mail-ease),
-    border 0.4s ease,
-    box-shadow 0.5s ease,
-    border-radius 0.4s ease;
-}
-.letter__surface--paper {
-  height: calc(var(--pack-h) * 0.36);
-  min-height: calc(var(--pack-h) * 0.36);
-  padding: 0;
-  border: 1px solid color-mix(in srgb, var(--exp-border) 30%, transparent);
-  border-radius: 5px 5px 2px 2px;
-  background: #fffefb;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-  background-image: none;
-  overflow: hidden;
-  transform-origin: center bottom;
-}
-.letter--emerging .letter__surface--paper {
-  animation: paper-rise-unfold 3.2s var(--mail-ease-pop) 0.7s forwards;
-}
-.letter__surface--unfolding {
-  transform-origin: center top;
-  overflow: hidden;
-  animation: surface-unfold 2.6s var(--mail-ease-hand) forwards;
 }
 
-/* Sequência — fase 1: aba abre (como no gif) */
+/* ── Sequência de animação (fiel ao gif) ───────────────── */
 .env-mail--animating .env-mail__seal {
-  animation: mail-seal-break 0.6s var(--mail-ease) 0.15s forwards;
+  animation: mail-seal-break 0.45s var(--mail-ease) 0.1s forwards;
 }
 .env-mail--animating .env-mail__flap {
-  animation: mail-flap-open 1.05s var(--mail-ease-hand) 0.4s forwards;
+  animation: mail-flap-open 0.95s var(--mail-ease-flap) 0.35s forwards;
 }
-/* bolso permanece como máscara até a carta sair */
-.env-mail--animating .env-mail__body {
-  animation: mail-fade 0.7s ease 4.1s forwards;
-}
-.env-mail--animating .env-mail__pocket,
-.env-mail--animating .env-mail__wing {
-  animation: mail-fade 0.7s ease 4.2s forwards;
+.env-mail--animating .env-mail__front,
+.env-mail--animating .env-mail__back {
+  animation: mail-fade 0.65s ease 4.05s forwards;
 }
 
-@keyframes mail-flap-idle {
-  0%,
-  100% {
-    transform: rotate(0deg);
-  }
-  50% {
-    transform: rotate(-1.5deg);
-  }
+.env-mail--shell-hidden .env-mail__back,
+.env-mail--shell-hidden .env-mail__front,
+.env-mail--shell-hidden .env-mail__flap,
+.env-mail--shell-hidden .env-mail__seal {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.7s ease, visibility 0.7s ease;
+}
+.env-mail--shell-hidden {
+  filter: none;
 }
 
+.env-stage--reading .env-mail__back,
+.env-stage--reading .env-mail__front,
+.env-stage--reading .env-mail__flap,
+.env-stage--reading .env-mail__seal {
+  display: none;
+}
+.env-stage--reading .env-mail {
+  width: min(680px, 100%);
+  padding-top: 0;
+  filter: none;
+}
+.env-stage--reading .env-mail__box {
+  width: 100%;
+  min-height: auto;
+  display: flex;
+  justify-content: center;
+}
+
+/* Fase 1 — aba abre 180° e vai para trás */
 @keyframes mail-flap-open {
   0% {
     transform: rotateX(0deg);
     opacity: 1;
     z-index: 3;
   }
-  55% {
-    transform: rotateX(95deg);
+  70% {
+    transform: rotateX(160deg);
     opacity: 1;
   }
   100% {
-    transform: rotateX(175deg);
+    transform: rotateX(180deg);
     opacity: 0;
     z-index: 0;
   }
 }
 
 @keyframes mail-seal-break {
-  0% {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(1);
-  }
-  45% {
-    opacity: 0.85;
-    transform: translate(-50%, -54%) scale(0.97);
-  }
-  100% {
+  to {
     opacity: 0;
-    transform: translate(-50%, -62%) scale(0.9);
+    transform: translate(-50%, -58%) scale(0.88);
   }
 }
 
@@ -723,86 +675,77 @@ onBeforeUnmount(() => {
   }
 }
 
-/* fase 2: carta sobe por trás do bolso — só visível pelo slot */
-@keyframes letter-emerge {
-  0% {
-    transform: translateY(64%);
-  }
-  28% {
-    transform: translateY(38%);
-  }
-  52% {
-    transform: translateY(14%);
-  }
-  76% {
-    transform: translateY(-12%);
-  }
+@keyframes mail-flap-idle {
+  0%,
   100% {
-    transform: translateY(calc(-1 * var(--pack-h) * 0.52));
+    transform: rotateX(0deg);
+  }
+  50% {
+    transform: rotateX(-2deg);
   }
 }
 
-/* papel pequeno desdobra enquanto sobe */
-@keyframes paper-rise-unfold {
+/* Fase 2 — carta sobe reta, só depois da aba (delay 1.35s) */
+@keyframes letter-rise {
   0% {
-    height: calc(var(--pack-h) * 0.36);
-    min-height: calc(var(--pack-h) * 0.36);
-    border-radius: 5px 5px 2px 2px;
-  }
-  40% {
-    height: calc(var(--pack-h) * 0.44);
-    min-height: calc(var(--pack-h) * 0.44);
-  }
-  70% {
-    height: calc(var(--pack-h) * 0.56);
-    min-height: calc(var(--pack-h) * 0.56);
+    transform: translateY(88%);
   }
   100% {
-    height: calc(var(--pack-h) * 0.72);
-    min-height: calc(var(--pack-h) * 0.72);
-    border-radius: 6px 6px 3px 3px;
+    transform: translateY(calc(-1 * var(--pack-h) * 0.62));
   }
 }
 
-/* fase 3: centralizar carta após sair do envelope */
-@keyframes letter-to-center {
+/* Papel desdobra em altura enquanto sobe (como no gif) */
+@keyframes paper-unfold-rise {
   0% {
-    left: 0;
-    right: 0;
-    transform: translateY(calc(-1 * var(--pack-h) * 0.52));
+    height: calc(var(--pack-h) * 0.34);
+    min-height: calc(var(--pack-h) * 0.34);
+  }
+  45% {
+    height: calc(var(--pack-h) * 0.46);
+    min-height: calc(var(--pack-h) * 0.46);
+  }
+  75% {
+    height: calc(var(--pack-h) * 0.58);
+    min-height: calc(var(--pack-h) * 0.58);
+  }
+  100% {
+    height: calc(var(--pack-h) * 0.74);
+    min-height: calc(var(--pack-h) * 0.74);
+  }
+}
+
+/* Fase 3 — centralizar após sair do envelope */
+@keyframes letter-center {
+  0% {
+    left: 13%;
+    right: 13%;
+    width: auto;
+    transform: translateY(calc(-1 * var(--pack-h) * 0.62));
   }
   100% {
     left: 50%;
     right: auto;
     width: min(680px, calc(100vw - 48px));
-    transform: translateX(-50%) translateY(calc(var(--pack-h) * -0.58));
+    transform: translateX(-50%) translateY(calc(var(--pack-h) * -0.55));
   }
 }
 
-/* fase 4: abrir a carta — desdobramento leve */
+/* Fase 4 — abrir carta de leitura */
 @keyframes surface-unfold {
   0% {
-    height: calc(var(--pack-h) * 0.72);
-    min-height: calc(var(--pack-h) * 0.72);
-    padding: clamp(16px, 3vw, 28px) clamp(14px, 3vw, 24px);
-    border-radius: 6px;
+    height: calc(var(--pack-h) * 0.74);
+    min-height: calc(var(--pack-h) * 0.74);
+    padding: clamp(14px, 2.5vw, 24px);
     background: #fffefb;
     background-image: none;
-    box-shadow: 0 12px 32px -18px rgba(0, 0, 0, 0.2);
-    transform: rotateX(8deg);
-  }
-  45% {
-    height: calc(var(--pack-h) * 0.88);
-    min-height: calc(var(--pack-h) * 0.88);
-    transform: rotateX(3deg);
-    background: var(--exp-surface, #fff);
-    border: 1px solid var(--exp-border);
+    box-shadow: 0 10px 28px -16px rgba(0, 0, 0, 0.18);
+    transform: rotateX(6deg);
   }
   100% {
     height: auto;
     min-height: calc(var(--pack-h) * 0.88);
     padding: clamp(28px, 5vw, 56px) clamp(22px, 5vw, 52px);
-    border-radius: 6px;
     background: var(--exp-surface, #fff);
     border: 1px solid var(--exp-border);
     box-shadow: 0 28px 64px -32px rgba(0, 0, 0, 0.32);
@@ -909,9 +852,7 @@ onBeforeUnmount(() => {
 .env-scene__eyebrow {
   font-style: normal;
   animation: env-soft-in 0.6s var(--exp-ease) both;
-  transition:
-    opacity 0.35s ease,
-    transform 0.35s ease;
+  transition: opacity 0.35s ease, transform 0.35s ease;
 }
 .env-scene__eyebrow--hide {
   opacity: 0;
@@ -970,12 +911,11 @@ onBeforeUnmount(() => {
   }
   .env-mail--animating .env-mail__flap,
   .env-mail--animating .env-mail__seal,
-  .env-mail--animating .env-mail__pocket,
-  .env-mail--animating .env-mail__wing,
-  .env-mail--animating .env-mail__body,
-  .letter--emerging,
+  .env-mail--animating .env-mail__front,
+  .env-mail--animating .env-mail__back,
+  .letter--rising,
   .letter--unfolding,
-  .letter--emerging .letter__surface--paper,
+  .letter--rising .letter__surface--peek,
   .letter__surface--unfolding,
   .letter__photo {
     animation: none !important;
