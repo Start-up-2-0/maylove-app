@@ -1,78 +1,84 @@
 <template>
-  <div class="env" :class="{ 'env--preview': mode === 'preview' }">
-    <div v-if="!reading" class="env-scene">
-      <p v-if="!animating && content.subtitle" class="env-scene__eyebrow exp-eyebrow">
-        {{ content.subtitle }}
-      </p>
+  <div class="env" :class="{ 'env--preview': mode === 'preview', 'env--active': opening }">
+    <p
+      v-if="content.subtitle"
+      class="env-scene__eyebrow exp-eyebrow"
+      :class="{ 'env-scene__eyebrow--hide': opening }"
+    >
+      {{ content.subtitle }}
+    </p>
 
+    <div class="env-stage">
       <div
         class="env-pack"
-        :class="{ 'env-pack--animating': animating }"
+        :class="{
+          'env-pack--animating': animating,
+          'env-pack--fading': morphing,
+        }"
         role="button"
         tabindex="0"
-        :aria-disabled="animating"
+        :aria-disabled="opening"
+        :aria-hidden="reading"
         aria-label="Abrir carta"
         @click="open"
         @keydown.enter.prevent="open"
         @keydown.space.prevent="open"
       >
         <div class="env-pack__box">
-          <!-- Corpo traseiro -->
           <span class="env-pack__body" />
-
-          <!-- Carta (contida no envelope) -->
           <span class="env-pack__paper" aria-hidden="true" />
-
-          <!-- Bolso frontal -->
           <span class="env-pack__pocket" aria-hidden="true" />
-
-          <!-- Aba superior -->
           <span class="env-pack__flap" aria-hidden="true" />
-
-          <!-- Selo -->
           <span class="env-pack__seal">{{ initial }}</span>
         </div>
       </div>
 
-      <template v-if="!animating">
-        <p class="env-scene__hint">Para {{ content.honoreeName || 'você' }}</p>
-        <button class="env-open-btn" type="button" @click="open">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8">
-            <path d="M4 7l8 6 8-6M4 7h16v11H4z" stroke-linecap="round" stroke-linejoin="round" />
-          </svg>
-          Abrir carta
-        </button>
-      </template>
+      <article
+        class="letter"
+        :class="{
+          'letter--morph': morphing,
+          'letter--open': reading,
+        }"
+        :aria-hidden="!morphing && !reading"
+      >
+        <div class="letter__surface" :class="{ 'letter__surface--ready': reading }">
+          <header class="letter__head">
+            <p class="letter__place">Uma carta para você</p>
+            <h1 class="letter__title">{{ content.title }}</h1>
+          </header>
+
+          <div class="letter__body">
+            <RichText v-if="introHtml" :text="content.message" class="letter__para letter__intro" />
+
+            <template v-for="(beat, i) in beats" :key="i">
+              <p v-if="beat.text && i <= activeIndex" class="letter__para">
+                {{ i < activeIndex ? beat.text : typedText
+                }}<span v-if="i === activeIndex && !doneTyping" class="letter__caret" />
+              </p>
+              <figure v-if="beat.photo && beatVisible(i)" class="letter__photo">
+                <img :src="beat.photo.url" :alt="`Recordação ${i + 1}`" loading="lazy" />
+              </figure>
+            </template>
+          </div>
+
+          <footer v-if="doneTyping" class="letter__foot">
+            <RichText v-if="content.closingMessage" :text="content.closingMessage" class="letter__closing" />
+            <p class="letter__sign">{{ content.signature || content.senderName }}</p>
+            <ShareBar v-if="mode === 'full' && shareUrl" :url="shareUrl" :text="content.title" />
+          </footer>
+        </div>
+      </article>
     </div>
 
-    <transition name="letter-reveal" @after-enter="onLetterEntered">
-      <article v-if="reading" class="letter">
-        <header class="letter__head">
-          <p class="letter__place">Uma carta para você</p>
-          <h1 class="letter__title">{{ content.title }}</h1>
-        </header>
-
-        <div class="letter__body">
-          <RichText v-if="introHtml" :text="content.message" class="letter__para letter__intro" />
-
-          <template v-for="(beat, i) in beats" :key="i">
-            <p v-if="beat.text && i <= activeIndex" class="letter__para">
-              {{ i < activeIndex ? beat.text : typedText
-              }}<span v-if="i === activeIndex && !doneTyping" class="letter__caret" />
-            </p>
-            <figure v-if="beat.photo && beatVisible(i)" class="letter__photo">
-              <img :src="beat.photo.url" :alt="`Recordação ${i + 1}`" loading="lazy" />
-            </figure>
-          </template>
-        </div>
-
-        <footer v-if="doneTyping" class="letter__foot">
-          <RichText v-if="content.closingMessage" :text="content.closingMessage" class="letter__closing" />
-          <p class="letter__sign">{{ content.signature || content.senderName }}</p>
-          <ShareBar v-if="mode === 'full' && shareUrl" :url="shareUrl" :text="content.title" />
-        </footer>
-      </article>
-    </transition>
+    <template v-if="!opening">
+      <p class="env-scene__hint">Para {{ content.honoreeName || 'você' }}</p>
+      <button class="env-open-btn" type="button" @click="open">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M4 7l8 6 8-6M4 7h16v11H4z" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+        Abrir carta
+      </button>
+    </template>
   </div>
 </template>
 
@@ -90,19 +96,23 @@ interface LetterBeat {
   photo?: ExperienceMediaItem
 }
 
-const OPEN_ANIMATION_MS = 3200
+const MORPH_START_MS = 1900
+const READING_START_MS = 2900
 
 const props = defineProps<LayoutComponentProps>()
 const audio = useExperienceAudio()
 
 const animating = ref(false)
+const morphing = ref(false)
 const reading = ref(false)
+const opening = computed(() => animating.value || morphing.value)
 const activeIndex = ref(0)
 const typedText = ref('')
 const doneTyping = ref(false)
 const readingStarted = ref(false)
 let timer: number | undefined
-let openTimer: number | undefined
+let morphTimer: number | undefined
+let readingTimer: number | undefined
 
 const initial = computed(() => (props.content.senderName || props.content.honoreeName || 'M').charAt(0).toUpperCase())
 const introHtml = computed(() => (containsHtml(props.content.message) ? props.content.message : null))
@@ -150,7 +160,7 @@ function beatVisible(index: number): boolean {
 }
 
 function open() {
-  if (animating.value || reading.value) return
+  if (opening.value || reading.value) return
   if (audio?.hasAudio) audio.play()
 
   if (reduced) {
@@ -161,12 +171,18 @@ function open() {
   }
 
   animating.value = true
-  openTimer = window.setTimeout(() => {
+  morphTimer = window.setTimeout(() => {
+    morphing.value = true
+  }, MORPH_START_MS)
+  readingTimer = window.setTimeout(() => {
+    animating.value = false
+    morphing.value = false
     reading.value = true
-  }, OPEN_ANIMATION_MS)
+    onLetterReady()
+  }, READING_START_MS)
 }
 
-function onLetterEntered() {
+function onLetterReady() {
   if (readingStarted.value) return
   readingStarted.value = true
   beginReading()
@@ -216,33 +232,48 @@ function nextBeat() {
 
 onBeforeUnmount(() => {
   window.clearTimeout(timer)
-  window.clearTimeout(openTimer)
+  window.clearTimeout(morphTimer)
+  window.clearTimeout(readingTimer)
 })
 </script>
 
 <style scoped>
 .env {
+  --pack-w: clamp(252px, 46vw, 320px);
+  --pack-h: clamp(178px, 32vw, 220px);
+
   position: relative;
-  display: grid;
-  place-items: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
   min-height: var(--exp-stage, 100svh);
   padding: clamp(24px, 6vw, 64px) clamp(16px, 5vw, 40px);
+  text-align: center;
 }
 .env--preview {
   min-height: var(--exp-stage, 620px);
 }
 
-.env-scene {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 20px;
-  text-align: center;
+.env-stage {
+  position: relative;
+  display: grid;
+  place-items: center;
   width: 100%;
+  min-height: calc(var(--pack-h) + 48px);
 }
+
 .env-scene__eyebrow {
   font-style: normal;
   animation: env-soft-in 0.6s var(--exp-ease) both;
+  transition:
+    opacity 0.35s ease,
+    transform 0.35s ease;
+}
+.env-scene__eyebrow--hide {
+  opacity: 0;
+  transform: translateY(-8px);
+  pointer-events: none;
 }
 .env-scene__hint {
   font-family: var(--exp-font-display);
@@ -271,18 +302,24 @@ onBeforeUnmount(() => {
 
 /* ===== Envelope (2D coeso) ===== */
 .env-pack {
-  --pack-w: clamp(252px, 46vw, 320px);
-  --pack-h: clamp(178px, 32vw, 220px);
   --pack-ease: cubic-bezier(0.25, 0.9, 0.35, 1);
   --pack-ink: color-mix(in srgb, var(--exp-primary) 82%, #000 10%);
   --pack-flap: color-mix(in srgb, var(--exp-primary) 70%, #000 12%);
 
+  grid-area: 1 / 1;
   width: var(--pack-w);
   padding-top: 12px;
   cursor: pointer;
   outline: none;
   filter: drop-shadow(0 22px 40px color-mix(in srgb, var(--exp-primary) 36%, transparent));
-  transition: filter 0.35s ease, transform 0.4s var(--pack-ease);
+  transition:
+    filter 0.35s ease,
+    transform 0.4s var(--pack-ease),
+    opacity 0.65s ease;
+}
+.env-pack--fading {
+  opacity: 0;
+  pointer-events: none;
 }
 .env-pack:not(.env-pack--animating):hover {
   transform: translateY(-4px);
@@ -415,9 +452,6 @@ onBeforeUnmount(() => {
 .env-pack--animating .env-pack__body {
   animation: pack-body-hide 0.75s ease 2.15s forwards;
 }
-.env-pack--animating {
-  animation: pack-lift 3.2s var(--pack-ease) forwards;
-}
 
 @keyframes pack-flap-idle {
   0%,
@@ -479,21 +513,40 @@ onBeforeUnmount(() => {
   }
 }
 
-@keyframes pack-lift {
-  0%,
-  70% {
-    transform: translateY(0);
-    opacity: 1;
-  }
-  100% {
-    transform: translateY(-8px);
-    opacity: 0;
-  }
-}
-
 /* ---------- Carta de leitura ---------- */
 .letter {
+  grid-area: 1 / 1;
   width: min(680px, 100%);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(12%) scale(0.34);
+  transform-origin: center 72%;
+  will-change: transform, opacity, width;
+}
+.letter--morph {
+  opacity: 1;
+  width: calc(var(--pack-w) * 0.78);
+  transform: translateY(-8%) scale(0.42);
+  transition: none;
+}
+.letter--open {
+  opacity: 1;
+  pointer-events: auto;
+  width: min(680px, 100%);
+  transform: none;
+  transition:
+    width 0.85s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.85s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.45s ease;
+}
+.letter--morph .letter__head,
+.letter--morph .letter__body,
+.letter--morph .letter__foot {
+  visibility: hidden;
+}
+.letter__surface {
+  width: 100%;
+  min-height: calc(var(--pack-h) * 0.88);
   padding: clamp(28px, 5vw, 56px) clamp(22px, 5vw, 52px);
   border-radius: 6px;
   background: var(--exp-surface, #fff);
@@ -504,6 +557,11 @@ onBeforeUnmount(() => {
     transparent 33px,
     color-mix(in srgb, var(--exp-primary) 10%, transparent) 34px
   );
+}
+.letter__surface--ready .letter__head,
+.letter__surface--ready .letter__body,
+.letter__surface--ready .letter__foot {
+  animation: env-soft-in 0.55s var(--exp-ease) both;
 }
 .letter__head {
   text-align: center;
@@ -591,16 +649,6 @@ onBeforeUnmount(() => {
   color: var(--exp-primary);
 }
 
-.letter-reveal-enter-active {
-  transition:
-    opacity 1s cubic-bezier(0.22, 1, 0.36, 1),
-    transform 1s cubic-bezier(0.22, 1, 0.36, 1);
-}
-.letter-reveal-enter-from {
-  opacity: 0;
-  transform: translateY(16px) scale(0.98);
-}
-
 @keyframes env-soft-in {
   from {
     opacity: 0;
@@ -631,8 +679,9 @@ onBeforeUnmount(() => {
   .env-pack--animating .env-pack__seal,
   .env-pack--animating .env-pack__pocket,
   .env-pack--animating .env-pack__body,
-  .env-pack--animating,
-  .letter-reveal-enter-active,
+  .env-pack--fading,
+  .letter--morph,
+  .letter--open,
   .letter__photo {
     animation: none !important;
     transition: none !important;

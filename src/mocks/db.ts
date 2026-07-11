@@ -54,6 +54,7 @@ export const db = {
           name: tribute.template.name,
         },
         color_primary: tribute.color_primary,
+        presentation: tribute.content_json?.presentation ?? null,
       }))
   },
 

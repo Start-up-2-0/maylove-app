@@ -11,6 +11,7 @@
       <div>
         <p class="eyebrow">Analytics</p>
         <h1 class="section-title">{{ tributeTitle }}</h1>
+        <p v-if="tributeMeta" class="detail-head__meta text-muted">{{ tributeMeta }}</p>
         <p v-if="publicPath" class="detail-head__slug text-muted">{{ publicPath }}</p>
       </div>
       <div class="detail-head__actions">
@@ -109,6 +110,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter, RouterLink } from 'vue-router'
 import { deleteTribute, fetchTribute, fetchTributeStats } from '@/api/tributes'
 import type { TributeDetail, TributeStats } from '@/api/types'
+import { formatTributeMeta } from '@/utils/tributeMeta'
 
 const route = useRoute()
 const router = useRouter()
@@ -125,6 +127,16 @@ const deleteError = ref('')
 const tributeTitle = computed(
   () => tribute.value?.title || tribute.value?.honoree_name || 'Desempenho da homenagem',
 )
+
+const tributeMeta = computed(() => {
+  const t = tribute.value
+  if (!t) return ''
+  return formatTributeMeta({
+    tribute_type: t.tribute_type,
+    template: t.template,
+    presentation: t.content_json?.presentation,
+  })
+})
 
 const publicPath = computed(() => (tribute.value?.slug ? `/h/${tribute.value.slug}` : ''))
 
@@ -293,8 +305,12 @@ function formatDate(value: string | null): string {
   gap: 16px;
   margin-bottom: 24px;
 }
+.detail-head__meta {
+  margin-top: 8px;
+  font-size: 0.92rem;
+}
 .detail-head__slug {
-  margin-top: 6px;
+  margin-top: 4px;
   font-size: 0.88rem;
   font-family: var(--font-sans);
 }

@@ -187,6 +187,7 @@ export interface TributeSummary {
   tribute_type: { id: string; slug: string; name: string }
   template: { id: string; slug: string; name: string }
   color_primary: string | null
+  presentation?: string | null
 }
 
 export interface TributeStats {

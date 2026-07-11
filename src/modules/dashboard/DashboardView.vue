@@ -98,7 +98,7 @@
               {{ tribute.title || tribute.honoree_name || 'Sem título' }}
             </h2>
             <p class="tribute-card__meta">
-              {{ tribute.tribute_type.name }} · {{ tribute.template.name }}
+              {{ formatTributeMeta(tribute) }}
             </p>
             <p class="tribute-card__slug">/h/{{ tribute.slug }}</p>
           </div>
@@ -181,6 +181,7 @@ import { RouterLink } from 'vue-router'
 import { deleteTribute, listTributes } from '@/api/tributes'
 import type { TributeSummary } from '@/api/types'
 import { useAuthStore } from '@/stores/auth'
+import { formatTributeMeta } from '@/utils/tributeMeta'
 
 const auth = useAuthStore()
 
