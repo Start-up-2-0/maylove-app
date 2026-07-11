@@ -41,7 +41,10 @@
             <!-- z:1 túnel — carta só existe durante animação -->
             <div
               class="env-mail__tunnel"
-              :class="{ 'env-mail__tunnel--free': releasing || unfolding || reading }"
+              :class="{
+                'env-mail__tunnel--escape': unfolding || releasing || reading,
+                'env-mail__tunnel--free': releasing || reading,
+              }"
             >
               <article
                 v-if="animating || unfolding || reading"
@@ -101,6 +104,7 @@
 
             <!-- z:2 face frontal opaca -->
             <span class="env-mail__shade" aria-hidden="true" />
+            <span class="env-mail__pocket" aria-hidden="true" />
             <span class="env-mail__wing env-mail__wing--l" aria-hidden="true" />
             <span class="env-mail__wing env-mail__wing--r" aria-hidden="true" />
 
@@ -145,11 +149,11 @@ interface LetterBeat {
   photo?: ExperienceMediaItem
 }
 
-/* Timeline cinematográfica: ~9.5s total */
-const RELEASE_MS = 5000
-const SHELL_MS = 5600
-const UNFOLD_START_MS = 4800
-const OPEN_DURATION_MS = 9500
+/* Timeline cinematográfica: ~6s total */
+const RELEASE_MS = 3200
+const SHELL_MS = 3600
+const UNFOLD_START_MS = 3000
+const OPEN_DURATION_MS = 6000
 
 const props = defineProps<LayoutComponentProps>()
 const audio = useExperienceAudio()
@@ -329,11 +333,11 @@ onBeforeUnmount(() => {
   --mail-ease-lift: cubic-bezier(0.45, 0.05, 0.22, 1);
   --mail-ease-settle: cubic-bezier(0.22, 0.68, 0.36, 1);
   --mail-ease-soft: cubic-bezier(0.33, 0, 0.14, 1);
-  --mail-rise-delay: 1.45s;
-  --mail-rise-dur: 2.85s;
-  --mail-flap-delay: 0.35s;
-  --mail-flap-dur: 1.55s;
-  --mail-hold-dur: 0.5s;
+  --mail-rise-delay: 0.9s;
+  --mail-rise-dur: 1.8s;
+  --mail-flap-delay: 0.22s;
+  --mail-flap-dur: 1s;
+  --mail-shell-fade-delay: 2.95s;
   --mail-ink: color-mix(in srgb, var(--exp-primary) 82%, #000 10%);
   --mail-face: color-mix(in srgb, var(--exp-primary) 78%, #000 8%);
   --mail-flap: color-mix(in srgb, var(--exp-primary) 70%, #000 12%);
@@ -373,7 +377,7 @@ onBeforeUnmount(() => {
   transition: filter 0.6s var(--mail-ease-soft);
 }
 .env-mail--animating {
-  animation: env-mail-shadow 5.2s var(--mail-ease-soft) forwards;
+  animation: env-mail-shadow 3.3s var(--mail-ease-soft) forwards;
 }
 .env-stage--reading {
   min-height: auto;
@@ -458,13 +462,15 @@ onBeforeUnmount(() => {
   z-index: 1;
   overflow: hidden;
   pointer-events: none;
-  transform: translateZ(0);
+}
+.env-mail__tunnel--escape {
+  overflow: visible;
 }
 .env-mail__tunnel--free {
   overflow: visible;
   left: 0;
   right: 0;
-  z-index: 5;
+  z-index: 6;
 }
 
 /* z:2 — bolso inferior sólido */
@@ -474,9 +480,9 @@ onBeforeUnmount(() => {
   right: 0;
   bottom: 0;
   height: 52%;
-  z-index: 2;
+  z-index: 5;
   pointer-events: none;
-  background: var(--mail-face);
+  background-color: var(--mail-face);
   border-radius: 0 0 14px 14px;
   box-shadow: inset 0 2px 0 color-mix(in srgb, #fff 12%, transparent);
 }
@@ -490,11 +496,24 @@ onBeforeUnmount(() => {
   background: color-mix(in srgb, #000 10%, transparent);
 }
 
+/* bolso central opaco — esconde carta atrás da face frontal */
+.env-mail__pocket {
+  position: absolute;
+  left: 27%;
+  right: 27%;
+  bottom: 0;
+  height: 52%;
+  z-index: 5;
+  pointer-events: none;
+  background-color: var(--mail-face);
+  border-radius: 0 0 6px 6px;
+}
+
 /* z:2 — laterais superiores */
 .env-mail__wing {
   position: absolute;
   top: 0;
-  z-index: 2;
+  z-index: 5;
   width: 27%;
   height: 50%;
   pointer-events: none;
@@ -589,8 +608,8 @@ onBeforeUnmount(() => {
   opacity: 1;
   visibility: visible;
   position: absolute;
-  z-index: 6;
-  animation: letter-continue 1.55s var(--mail-ease-settle) forwards;
+  z-index: 1;
+  animation: letter-continue 1s var(--mail-ease-settle) forwards;
 }
 .letter--reading {
   position: relative;
@@ -669,7 +688,7 @@ onBeforeUnmount(() => {
   border-radius: 4px 4px 2px 2px;
   box-shadow: 0 8px 24px -12px rgba(0, 0, 0, 0.14);
   transform-origin: center top;
-  animation: surface-unfold 2.9s var(--mail-ease-soft) 0.35s forwards;
+  animation: surface-unfold 1.8s var(--mail-ease-soft) 0.22s forwards;
 }
 .letter__surface {
   width: 100%;
@@ -699,13 +718,15 @@ onBeforeUnmount(() => {
   animation: flap-wrap-vanish 0.55s var(--mail-ease-soft) calc(var(--mail-flap-delay) + var(--mail-flap-dur) - 0.1s) forwards;
 }
 .env-mail--animating .env-mail__shade,
+.env-mail--animating .env-mail__pocket,
 .env-mail--animating .env-mail__wing,
 .env-mail--animating .env-mail__back {
-  animation: mail-fade 0.85s var(--mail-ease-soft) 4.65s forwards;
+  animation: mail-fade 0.65s var(--mail-ease-soft) var(--mail-shell-fade-delay) forwards;
 }
 
 .env-mail--shell-hidden .env-mail__back,
 .env-mail--shell-hidden .env-mail__shade,
+.env-mail--shell-hidden .env-mail__pocket,
 .env-mail--shell-hidden .env-mail__wing,
 .env-mail--shell-hidden .env-mail__flap-wrap,
 .env-mail--shell-hidden .env-mail__seal {
@@ -720,6 +741,7 @@ onBeforeUnmount(() => {
 
 .env-stage--reading .env-mail__back,
 .env-stage--reading .env-mail__shade,
+.env-stage--reading .env-mail__pocket,
 .env-stage--reading .env-mail__wing,
 .env-stage--reading .env-mail__flap-wrap,
 .env-stage--reading .env-mail__seal {
