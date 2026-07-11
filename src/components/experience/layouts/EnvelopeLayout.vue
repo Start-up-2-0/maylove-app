@@ -42,7 +42,7 @@
             <div
               class="env-mail__tunnel"
               :class="{
-                'env-mail__tunnel--escape': unfolding || releasing || reading,
+                'env-mail__tunnel--escape': releasing || reading,
                 'env-mail__tunnel--free': releasing || reading,
               }"
             >
@@ -50,7 +50,8 @@
                 v-if="animating || unfolding || reading"
                 class="letter"
                 :class="{
-                  'letter--emerging': unfolding && !reading,
+                  'letter--emerging': unfolding && !releasing && !reading,
+                  'letter--centering': releasing && !reading,
                   'letter--reading': reading,
                 }"
                 :aria-hidden="!reading"
@@ -604,8 +605,17 @@ onBeforeUnmount(() => {
   opacity: 1;
   visibility: visible;
   position: absolute;
+  left: 0;
+  right: 0;
   z-index: 1;
   animation: letter-emerge var(--mail-emerge-dur) var(--mail-ease-lift) forwards;
+}
+.letter--centering {
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 1;
+  animation: letter-center 1s var(--mail-ease-settle) forwards;
 }
 .letter--reading {
   position: relative;
@@ -667,6 +677,11 @@ onBeforeUnmount(() => {
   box-shadow: 0 8px 24px -12px rgba(0, 0, 0, 0.14);
   transform-origin: center top;
   animation: surface-unfold var(--mail-emerge-dur) var(--mail-ease-soft) forwards;
+}
+.letter--centering .letter__surface--unfolding,
+.letter--reading .letter__surface--unfolding {
+  max-height: none;
+  overflow: visible;
 }
 .letter__surface {
   width: 100%;
@@ -809,12 +824,9 @@ onBeforeUnmount(() => {
   }
 }
 
-/* Fase 2+3 — subida, pausa no topo e centralização contínuas */
+/* Fase 2 — subida dentro do túnel (sem mudar largura) */
 @keyframes letter-emerge {
   0% {
-    left: 0;
-    right: 0;
-    width: auto;
     transform: translate3d(0, 8%, 0);
   }
   14% {
@@ -823,10 +835,18 @@ onBeforeUnmount(() => {
   42% {
     transform: translate3d(0, calc(var(--pack-h) * -0.22), 0);
   }
-  58% {
+  58%,
+  100% {
     transform: translate3d(0, calc(var(--pack-h) * -0.5), 0);
   }
-  68% {
+}
+
+/* Fase 3 — centralizar após sair do bolso */
+@keyframes letter-center {
+  0% {
+    left: 0;
+    right: 0;
+    width: auto;
     transform: translate3d(0, calc(var(--pack-h) * -0.5), 0);
   }
   100% {
@@ -869,11 +889,7 @@ onBeforeUnmount(() => {
     border: 1px solid var(--exp-border);
     border-radius: 6px;
     box-shadow: 0 28px 64px -32px rgba(0, 0, 0, 0.32);
-    background-image: repeating-linear-gradient(
-      transparent,
-      transparent 33px,
-      color-mix(in srgb, var(--exp-primary) 10%, transparent) 34px
-    );
+    background-image: none;
   }
 }
 
@@ -1046,6 +1062,7 @@ onBeforeUnmount(() => {
   .env-mail--animating .env-mail__wing,
   .env-mail--animating .env-mail__back,
   .letter--emerging,
+  .letter--centering,
   .letter--reading,
   .letter__surface--unfolding,
   .letter__photo {
