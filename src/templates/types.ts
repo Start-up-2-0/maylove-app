@@ -164,6 +164,10 @@ export interface ExperienceContent {
   message: string
   messages: string[]
   closingMessage: string
+  /** Texto de abertura opcional (antes dos trechos/momentos). */
+  includeOpeningMessage: boolean
+  /** Mensagem de encerramento opcional ao final. */
+  includeClosingMessage: boolean
   /** Pergunta do pedido (estilo "Pedido interativo"). */
   question: string
   /** Mensagem exibida ao aceitar o pedido. */

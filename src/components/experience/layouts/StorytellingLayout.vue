@@ -94,7 +94,7 @@ const chapters = computed<Chapter[]>(() => {
         photo: props.content.photos[i + 1] ?? props.content.photos[i] ?? props.content.photos[0],
       })
     })
-  } else {
+  } else if (props.content.includeOpeningMessage) {
     const msgs = props.content.messages.length ? props.content.messages : [props.content.message]
     msgs.filter(Boolean).forEach((msg, i) => {
       list.push({
@@ -106,12 +106,14 @@ const chapters = computed<Chapter[]>(() => {
     })
   }
 
-  list.push({
-    kind: 'end',
-    eyebrow: 'Para sempre',
-    title: htmlToPlain(props.content.closingMessage),
-    photo: props.content.photos[props.content.photos.length - 1],
-  })
+  if (props.content.includeClosingMessage) {
+    list.push({
+      kind: 'end',
+      eyebrow: 'Para sempre',
+      title: htmlToPlain(props.content.closingMessage),
+      photo: props.content.photos[props.content.photos.length - 1],
+    })
+  }
   return list
 })
 

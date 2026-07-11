@@ -101,7 +101,13 @@ function bgStyle(url: string): CSSProperties {
 const slides = computed<Slide[]>(() => {
   const photos = props.content.photos
   if (!photos.length) {
-    return [{ title: props.content.title, subtitle: props.content.subtitle, caption: props.content.message }]
+    return [
+      {
+        title: props.content.title,
+        subtitle: props.content.subtitle,
+        caption: props.content.includeOpeningMessage ? props.content.message : '',
+      },
+    ]
   }
   return photos.map((photo, i) => ({
     photo,
@@ -109,8 +115,12 @@ const slides = computed<Slide[]>(() => {
     subtitle: i === 0 ? props.content.subtitle : undefined,
     caption:
       props.content.messages[i] ||
+      props.content.timeline[i]?.description ||
       props.content.timeline[i]?.title ||
-      (i === props.content.photos.length - 1 ? props.content.closingMessage : ''),
+      (i === 0 && props.content.includeOpeningMessage ? props.content.message : '') ||
+      (i === props.content.photos.length - 1 && props.content.includeClosingMessage
+        ? props.content.closingMessage
+        : ''),
   }))
 })
 

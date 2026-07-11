@@ -17,7 +17,7 @@
           <!-- Contracapa -->
           <template v-else-if="current.kind === 'back'">
             <div class="alb__cover alb__cover--back">
-              <RichText v-if="content.closingMessage" :text="content.closingMessage" class="alb__closing" />
+              <RichText v-if="content.includeClosingMessage && content.closingMessage" :text="content.closingMessage" class="alb__closing" />
               <p class="alb__sign">{{ content.signature || content.senderName }}</p>
               <ShareBar v-if="mode === 'full' && shareUrl" :url="shareUrl" :text="content.title" />
             </div>
@@ -88,7 +88,7 @@ const pages = computed<AlbumPage[]>(() => {
       pageNo: i + 1,
     })
   }
-  if (!contentPages.length) {
+  if (!contentPages.length && props.content.includeOpeningMessage) {
     contentPages.push({ kind: 'content', message: props.content.message, pageNo: 1 })
   }
   return [{ kind: 'cover' }, ...contentPages, { kind: 'back' }]

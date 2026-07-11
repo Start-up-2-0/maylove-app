@@ -42,7 +42,11 @@
           </template>
           <template v-else>
             <p class="prop__celebrate">{{ celebration }}</p>
-            <RichText v-if="content.closingMessage" :text="content.closingMessage" class="prop__closing" />
+            <RichText
+              v-if="content.includeClosingMessage && content.closingMessage"
+              :text="content.closingMessage"
+              class="prop__closing"
+            />
             <p class="prop__sign">{{ content.signature || content.senderName }}</p>
             <ShareBar v-if="mode === 'full' && shareUrl" :url="shareUrl" :text="content.title" />
           </template>
@@ -58,7 +62,6 @@ import type { CSSProperties } from 'vue'
 import type { ExperienceMediaItem, LayoutComponentProps } from '@/templates/types'
 import type { TributeEffect } from '@/api/types'
 import { useExperienceAudio } from '@/composables/experienceAudio'
-import { htmlToPlain } from '@/utils/richText'
 import EffectsLayer from '../shared/EffectsLayer.vue'
 import ShareBar from '../shared/ShareBar.vue'
 import RichText from '../shared/RichText.vue'
@@ -95,7 +98,7 @@ const steps = computed<Step[]>(() => {
         photo: props.content.photos[i + 1] ?? props.content.photos[i],
       })
     })
-  } else {
+  } else if (props.content.includeOpeningMessage) {
     props.content.messages.filter(Boolean).forEach((msg, i) => {
       list.push({ text: msg, photo: props.content.photos[i + 1] ?? props.content.photos[i] })
     })
@@ -109,8 +112,7 @@ const current = computed(() => steps.value[Math.min(index.value, steps.value.len
 
 const question = computed(() => {
   if (props.content.question) return props.content.question
-  const closing = htmlToPlain(props.content.closingMessage) || ''
-  return closing.includes('?') ? closing : 'Você aceita casar comigo?'
+  return 'Você aceita casar comigo?'
 })
 
 const celebration = computed(() => props.content.celebration || 'Ela disse SIM! 🎉')

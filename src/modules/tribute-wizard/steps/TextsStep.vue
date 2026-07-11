@@ -85,7 +85,39 @@
     <section class="tx-section">
       <h3 class="tx-title">{{ copy.messageSectionTitle }}</h3>
       <p class="tx-hint">{{ copy.messageSectionHint }}</p>
-      <div class="tx-grid">
+
+      <template v-if="usesOptionalBlocks">
+        <label class="tx-toggle">
+          <input v-model="form.include_opening_message" type="checkbox" />
+          <span>
+            <strong>{{ copy.openingToggleLabel }}</strong>
+            <small>{{ copy.openingToggleHint }}</small>
+          </span>
+        </label>
+        <div v-if="form.include_opening_message" class="tx-grid tx-grid--toggled">
+          <div class="ml-field span-2">
+            <label class="ml-label">{{ copy.messageLabel }}</label>
+            <RichTextEditor v-model="form.message" :placeholder="copy.messagePlaceholder" />
+          </div>
+        </div>
+
+        <label class="tx-toggle">
+          <input v-model="form.include_closing_message" type="checkbox" />
+          <span>
+            <strong>{{ copy.closingToggleLabel }}</strong>
+            <small>{{ copy.closingToggleHint }}</small>
+          </span>
+        </label>
+        <div v-if="form.include_closing_message" class="tx-grid tx-grid--toggled">
+          <div class="ml-field span-2">
+            <label class="ml-label">{{ copy.closingLabel }}</label>
+            <RichTextEditor v-model="form.closing_message" :placeholder="copy.closingPlaceholder" />
+            <span class="ml-hint">{{ copy.closingHint }}</span>
+          </div>
+        </div>
+      </template>
+
+      <div v-else class="tx-grid">
         <div class="ml-field span-2">
           <label class="ml-label">{{ copy.messageLabel }}<template v-if="messageRequired"> *</template></label>
           <RichTextEditor v-model="form.message" :placeholder="copy.messagePlaceholder" />
@@ -142,7 +174,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { useTributeWizard } from '@/composables/useTributeWizard'
-import { resolvePresentationSchema } from '@/templates/presentationSchema'
+import { resolvePresentationSchema, layoutUsesOptionalTextBlocks } from '@/templates/presentationSchema'
 import type { TemplateDefinition } from '@/templates/types'
 import WizardStepHeader from '@/components/wizard/WizardStepHeader.vue'
 import RichTextEditor from '@/components/wizard/RichTextEditor.vue'
@@ -157,6 +189,7 @@ const schema = computed(() => resolvePresentationSchema(props.form.presentation,
 
 const copy = computed(() => schema.value.text)
 const messageRequired = computed(() => schema.value.required.includes('message'))
+const usesOptionalBlocks = computed(() => layoutUsesOptionalTextBlocks(schema.value.layout))
 const presentationLabel = computed(() => schema.value.presentationLabel)
 const presentationEmoji = computed(() => schema.value.presentationEmoji)
 </script>
@@ -211,6 +244,34 @@ const presentationEmoji = computed(() => schema.value.presentationEmoji)
 }
 .span-2 {
   grid-column: 1 / -1;
+}
+.tx-grid--toggled {
+  margin: 10px 0 18px;
+  padding-left: 12px;
+  border-left: 2px solid var(--border);
+}
+.tx-toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin: 14px 0 0;
+  cursor: pointer;
+}
+.tx-toggle input {
+  margin-top: 4px;
+  accent-color: var(--primary);
+}
+.tx-toggle strong {
+  display: block;
+  font-size: 0.92rem;
+  color: var(--ink);
+}
+.tx-toggle small {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.82rem;
+  color: var(--muted);
+  line-height: 1.45;
 }
 .public-link {
   margin: 0;

@@ -61,8 +61,8 @@
             </template>
           </div>
 
-          <footer v-if="doneTyping" class="letter__foot">
-            <RichText v-if="content.closingMessage" :text="content.closingMessage" class="letter__closing" />
+        <footer v-if="doneTyping && content.includeClosingMessage" class="letter__foot">
+          <RichText v-if="content.closingMessage" :text="content.closingMessage" class="letter__closing" />
             <p class="letter__sign">{{ content.signature || content.senderName }}</p>
             <ShareBar v-if="mode === 'full' && shareUrl" :url="shareUrl" :text="content.title" />
           </footer>
@@ -115,13 +115,21 @@ let morphTimer: number | undefined
 let readingTimer: number | undefined
 
 const initial = computed(() => (props.content.senderName || props.content.honoreeName || 'M').charAt(0).toUpperCase())
-const introHtml = computed(() => (containsHtml(props.content.message) ? props.content.message : null))
+const introHtml = computed(() =>
+  props.content.includeOpeningMessage && containsHtml(props.content.message)
+    ? props.content.message
+    : null,
+)
 
 const beats = computed<LetterBeat[]>(() => {
   const timeline = props.content.timeline
   if (timeline.length) {
     const items: LetterBeat[] = []
-    const intro = introHtml.value ? '' : plainTimelineText(props.content.message)
+    const intro = introHtml.value
+      ? ''
+      : props.content.includeOpeningMessage
+        ? plainTimelineText(props.content.message)
+        : ''
     if (intro) items.push({ text: intro })
     for (const item of timeline) {
       items.push(beatFromTimelineItem(item))
@@ -129,10 +137,12 @@ const beats = computed<LetterBeat[]>(() => {
     return items.filter((beat) => beat.text || beat.photo)
   }
 
-  const base = (props.content.message || '')
-    .split('\n')
-    .map((line) => plainTimelineText(line))
-    .filter(Boolean)
+  const base = props.content.includeOpeningMessage
+    ? (props.content.message || '')
+        .split('\n')
+        .map((line) => plainTimelineText(line))
+        .filter(Boolean)
+    : []
   const extra = props.content.messages.map((line) => plainTimelineText(line)).filter(Boolean)
   const all = [...base, ...extra]
   if (all.length) {

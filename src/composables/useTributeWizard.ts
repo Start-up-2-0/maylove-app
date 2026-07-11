@@ -43,6 +43,8 @@ export function useTributeWizard(tributeId: string) {
     music_start_seconds: 0,
     music_end_seconds: 0,
     music_duration_seconds: 0,
+    include_opening_message: false,
+    include_closing_message: false,
   })
 
   // event_info só é enviado se algum campo estiver preenchido; caso contrário
@@ -111,6 +113,8 @@ export function useTributeWizard(tributeId: string) {
             music_duration_seconds: form.music_duration_seconds,
           }
         : {}),
+      include_opening_message: form.include_opening_message,
+      include_closing_message: form.include_closing_message,
     },
   }))
 
@@ -186,6 +190,10 @@ export function useTributeWizard(tributeId: string) {
     form.music_end_seconds =
       data.content_json?.music_end_seconds ??
       (form.music_duration_seconds > 0 ? form.music_duration_seconds : 0)
+    form.include_opening_message =
+      data.content_json?.include_opening_message ?? Boolean(data.message?.trim())
+    form.include_closing_message =
+      data.content_json?.include_closing_message ?? Boolean(data.closing_message?.trim())
   }
 
   async function reload() {

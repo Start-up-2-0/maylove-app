@@ -1,5 +1,5 @@
 <template>
-  <section class="exp-section final-section">
+  <section v-if="text" class="exp-section final-section">
     <div class="exp-container final" v-reveal>
       <span class="final__mark" aria-hidden="true">♥</span>
       <TypewriterText
@@ -21,9 +21,10 @@ import TypewriterText from '../shared/TypewriterText.vue'
 
 const props = defineProps<SectionComponentProps>()
 
-const text = computed(
-  () => (props.section.config?.text as string) || props.content.closingMessage || 'Com todo o carinho.',
-)
+const text = computed(() => {
+  if (!props.content.includeClosingMessage) return ''
+  return (props.section.config?.text as string) || props.content.closingMessage || 'Com todo o carinho.'
+})
 const typing = computed(() => props.content.textStyle === 'typewriter')
 </script>
 

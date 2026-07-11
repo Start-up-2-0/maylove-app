@@ -146,6 +146,10 @@ export interface TributeContentJson {
   music_end_seconds?: number
   /** Duração total da faixa em segundos. */
   music_duration_seconds?: number
+  /** Exibe texto de abertura antes dos trechos/momentos (apresentações narrativas). */
+  include_opening_message?: boolean
+  /** Exibe mensagem de encerramento ao final da experiência. */
+  include_closing_message?: boolean
 }
 
 export interface TributeDetail {

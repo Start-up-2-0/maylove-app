@@ -31,7 +31,7 @@
       </article>
     </div>
 
-    <footer class="tl__foot">
+    <footer v-if="content.includeClosingMessage" class="tl__foot">
       <RichText v-if="content.closingMessage" :text="content.closingMessage" class="tl__closing" />
       <p class="tl__sign">{{ content.signature || content.senderName }}</p>
       <ShareBar v-if="mode === 'full' && shareUrl" :url="shareUrl" :text="content.title" />
@@ -67,7 +67,11 @@ const items = computed<TimelineEntry[]>(() => {
       photo: item.photoUrl ? { id: `t${i}`, url: item.photoUrl, type: 'photo' } : props.content.photos[i],
     }))
   }
-  const msgs = props.content.messages.length ? props.content.messages : [props.content.message]
+  const msgs = props.content.messages.length
+    ? props.content.messages
+    : props.content.includeOpeningMessage
+      ? [props.content.message]
+      : []
   return msgs.filter(Boolean).map((msg, i) => ({ title: `Momento ${i + 1}`, text: msg, photo: props.content.photos[i] }))
 })
 

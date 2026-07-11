@@ -41,6 +41,12 @@ export interface TextFieldSchema {
   closingLabel: string
   closingPlaceholder: string
   closingHint: string
+  /** Rótulo do toggle para incluir texto de abertura (layouts com Momentos). */
+  openingToggleLabel: string
+  openingToggleHint: string
+  /** Rótulo do toggle para incluir encerramento (layouts com Momentos). */
+  closingToggleLabel: string
+  closingToggleHint: string
   showDate: boolean
   dateLabel: string
   dateHint: string
@@ -104,6 +110,10 @@ const TEXT_SCHEMA: Record<ExperienceLayout, TextFieldSchema> = {
     closingLabel: 'Despedida',
     closingPlaceholder: 'Com amor,',
     closingHint: 'Fecha a carta, logo antes da assinatura.',
+    openingToggleLabel: '',
+    openingToggleHint: '',
+    closingToggleLabel: '',
+    closingToggleHint: '',
     showDate: false,
     dateLabel: 'Data especial',
     dateHint: '',
@@ -117,14 +127,18 @@ const TEXT_SCHEMA: Record<ExperienceLayout, TextFieldSchema> = {
     subtitlePlaceholder: 'Ex.: Você recebeu uma mensagem',
     subtitleHint: 'Aparece sobre o envelope fechado, antes de abrir.',
     showProposal: false,
-    messageSectionTitle: 'Abertura (opcional)',
+    messageSectionTitle: 'Extras opcionais',
     messageSectionHint:
-      'Texto inicial antes dos trechos. Os parágrafos entre as fotos são definidos na etapa Momentos.',
+      'O coração da carta são os trechos da etapa Momentos. Marque abaixo apenas o que quiser incluir.',
     messageLabel: 'Texto de abertura',
-    messagePlaceholder: 'Opcional — deixe em branco se a carta começar direto nos trechos.',
+    messagePlaceholder: 'Um parágrafo antes do primeiro trecho...',
     closingLabel: 'Despedida',
     closingPlaceholder: 'Com amor,',
-    closingHint: 'Aparece ao final, após todos os trechos.',
+    closingHint: 'Aparece ao final, após todos os trechos e antes da assinatura.',
+    openingToggleLabel: 'Incluir texto de abertura',
+    openingToggleHint: 'Parágrafo opcional antes do primeiro trecho da carta.',
+    closingToggleLabel: 'Incluir despedida ao final',
+    closingToggleHint: 'Mensagem de encerramento após todos os trechos.',
     showDate: false,
     dateLabel: 'Data especial',
     dateHint: '',
@@ -138,14 +152,18 @@ const TEXT_SCHEMA: Record<ExperienceLayout, TextFieldSchema> = {
     subtitlePlaceholder: 'Uma frase de impacto para a abertura',
     subtitleHint: 'Aparece sobre a primeira foto, como a legenda de um trailer.',
     showProposal: false,
-    messageSectionTitle: 'Legendas',
+    messageSectionTitle: 'Extras opcionais',
     messageSectionHint:
-      'A legenda de abertura da experiência. As legendas de cada foto vêm da etapa de Fotos.',
-    messageLabel: 'Legenda de abertura',
-    messagePlaceholder: 'Escreva a legenda inicial...',
+      'As legendas de cada cena vêm da etapa Momentos. Marque abaixo apenas o que quiser incluir.',
+    messageLabel: 'Legenda de abertura extra',
+    messagePlaceholder: 'Texto adicional na primeira cena...',
     closingLabel: 'Legenda final',
     closingPlaceholder: 'A frase que encerra a apresentação',
-    closingHint: 'Aparece sobre a última foto.',
+    closingHint: 'Aparece na última cena, após as legendas dos momentos.',
+    openingToggleLabel: 'Incluir legenda extra na abertura',
+    openingToggleHint: 'Texto adicional na primeira cena, além do título e da frase de abertura.',
+    closingToggleLabel: 'Incluir legenda final',
+    closingToggleHint: 'Frase de encerramento na última foto.',
     showDate: false,
     dateLabel: 'Data especial',
     dateHint: '',
@@ -159,14 +177,18 @@ const TEXT_SCHEMA: Record<ExperienceLayout, TextFieldSchema> = {
     subtitlePlaceholder: 'Como a história começa...',
     subtitleHint: 'Texto do primeiro capítulo, sobre a foto de abertura.',
     showProposal: false,
-    messageSectionTitle: 'Narrativa',
+    messageSectionTitle: 'Extras opcionais',
     messageSectionHint:
-      'Texto de abertura da narrativa. Os capítulos seguintes vêm dos momentos/fotos.',
-    messageLabel: 'Texto de abertura',
-    messagePlaceholder: 'Comece a contar a história...',
+      'Os capítulos vêm da etapa Momentos. Marque abaixo apenas o que quiser incluir além deles.',
+    messageLabel: 'Texto de abertura extra',
+    messagePlaceholder: 'Um parágrafo antes dos capítulos...',
     closingLabel: 'Capítulo final',
     closingPlaceholder: 'A frase que encerra a história',
-    closingHint: 'Vira o título do último capítulo, o desfecho da história.',
+    closingHint: 'Título do capítulo de encerramento, após os momentos.',
+    openingToggleLabel: 'Incluir texto de abertura extra',
+    openingToggleHint: 'Parágrafo opcional antes do primeiro capítulo.',
+    closingToggleLabel: 'Incluir capítulo final',
+    closingToggleHint: 'Desfecho da história após os capítulos dos momentos.',
     showDate: false,
     dateLabel: 'Data especial',
     dateHint: '',
@@ -180,14 +202,18 @@ const TEXT_SCHEMA: Record<ExperienceLayout, TextFieldSchema> = {
     subtitlePlaceholder: 'Uma introdução curta',
     subtitleHint: 'Aparece no topo, antes da linha do tempo.',
     showProposal: false,
-    messageSectionTitle: 'Mensagem',
+    messageSectionTitle: 'Extras opcionais',
     messageSectionHint:
-      'Mensagem de abertura (usada se não houver momentos). As datas e marcos vêm da etapa de Momentos.',
-    messageLabel: 'Mensagem principal',
-    messagePlaceholder: 'Escreva uma introdução...',
+      'Os marcos vêm da etapa Momentos. Marque abaixo apenas o que quiser incluir.',
+    messageLabel: 'Introdução extra',
+    messagePlaceholder: 'Texto antes do primeiro marco...',
     closingLabel: 'Mensagem de encerramento',
     closingPlaceholder: 'Uma despedida especial',
-    closingHint: 'Aparece ao final da linha do tempo.',
+    closingHint: 'Aparece ao final da linha do tempo, após os marcos.',
+    openingToggleLabel: 'Incluir introdução extra',
+    openingToggleHint: 'Texto opcional antes do primeiro marco.',
+    closingToggleLabel: 'Incluir mensagem de encerramento',
+    closingToggleHint: 'Despedida ao final da linha do tempo.',
     showDate: false,
     dateLabel: 'Data especial',
     dateHint: '',
@@ -201,14 +227,18 @@ const TEXT_SCHEMA: Record<ExperienceLayout, TextFieldSchema> = {
     subtitlePlaceholder: 'Uma frase para a capa',
     subtitleHint: 'Aparece na capa do álbum.',
     showProposal: false,
-    messageSectionTitle: 'Mensagem',
+    messageSectionTitle: 'Extras opcionais',
     messageSectionHint:
-      'Mensagem da primeira página (usada se não houver mensagens por foto). As páginas vêm dos momentos/fotos.',
-    messageLabel: 'Mensagem principal',
-    messagePlaceholder: 'Escreva a mensagem de abertura...',
+      'As páginas vêm da etapa Momentos. Marque abaixo apenas o que quiser incluir.',
+    messageLabel: 'Mensagem da primeira página extra',
+    messagePlaceholder: 'Texto adicional na abertura do álbum...',
     closingLabel: 'Mensagem da contracapa',
     closingPlaceholder: 'Uma despedida especial',
     closingHint: 'Aparece na contracapa, ao fim do álbum.',
+    openingToggleLabel: 'Incluir mensagem extra na abertura',
+    openingToggleHint: 'Página de texto antes das páginas dos momentos.',
+    closingToggleLabel: 'Incluir mensagem na contracapa',
+    closingToggleHint: 'Despedida ao fechar o álbum.',
     showDate: false,
     dateLabel: 'Data especial',
     dateHint: '',
@@ -222,13 +252,18 @@ const TEXT_SCHEMA: Record<ExperienceLayout, TextFieldSchema> = {
     subtitlePlaceholder: 'Como a história começa',
     subtitleHint: 'Texto do primeiro passo, antes de chegar à pergunta.',
     showProposal: true,
-    messageSectionTitle: 'Mensagem',
-    messageSectionHint: 'Passo inicial da história (usado se não houver momentos cadastrados).',
-    messageLabel: 'Mensagem de abertura',
-    messagePlaceholder: 'Escreva o começo da história...',
-    closingLabel: 'Mensagem final',
+    messageSectionTitle: 'Extras opcionais',
+    messageSectionHint:
+      'Os passos vêm da etapa Momentos. Marque abaixo apenas o que quiser incluir.',
+    messageLabel: 'Mensagem de abertura extra',
+    messagePlaceholder: 'Texto antes do primeiro passo...',
+    closingLabel: 'Mensagem após o aceite',
     closingPlaceholder: 'O que aparece depois do aceite',
-    closingHint: 'Aparece após o aceite, antes da assinatura.',
+    closingHint: 'Exibida após a pessoa tocar em “Sim”, antes da assinatura.',
+    openingToggleLabel: 'Incluir mensagem de abertura extra',
+    openingToggleHint: 'Texto opcional antes dos passos dos momentos.',
+    closingToggleLabel: 'Incluir mensagem após o aceite',
+    closingToggleHint: 'Mensagem de celebração depois que a pessoa aceita.',
     showDate: false,
     dateLabel: 'Data especial',
     dateHint: '',
@@ -249,6 +284,10 @@ const TEXT_SCHEMA: Record<ExperienceLayout, TextFieldSchema> = {
     closingLabel: 'Mensagem de encerramento',
     closingPlaceholder: 'Uma despedida especial',
     closingHint: 'Exibida no bloco final da experiência.',
+    openingToggleLabel: '',
+    openingToggleHint: '',
+    closingToggleLabel: '',
+    closingToggleHint: '',
     showDate: true,
     dateLabel: 'Data especial',
     dateHint: 'Usada na contagem regressiva e nos destaques de data.',
@@ -292,7 +331,7 @@ const PHOTO_SCHEMA: Record<ExperienceLayout, PhotoFieldSchema> = {
 }
 
 /** Layouts narrativos/foto-centrados editam conteúdo por "Momentos". */
-const MOMENT_LAYOUTS: ExperienceLayout[] = [
+export const MOMENT_LAYOUTS: ExperienceLayout[] = [
   'envelope',
   'timeline',
   'album',
@@ -300,6 +339,10 @@ const MOMENT_LAYOUTS: ExperienceLayout[] = [
   'cinematic',
   'proposal',
 ]
+
+export function layoutUsesOptionalTextBlocks(layout: ExperienceLayout): boolean {
+  return MOMENT_LAYOUTS.includes(layout)
+}
 
 /** Categorias em que faz sentido pedir data/local/mapa do evento. */
 const EVENT_CATEGORIES = ['casamento', 'pedido-casamento', 'formatura', 'cha-de-bebe']

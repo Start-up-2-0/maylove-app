@@ -4,6 +4,7 @@ import type {
   AnimationEntrance,
   AnimationSpeed,
   ExperienceContent,
+  ExperienceLayout,
   ExperienceMediaItem,
   ExperienceTimelineItem,
   ResolvedTheme,
@@ -11,6 +12,8 @@ import type {
 } from '@/templates/types'
 import { getStyle } from '@/templates/styles'
 import { getBackground } from '@/templates/backgrounds'
+import { getPresentation } from '@/templates/presentations'
+import { layoutUsesOptionalTextBlocks } from '@/templates/presentationSchema'
 import {
   fallbackTimelineTitle,
   resolveTimelinePhoto,
@@ -119,6 +122,16 @@ function readSeconds(value: unknown): number | undefined {
 
 function hasRealTributeSource(opts: ResolveOptions): boolean {
   return Boolean(opts.publicData || opts.detail || opts.tribute || opts.form)
+}
+
+function resolveTextFlag(
+  formValue: boolean | undefined,
+  contentValue: boolean | undefined,
+  legacyText: string,
+): boolean {
+  if (formValue !== undefined) return formValue
+  if (contentValue !== undefined) return contentValue
+  return Boolean(legacyText.trim())
 }
 
 export function resolveContent(def: TemplateDefinition, opts: ResolveOptions): ExperienceContent {
@@ -245,6 +258,23 @@ export function resolveContent(def: TemplateDefinition, opts: ResolveOptions): E
     content.music_end_seconds ??
     (musicDuration > 0 ? musicDuration : null)
 
+  const resolvedLayout: ExperienceLayout =
+    getPresentation(form?.presentation || content.presentation)?.layout ??
+    getPresentation(content.presentation)?.layout ??
+    def.layout ??
+    'scroll'
+
+  const includeOpeningMessage = (() => {
+    const optional = layoutUsesOptionalTextBlocks(resolvedLayout)
+    if (!optional) return true
+    return resolveTextFlag(form?.include_opening_message, content.include_opening_message, message)
+  })()
+  const includeClosingMessage = (() => {
+    const optional = layoutUsesOptionalTextBlocks(resolvedLayout)
+    if (!optional) return true
+    return resolveTextFlag(form?.include_closing_message, content.include_closing_message, closingMessage)
+  })()
+
   return {
     honoreeName,
     senderName,
@@ -253,6 +283,8 @@ export function resolveContent(def: TemplateDefinition, opts: ResolveOptions): E
     message,
     messages,
     closingMessage,
+    includeOpeningMessage,
+    includeClosingMessage,
     question,
     celebration,
     signature: form?.signature || content.signature || (useSample ? sample.signature : '') || senderName,
