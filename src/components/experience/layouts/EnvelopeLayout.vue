@@ -40,8 +40,9 @@
             <article
               class="letter"
               :class="{
-                'letter--pulling': animating,
-                'letter--unfolding': unfolding,
+                'letter--pulling': animating && !unfolding,
+                'letter--settled': unfolding || reading,
+                'letter--unfolding': unfolding && !reading,
                 'letter--reading': reading,
               }"
               :aria-hidden="!reading"
@@ -49,7 +50,7 @@
               <div
                 class="letter__surface"
                 :class="{
-                  'letter__surface--paper': animating && !unfolding,
+                  'letter__surface--paper': !unfolding && !reading,
                   'letter__surface--unfolding': unfolding && !reading,
                   'letter__surface--ready': reading,
                 }"
@@ -119,10 +120,10 @@ interface LetterBeat {
   photo?: ExperienceMediaItem
 }
 
-const EMERGE_MS = 2600
-const RELEASE_MS = 2800
-const SHELL_MS = 3400
-const OPEN_DURATION_MS = 5200
+const RELEASE_MS = 4000
+const SHELL_MS = 4400
+const UNFOLD_START_MS = 5100
+const OPEN_DURATION_MS = 7600
 
 const props = defineProps<LayoutComponentProps>()
 const audio = useExperienceAudio()
@@ -221,7 +222,7 @@ function open() {
   animating.value = true
   unfoldTimer = window.setTimeout(() => {
     unfolding.value = true
-  }, EMERGE_MS)
+  }, UNFOLD_START_MS)
   releaseTimer = window.setTimeout(() => {
     releasing.value = true
   }, RELEASE_MS)
@@ -324,7 +325,10 @@ onBeforeUnmount(() => {
   transition: min-height 0.6s var(--mail-ease);
 }
 .env-stage--animating {
-  min-height: calc(var(--pack-h) + clamp(180px, 34vw, 280px));
+  min-height: calc(var(--pack-h) + clamp(200px, 38vw, 320px));
+}
+.env-mail--release {
+  transition: width 0.95s var(--mail-ease), filter 0.5s ease;
 }
 .env-stage--reading {
   min-height: auto;
@@ -486,14 +490,20 @@ onBeforeUnmount(() => {
   opacity: 1;
   clip-path: polygon(16% 46%, 84% 46%, 84% 100%, 16% 100%);
   animation:
-    letter-emerge 2.4s var(--mail-ease) 0.3s forwards,
-    letter-slot-open 2.4s var(--mail-ease) 0.3s forwards;
+    letter-slot-open 4.2s var(--mail-ease) 1s forwards,
+    letter-emerge 3.2s var(--mail-ease) 1s forwards,
+    letter-center 0.95s var(--mail-ease) 4.2s forwards;
+}
+.letter--settled {
+  opacity: 1;
+  clip-path: none;
+  left: 50%;
+  right: auto;
+  width: min(680px, calc(100vw - 48px));
+  transform: translateX(-50%) translateY(-26%);
 }
 .letter--unfolding {
-  clip-path: none;
-  animation:
-    letter-emerge 2.4s var(--mail-ease) 0.3s forwards,
-    letter-expand 2.3s var(--mail-ease) forwards;
+  animation: none;
 }
 .letter--reading {
   position: relative;
@@ -512,7 +522,10 @@ onBeforeUnmount(() => {
 }
 .letter--pulling .letter__head,
 .letter--pulling .letter__body,
-.letter--pulling .letter__foot {
+.letter--pulling .letter__foot,
+.letter--settled:not(.letter--reading) .letter__head,
+.letter--settled:not(.letter--reading) .letter__body,
+.letter--settled:not(.letter--reading) .letter__foot {
   display: none;
 }
 .letter--unfolding .letter__body,
@@ -522,7 +535,7 @@ onBeforeUnmount(() => {
 .letter--unfolding .letter__head {
   display: block;
   opacity: 0;
-  animation: env-soft-in 0.75s var(--exp-ease) 1.1s forwards;
+  animation: env-soft-in 0.7s var(--exp-ease) 0.55s forwards;
 }
 
 .env-mail--shell-hidden .env-mail__body,
@@ -584,21 +597,22 @@ onBeforeUnmount(() => {
 .letter__surface--unfolding {
   transform-origin: center top;
   overflow: hidden;
-  animation: surface-unfold 2.3s var(--mail-ease) forwards;
+  animation: surface-unfold 2.4s var(--mail-ease) forwards;
 }
 
-/* Sequência de abertura */
+/* Sequência de abertura — fase 1: envelope */
 .env-mail--animating .env-mail__seal {
-  animation: mail-seal-break 0.5s var(--mail-ease) forwards;
+  animation: mail-seal-break 0.55s var(--mail-ease) forwards;
 }
 .env-mail--animating .env-mail__flap {
-  animation: mail-flap-open 0.9s var(--mail-ease) 0.12s forwards;
+  animation: mail-flap-open 0.95s var(--mail-ease) 0.18s forwards;
 }
+/* fase 2: carta saindo — bolso some enquanto a carta sobe */
 .env-mail--animating .env-mail__pocket {
-  animation: mail-fade 0.65s ease 1.85s forwards;
+  animation: mail-fade 0.75s ease 2.4s forwards;
 }
 .env-mail--animating .env-mail__body {
-  animation: mail-fade 0.6s ease 2.55s forwards;
+  animation: mail-fade 0.7s ease 3.55s forwards;
 }
 
 @keyframes mail-flap-idle {
@@ -641,88 +655,89 @@ onBeforeUnmount(() => {
 
 @keyframes letter-slot-open {
   0%,
-  22% {
+  58% {
     clip-path: polygon(16% 46%, 84% 46%, 84% 100%, 16% 100%);
   }
-  48% {
-    clip-path: polygon(10% 30%, 90% 30%, 90% 100%, 10% 100%);
+  78% {
+    clip-path: polygon(10% 28%, 90% 28%, 90% 100%, 10% 100%);
   }
-  68%,
+  94%,
   100% {
     clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%);
   }
 }
 
+/* fase 2: carta saindo devagar do envelope */
 @keyframes letter-emerge {
   0%,
-  10% {
+  6% {
     opacity: 0;
-    transform: translateY(62%);
+    transform: translateY(58%);
   }
-  20% {
+  14% {
     opacity: 1;
-    transform: translateY(46%);
+    transform: translateY(50%);
   }
-  48% {
-    transform: translateY(18%);
+  38% {
+    transform: translateY(34%);
   }
-  68% {
-    transform: translateY(-6%);
+  58% {
+    transform: translateY(20%);
+  }
+  78% {
+    transform: translateY(8%);
   }
   100% {
-    transform: translateY(-34%);
+    transform: translateY(-6%);
   }
 }
 
-@keyframes letter-expand {
+/* fase 3: centralizar a carta (ainda fechada) */
+@keyframes letter-center {
   0% {
     left: 11%;
     right: 11%;
-    transform: translateY(-34%);
-  }
-  55% {
-    left: 11%;
-    right: 11%;
-    transform: translateY(-42%);
+    transform: translateY(-6%);
   }
   100% {
     left: 50%;
     right: auto;
     width: min(680px, calc(100vw - 48px));
-    transform: translateX(-50%) translateY(-48%);
+    transform: translateX(-50%) translateY(-26%);
   }
 }
 
+/* fase 4: abrir a carta aos poucos */
 @keyframes surface-unfold {
   0% {
-    height: calc(var(--pack-h) * 0.46);
-    min-height: calc(var(--pack-h) * 0.46);
+    height: calc(var(--pack-h) * 0.44);
+    min-height: calc(var(--pack-h) * 0.44);
     padding: 0;
     border: none;
     border-radius: 4px 4px 2px 2px;
     background: linear-gradient(180deg, #fffef9 0%, #f3ecdf 100%);
     background-image: none;
     box-shadow: 0 -2px 14px rgba(0, 0, 0, 0.1);
-    transform: rotateX(24deg);
+    transform: rotateX(26deg);
   }
-  35% {
-    height: calc(var(--pack-h) * 0.62);
-    min-height: calc(var(--pack-h) * 0.62);
-    transform: rotateX(14deg);
+  30% {
+    height: calc(var(--pack-h) * 0.58);
+    min-height: calc(var(--pack-h) * 0.58);
+    transform: rotateX(16deg);
   }
-  62% {
-    height: calc(var(--pack-h) * 0.78);
-    min-height: calc(var(--pack-h) * 0.78);
-    padding: clamp(16px, 3.5vw, 32px) clamp(14px, 3vw, 28px);
-    transform: rotateX(7deg);
+  55% {
+    height: calc(var(--pack-h) * 0.72);
+    min-height: calc(var(--pack-h) * 0.72);
+    padding: clamp(14px, 3vw, 28px) clamp(12px, 2.5vw, 24px);
+    transform: rotateX(9deg);
     background: var(--exp-surface, #fff);
-    border: 1px solid color-mix(in srgb, var(--exp-border) 70%, transparent);
-    box-shadow: 0 20px 50px -24px rgba(0, 0, 0, 0.32);
+    border: 1px solid color-mix(in srgb, var(--exp-border) 60%, transparent);
+    box-shadow: 0 18px 44px -22px rgba(0, 0, 0, 0.3);
   }
-  85% {
-    height: calc(var(--pack-h) * 0.9);
-    min-height: calc(var(--pack-h) * 0.9);
-    transform: rotateX(2deg);
+  78% {
+    height: calc(var(--pack-h) * 0.86);
+    min-height: calc(var(--pack-h) * 0.86);
+    transform: rotateX(3deg);
     background-image: repeating-linear-gradient(
       transparent,
       transparent 33px,
@@ -904,6 +919,7 @@ onBeforeUnmount(() => {
   .env-mail--animating .env-mail__pocket,
   .env-mail--animating .env-mail__body,
   .letter--pulling,
+  .letter--settled,
   .letter--unfolding,
   .letter__surface--unfolding,
   .letter__photo {
