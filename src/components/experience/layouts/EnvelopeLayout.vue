@@ -13,7 +13,6 @@
         class="env-pack"
         :class="{
           'env-pack--animating': animating,
-          'env-pack--fading': animating,
           'env-pack--gone': envelopeGone,
         }"
         role="button"
@@ -30,53 +29,49 @@
           :class="{ 'env-pack__box--release': releasing }"
         >
           <span class="env-pack__body" />
-
-          <article
-            class="letter"
-            :class="{
-              'letter--rising': animating,
-              'letter--open': reading,
-            }"
-            :aria-hidden="!reading"
-          >
-            <div class="letter__surface" :class="{ 'letter__surface--ready': reading }">
-              <header class="letter__head">
-                <p class="letter__place">Uma carta para você</p>
-                <h1 class="letter__title">{{ content.title }}</h1>
-              </header>
-
-              <div class="letter__body">
-                <RichText v-if="introHtml" :text="content.message" class="letter__para letter__intro" />
-
-                <template v-for="(beat, i) in beats" :key="i">
-                  <p v-if="beat.text && i <= activeIndex" class="letter__para">
-                    {{ i < activeIndex ? beat.text : typedText
-                    }}<span v-if="i === activeIndex && !doneTyping" class="letter__caret" />
-                  </p>
-                  <figure v-if="beat.photo && beatVisible(i)" class="letter__photo">
-                    <img :src="beat.photo.url" :alt="`Recordação ${i + 1}`" loading="lazy" />
-                  </figure>
-                </template>
-              </div>
-
-              <footer v-if="showLetterFooter" class="letter__foot">
-                <RichText
-                  v-if="content.includeClosingMessage && content.closingMessage"
-                  :text="content.closingMessage"
-                  class="letter__closing"
-                />
-                <p v-if="signatureLabel" class="letter__sign">{{ signatureLabel }}</p>
-                <ShareBar v-if="mode === 'full' && shareUrl" :url="shareUrl" :text="content.title" />
-              </footer>
-            </div>
-          </article>
-
+          <span
+            class="env-pack__slip"
+            :class="{ 'env-pack__slip--rising': animating }"
+            aria-hidden="true"
+          />
           <span class="env-pack__pocket" aria-hidden="true" />
           <span class="env-pack__flap" aria-hidden="true" />
           <span class="env-pack__seal">{{ initial }}</span>
-          <span class="env-pack__veil" aria-hidden="true" />
         </div>
       </div>
+
+      <article class="letter" :class="{ 'letter--open': reading }" :aria-hidden="!reading">
+        <div class="letter__surface" :class="{ 'letter__surface--ready': reading }">
+          <header class="letter__head">
+            <p class="letter__place">Uma carta para você</p>
+            <h1 class="letter__title">{{ content.title }}</h1>
+          </header>
+
+          <div class="letter__body">
+            <RichText v-if="introHtml" :text="content.message" class="letter__para letter__intro" />
+
+            <template v-for="(beat, i) in beats" :key="i">
+              <p v-if="beat.text && i <= activeIndex" class="letter__para">
+                {{ i < activeIndex ? beat.text : typedText
+                }}<span v-if="i === activeIndex && !doneTyping" class="letter__caret" />
+              </p>
+              <figure v-if="beat.photo && beatVisible(i)" class="letter__photo">
+                <img :src="beat.photo.url" :alt="`Recordação ${i + 1}`" loading="lazy" />
+              </figure>
+            </template>
+          </div>
+
+          <footer v-if="showLetterFooter" class="letter__foot">
+            <RichText
+              v-if="content.includeClosingMessage && content.closingMessage"
+              :text="content.closingMessage"
+              class="letter__closing"
+            />
+            <p v-if="signatureLabel" class="letter__sign">{{ signatureLabel }}</p>
+            <ShareBar v-if="mode === 'full' && shareUrl" :url="shareUrl" :text="content.title" />
+          </footer>
+        </div>
+      </article>
     </div>
 
     <template v-if="sealed">
@@ -106,8 +101,8 @@ interface LetterBeat {
 }
 
 const READING_START_MS = 3300
-const RELEASE_MS = 2400
-const ENVELOPE_GONE_MS = 2900
+const RELEASE_MS = 2300
+const ENVELOPE_GONE_MS = 3000
 
 const props = defineProps<LayoutComponentProps>()
 const audio = useExperienceAudio()
@@ -297,6 +292,9 @@ onBeforeUnmount(() => {
   min-height: calc(var(--pack-h) + 48px);
   overflow: visible;
 }
+.env-stage--reading {
+  min-height: auto;
+}
 .env-stage--reading .env-pack {
   pointer-events: none;
   cursor: default;
@@ -305,7 +303,6 @@ onBeforeUnmount(() => {
 
 .env-pack--gone {
   opacity: 0;
-  visibility: hidden;
   pointer-events: none;
 }
 
@@ -363,9 +360,6 @@ onBeforeUnmount(() => {
     transform 0.4s var(--pack-ease),
     opacity 0.65s ease;
 }
-.env-pack--fading {
-  pointer-events: none;
-}
 .env-pack:not(.env-pack--animating):hover {
   transform: translateY(-4px);
   filter: drop-shadow(0 26px 46px color-mix(in srgb, var(--exp-primary) 44%, transparent));
@@ -422,53 +416,27 @@ onBeforeUnmount(() => {
     linear-gradient(-45deg, transparent 49%, color-mix(in srgb, #000 16%, transparent) 50%, transparent 51%);
 }
 
-/* Carta — dentro do envelope, sobe e depois expande */
-.letter {
+/* Papel — sobe de dentro do envelope (atrás do bolso e da aba) */
+.env-pack__slip {
   position: absolute;
   left: 11%;
   right: 11%;
   bottom: 0;
   z-index: 1;
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
-  transform: translateY(72%);
-  transform-origin: center bottom;
-  will-change: transform, opacity, width, left, right;
-}
-.letter--rising,
-.letter--open {
-  visibility: visible;
-}
-.letter--rising {
-  opacity: 1;
-  z-index: 1;
-  animation: letter-rise 2.15s var(--pack-ease) 1s forwards;
-}
-.letter--open {
-  opacity: 1;
-  pointer-events: auto;
-  z-index: 2;
-  left: 50%;
-  right: auto;
-  width: calc(var(--pack-w) * 0.78);
-  transform: translateX(-50%) translateY(calc(var(--pack-h) * -0.42));
-  animation: letter-expand 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-}
-.letter--rising .letter__head,
-.letter--rising .letter__body,
-.letter--rising .letter__foot {
-  visibility: hidden;
-}
-.letter--rising .letter__surface {
-  min-height: calc(var(--pack-h) * 0.5);
-  padding: 0;
-  border: none;
+  height: 88%;
   border-radius: 4px 4px 0 0;
   background: linear-gradient(180deg, #fffef9 0%, #f3ecdf 100%);
   box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.1);
-  background-image: none;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(72%);
+  transform-origin: center bottom;
 }
+.env-pack__slip--rising {
+  opacity: 1;
+  animation: slip-rise 2.15s var(--pack-ease) 1s forwards;
+}
+
 .env-pack__pocket {
   position: absolute;
   inset: 0;
@@ -514,28 +482,6 @@ onBeforeUnmount(() => {
   transform: translate(-50%, -50%);
 }
 
-/* Máscara frontal — carta permanece atrás até o envelope abrir */
-.env-pack__veil {
-  position: absolute;
-  inset: 0;
-  z-index: 5;
-  pointer-events: none;
-  border-radius: 14px;
-  opacity: 0;
-  background: linear-gradient(
-    180deg,
-    var(--pack-flap) 0%,
-    var(--pack-flap) 48%,
-    color-mix(in srgb, var(--pack-flap) 88%, #000 6%) 48%,
-    var(--pack-ink) 100%
-  );
-  clip-path: polygon(0 0, 100% 0, 100% 50%, 50% 72%, 0 50%);
-}
-.env-pack--animating .env-pack__veil {
-  opacity: 1;
-  animation: pack-veil-hide 0.8s ease 2.35s forwards;
-}
-
 /* Idle: leve respiração da aba */
 .env-pack:not(.env-pack--animating) .env-pack__flap {
   animation: pack-flap-idle 3.5s ease-in-out infinite;
@@ -553,9 +499,6 @@ onBeforeUnmount(() => {
 }
 .env-pack--animating .env-pack__body {
   animation: pack-body-hide 0.7s ease 2.55s forwards;
-}
-.env-pack--fading {
-  animation: pack-fade-out 0.85s ease 2.45s forwards;
 }
 
 @keyframes pack-flap-idle {
@@ -591,17 +534,7 @@ onBeforeUnmount(() => {
   }
 }
 
-@keyframes pack-fade-out {
-  0% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-    pointer-events: none;
-  }
-}
-
-@keyframes letter-rise {
+@keyframes slip-rise {
   0% {
     opacity: 0.35;
     transform: translateY(78%);
@@ -619,28 +552,7 @@ onBeforeUnmount(() => {
   }
 }
 
-@keyframes letter-expand {
-  from {
-    left: 50%;
-    right: auto;
-    width: calc(var(--pack-w) * 0.78);
-    transform: translateX(-50%) translateY(calc(var(--pack-h) * -0.42));
-  }
-  to {
-    left: 50%;
-    right: auto;
-    width: min(680px, calc(100vw - 48px));
-    transform: translateX(-50%) translateY(0);
-  }
-}
-
 @keyframes pack-pocket-hide {
-  to {
-    opacity: 0;
-  }
-}
-
-@keyframes pack-veil-hide {
   to {
     opacity: 0;
   }
@@ -652,7 +564,30 @@ onBeforeUnmount(() => {
   }
 }
 
-/* ---------- Carta de leitura ---------- */
+/* ---------- Carta de leitura (no palco) ---------- */
+.letter {
+  grid-area: 1 / 1;
+  width: min(680px, 100%);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(18px) scale(0.96);
+}
+.letter--open {
+  opacity: 1;
+  pointer-events: auto;
+  animation: letter-reveal 0.85s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+@keyframes letter-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 .letter__surface {
   width: 100%;
   min-height: calc(var(--pack-h) * 0.88);
@@ -787,9 +722,7 @@ onBeforeUnmount(() => {
   .env-pack--animating .env-pack__seal,
   .env-pack--animating .env-pack__pocket,
   .env-pack--animating .env-pack__body,
-  .env-pack--animating .env-pack__veil,
-  .env-pack--fading,
-  .letter--rising,
+  .env-pack--animating .env-pack__slip,
   .letter--open,
   .letter__photo {
     animation: none !important;
