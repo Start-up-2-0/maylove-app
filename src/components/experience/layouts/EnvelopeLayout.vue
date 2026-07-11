@@ -120,10 +120,10 @@ interface LetterBeat {
   photo?: ExperienceMediaItem
 }
 
-const RELEASE_MS = 5200
-const SHELL_MS = 6000
-const UNFOLD_START_MS = 7400
-const OPEN_DURATION_MS = 10800
+const RELEASE_MS = 2800
+const SHELL_MS = 5600
+const UNFOLD_START_MS = 7000
+const OPEN_DURATION_MS = 10200
 
 const props = defineProps<LayoutComponentProps>()
 const audio = useExperienceAudio()
@@ -490,11 +490,12 @@ onBeforeUnmount(() => {
 
 .letter--pulling {
   opacity: 1;
-  clip-path: polygon(16% 46%, 84% 46%, 84% 100%, 16% 100%);
+  will-change: transform, clip-path;
+  clip-path: polygon(14% 44%, 86% 44%, 86% 100%, 14% 100%);
   animation:
-    letter-slot-open 5.8s var(--mail-ease-hand) 1.35s forwards,
-    letter-emerge 4.5s var(--mail-ease-hand) 1.35s forwards,
-    letter-center 1.45s var(--mail-ease) 5.8s forwards;
+    letter-slot-open 5.2s var(--mail-ease-hand) 0.85s forwards,
+    letter-emerge 4.5s var(--mail-ease-hand) 0.85s forwards,
+    letter-center 1.45s var(--mail-ease) 5.35s forwards;
 }
 .letter--settled {
   opacity: 1;
@@ -502,7 +503,7 @@ onBeforeUnmount(() => {
   left: 50%;
   right: auto;
   width: min(680px, calc(100vw - 48px));
-  transform: translateX(-50%) translateY(-22%);
+  transform: translateX(-50%) translateY(calc(var(--pack-h) * -0.72));
 }
 .letter--unfolding {
   animation: none;
@@ -589,15 +590,29 @@ onBeforeUnmount(() => {
     border-radius 0.4s ease;
 }
 .letter__surface--paper {
-  height: calc(var(--pack-h) * 0.46);
-  min-height: calc(var(--pack-h) * 0.46);
+  position: relative;
+  height: calc(var(--pack-h) * 0.56);
+  min-height: calc(var(--pack-h) * 0.56);
   padding: 0;
   border: none;
   border-radius: 4px 4px 0 0;
-  background: linear-gradient(180deg, #fffef9 0%, #f3ecdf 100%);
-  box-shadow: 0 -2px 14px rgba(0, 0, 0, 0.1);
+  background: linear-gradient(180deg, #fffff8 0%, #f7f0e4 55%, #efe6d8 100%);
+  box-shadow:
+    0 -6px 18px rgba(0, 0, 0, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
   background-image: none;
   overflow: hidden;
+}
+.letter__surface--paper::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 10%;
+  right: 10%;
+  height: 3px;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--exp-primary) 18%, #d9cfc0);
+  opacity: 0.85;
 }
 .letter__surface--unfolding {
   transform-origin: center top;
@@ -614,10 +629,10 @@ onBeforeUnmount(() => {
 }
 /* fase 2: carta saindo — bolso some devagar enquanto a carta sobe */
 .env-mail--animating .env-mail__pocket {
-  animation: mail-fade 1.1s ease-out 3.4s forwards;
+  animation: mail-fade 1.1s ease-out 2.9s forwards;
 }
 .env-mail--animating .env-mail__body {
-  animation: mail-fade 1.15s ease-out 5.1s forwards;
+  animation: mail-fade 1.15s ease-out 4.6s forwards;
 }
 
 @keyframes mail-flap-idle {
@@ -676,49 +691,46 @@ onBeforeUnmount(() => {
 
 @keyframes letter-slot-open {
   0%,
-  62% {
-    clip-path: polygon(16% 46%, 84% 46%, 84% 100%, 16% 100%);
+  48% {
+    clip-path: polygon(14% 44%, 86% 44%, 86% 100%, 14% 100%);
   }
-  82% {
-    clip-path: polygon(10% 30%, 90% 30%, 90% 100%, 10% 100%);
+  68% {
+    clip-path: polygon(8% 26%, 92% 26%, 92% 100%, 8% 100%);
   }
-  96%,
+  88%,
   100% {
     clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%);
   }
 }
 
-/* fase 2: carta saindo devagar — hesitações leves como dedos puxando */
+/* fase 2: carta saindo — sobe o suficiente para ultrapassar o bolso */
 @keyframes letter-emerge {
   0%,
-  10% {
+  8% {
     opacity: 0;
-    transform: translateY(52%) translateX(0);
+    transform: translateY(38%) translateX(0);
   }
-  18% {
+  14% {
     opacity: 1;
-    transform: translateY(47%) translateX(0);
+    transform: translateY(30%) translateX(0);
   }
-  34% {
-    transform: translateY(40%) translateX(0.5px);
+  28% {
+    transform: translateY(16%) translateX(0.5px);
   }
-  48% {
-    transform: translateY(32%) translateX(-0.5px);
+  42% {
+    transform: translateY(2%) translateX(-0.5px);
   }
-  58% {
-    transform: translateY(28%) translateX(0);
+  56% {
+    transform: translateY(-18%) translateX(0);
   }
   70% {
-    transform: translateY(20%) translateX(0.4px);
+    transform: translateY(-42%) translateX(0.4px);
   }
-  82% {
-    transform: translateY(12%) translateX(-0.4px);
-  }
-  92% {
-    transform: translateY(5%) translateX(0);
+  84% {
+    transform: translateY(-68%) translateX(-0.4px);
   }
   100% {
-    transform: translateY(-4%) translateX(0);
+    transform: translateY(-92%) translateX(0);
   }
 }
 
@@ -727,21 +739,21 @@ onBeforeUnmount(() => {
   0% {
     left: 11%;
     right: 11%;
-    transform: translateY(-4%);
+    transform: translateY(-92%);
   }
   100% {
     left: 50%;
     right: auto;
     width: min(680px, calc(100vw - 48px));
-    transform: translateX(-50%) translateY(-22%);
+    transform: translateX(-50%) translateY(calc(var(--pack-h) * -0.72));
   }
 }
 
 /* fase 4: abrir a carta — desdobramento leve */
 @keyframes surface-unfold {
   0% {
-    height: calc(var(--pack-h) * 0.44);
-    min-height: calc(var(--pack-h) * 0.44);
+    height: calc(var(--pack-h) * 0.56);
+    min-height: calc(var(--pack-h) * 0.56);
     padding: 0;
     border: none;
     border-radius: 4px 4px 2px 2px;
