@@ -392,7 +392,6 @@ onBeforeUnmount(() => {
   height: var(--pack-h);
   overflow: hidden;
   border-radius: 14px;
-  isolation: isolate;
   perspective: 900px;
 }
 .env-mail--release .env-mail__box,
@@ -417,50 +416,56 @@ onBeforeUnmount(() => {
   box-shadow: inset 0 -10px 24px color-mix(in srgb, #000 12%, transparent);
 }
 
-/* z:1 — slot interno: carta só existe aqui, sem raio-x */
+/* z:1 — carta atrás do bolso */
 .env-mail__slot {
   position: absolute;
-  left: 13%;
-  right: 13%;
+  left: 14%;
+  right: 14%;
   top: 0;
   bottom: 0;
   z-index: 1;
-  overflow: hidden;
+  overflow: visible;
   pointer-events: none;
 }
 .env-mail__slot--free {
-  overflow: visible;
   left: 0;
   right: 0;
   z-index: 5;
 }
 
-/* z:2 — bolso frontal 100% opaco (cobre carta por baixo) */
+/*
+ * z:2 — face frontal 100% opaca com janela central (evenodd).
+ * Carta só aparece pela abertura; zero raio-x.
+ */
 .env-mail__front {
   position: absolute;
   inset: 0;
   z-index: 2;
   pointer-events: none;
   background: var(--mail-face);
-  clip-path: polygon(0 50%, 50% 72%, 100% 50%, 100% 100%, 0 100%);
-  box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 18%, transparent);
+  transform: translateZ(2px);
+  clip-path: polygon(
+    evenodd,
+    0% 0%,
+    100% 0%,
+    100% 100%,
+    0% 100%,
+    39% 69%,
+    61% 69%,
+    57% 26%,
+    43% 26%
+  );
+  box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 16%, transparent);
 }
-.env-mail__front::before,
 .env-mail__front::after {
   content: '';
   position: absolute;
-  top: 0;
-  width: 50%;
-  height: 56%;
-  background: var(--mail-face);
-}
-.env-mail__front::before {
-  left: 0;
-  clip-path: polygon(0 0, 0 50%, 50% 72%, 50% 0);
-}
-.env-mail__front::after {
-  right: 0;
-  clip-path: polygon(100% 0, 100% 50%, 50% 72%, 50% 0);
+  inset: 0;
+  pointer-events: none;
+  clip-path: polygon(0 50%, 50% 72%, 100% 50%, 100% 100%, 0 100%);
+  background:
+    linear-gradient(128deg, transparent 49.6%, color-mix(in srgb, #000 14%, transparent) 50%, transparent 50.4%),
+    linear-gradient(52deg, transparent 49.6%, color-mix(in srgb, #000 14%, transparent) 50%, transparent 50.4%);
 }
 
 /* z:3 — aba triangular */
@@ -478,6 +483,7 @@ onBeforeUnmount(() => {
   backface-visibility: hidden;
   box-shadow: 0 6px 14px color-mix(in srgb, #000 14%, transparent);
   pointer-events: none;
+  transform: translateZ(3px);
 }
 .env-mail:not(.env-mail--animating) .env-mail__flap {
   animation: mail-flap-idle 4.5s ease-in-out infinite;
@@ -511,12 +517,13 @@ onBeforeUnmount(() => {
   bottom: 0;
   opacity: 0;
   pointer-events: none;
-  transform: translateY(92%);
+  transform: translateY(100%);
   transform-origin: center bottom;
 }
 .letter--rising {
-  opacity: 1;
-  animation: letter-rise 2.8s var(--mail-ease-rise) 1.35s forwards;
+  animation:
+    letter-visible 0.01s linear 1.35s forwards,
+    letter-rise 2.6s var(--mail-ease-rise) 1.35s forwards;
 }
 .letter--unfolding {
   opacity: 1;
@@ -555,19 +562,19 @@ onBeforeUnmount(() => {
 .letter__surface--peek {
   display: grid;
   place-items: center;
-  height: calc(var(--pack-h) * 0.34);
-  min-height: calc(var(--pack-h) * 0.34);
+  height: calc(var(--pack-h) * 0.32);
+  min-height: calc(var(--pack-h) * 0.32);
   padding: 0;
-  border-radius: 6px 6px 3px 3px;
+  border-radius: 5px 5px 2px 2px;
   background: #fffefb;
-  border: 1px solid color-mix(in srgb, var(--exp-border) 28%, transparent);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  border: 1px solid color-mix(in srgb, var(--exp-border) 22%, transparent);
+  box-shadow: none;
   background-image: none;
   overflow: hidden;
   transform-origin: center bottom;
 }
 .letter--rising .letter__surface--peek {
-  animation: paper-unfold-rise 2.8s var(--mail-ease-rise) 1.35s forwards;
+  animation: paper-unfold-rise 2.6s var(--mail-ease-rise) 1.35s forwards;
 }
 .letter__peek-mark {
   display: grid;
@@ -686,56 +693,58 @@ onBeforeUnmount(() => {
 }
 
 /* Fase 2 — carta sobe reta, só depois da aba (delay 1.35s) */
+@keyframes letter-visible {
+  to {
+    opacity: 1;
+  }
+}
+
 @keyframes letter-rise {
   0% {
-    transform: translateY(88%);
+    transform: translateY(100%);
   }
   100% {
-    transform: translateY(calc(-1 * var(--pack-h) * 0.62));
+    transform: translateY(calc(-1 * var(--pack-h) * 0.46));
   }
 }
 
 /* Papel desdobra em altura enquanto sobe (como no gif) */
 @keyframes paper-unfold-rise {
   0% {
-    height: calc(var(--pack-h) * 0.34);
-    min-height: calc(var(--pack-h) * 0.34);
+    height: calc(var(--pack-h) * 0.32);
+    min-height: calc(var(--pack-h) * 0.32);
   }
-  45% {
-    height: calc(var(--pack-h) * 0.46);
-    min-height: calc(var(--pack-h) * 0.46);
-  }
-  75% {
-    height: calc(var(--pack-h) * 0.58);
-    min-height: calc(var(--pack-h) * 0.58);
+  50% {
+    height: calc(var(--pack-h) * 0.44);
+    min-height: calc(var(--pack-h) * 0.44);
   }
   100% {
-    height: calc(var(--pack-h) * 0.74);
-    min-height: calc(var(--pack-h) * 0.74);
+    height: calc(var(--pack-h) * 0.68);
+    min-height: calc(var(--pack-h) * 0.68);
   }
 }
 
 /* Fase 3 — centralizar após sair do envelope */
 @keyframes letter-center {
   0% {
-    left: 13%;
-    right: 13%;
+    left: 14%;
+    right: 14%;
     width: auto;
-    transform: translateY(calc(-1 * var(--pack-h) * 0.62));
+    transform: translateY(calc(-1 * var(--pack-h) * 0.46));
   }
   100% {
     left: 50%;
     right: auto;
     width: min(680px, calc(100vw - 48px));
-    transform: translateX(-50%) translateY(calc(var(--pack-h) * -0.55));
+    transform: translateX(-50%) translateY(calc(var(--pack-h) * -0.52));
   }
 }
 
 /* Fase 4 — abrir carta de leitura */
 @keyframes surface-unfold {
   0% {
-    height: calc(var(--pack-h) * 0.74);
-    min-height: calc(var(--pack-h) * 0.74);
+    height: calc(var(--pack-h) * 0.68);
+    min-height: calc(var(--pack-h) * 0.68);
     padding: clamp(14px, 2.5vw, 24px);
     background: #fffefb;
     background-image: none;
