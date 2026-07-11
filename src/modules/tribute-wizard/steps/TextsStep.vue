@@ -133,7 +133,7 @@
 
     <section class="tx-section">
       <h3 class="tx-title">Assinatura</h3>
-      <p class="tx-hint">Quem envia a homenagem — aparece ao final, fechando a mensagem.</p>
+      <p class="tx-hint">Quem envia a homenagem — aparece ao final da experiência, com ou sem despedida.</p>
       <div class="tx-grid">
         <div class="ml-field">
           <label class="ml-label" for="t-sender">De (remetente)</label>

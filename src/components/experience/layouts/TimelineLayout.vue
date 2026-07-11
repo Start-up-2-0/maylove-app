@@ -31,9 +31,13 @@
       </article>
     </div>
 
-    <footer v-if="content.includeClosingMessage" class="tl__foot">
-      <RichText v-if="content.closingMessage" :text="content.closingMessage" class="tl__closing" />
-      <p class="tl__sign">{{ content.signature || content.senderName }}</p>
+    <footer v-if="showFooter" class="tl__foot">
+      <RichText
+        v-if="content.includeClosingMessage && content.closingMessage"
+        :text="content.closingMessage"
+        class="tl__closing"
+      />
+      <p v-if="signatureLabel" class="tl__sign">{{ signatureLabel }}</p>
       <ShareBar v-if="mode === 'full' && shareUrl" :url="shareUrl" :text="content.title" />
     </footer>
   </div>
@@ -54,6 +58,14 @@ interface TimelineEntry {
 }
 
 const props = defineProps<LayoutComponentProps>()
+
+const signatureLabel = computed(() => props.content.signature || props.content.senderName || '')
+const showFooter = computed(
+  () =>
+    (props.content.includeClosingMessage && props.content.closingMessage) ||
+    Boolean(signatureLabel.value) ||
+    (props.mode === 'full' && props.shareUrl),
+)
 
 const track = ref<HTMLElement | null>(null)
 const fill = ref(0)

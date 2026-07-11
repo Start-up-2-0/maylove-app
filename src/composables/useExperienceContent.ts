@@ -130,7 +130,7 @@ function resolveTextFlag(
   legacyText: string,
 ): boolean {
   if (formValue !== undefined) return formValue
-  if (contentValue !== undefined) return contentValue
+  if (typeof contentValue === 'boolean') return contentValue
   return Boolean(legacyText.trim())
 }
 

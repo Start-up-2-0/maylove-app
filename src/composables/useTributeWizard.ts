@@ -191,9 +191,13 @@ export function useTributeWizard(tributeId: string) {
       data.content_json?.music_end_seconds ??
       (form.music_duration_seconds > 0 ? form.music_duration_seconds : 0)
     form.include_opening_message =
-      data.content_json?.include_opening_message ?? Boolean(data.message?.trim())
+      typeof data.content_json?.include_opening_message === 'boolean'
+        ? data.content_json.include_opening_message
+        : Boolean(data.message?.trim())
     form.include_closing_message =
-      data.content_json?.include_closing_message ?? Boolean(data.closing_message?.trim())
+      typeof data.content_json?.include_closing_message === 'boolean'
+        ? data.content_json.include_closing_message
+        : Boolean(data.closing_message?.trim())
   }
 
   async function reload() {

@@ -61,11 +61,15 @@
             </template>
           </div>
 
-        <footer v-if="doneTyping && content.includeClosingMessage" class="letter__foot">
-          <RichText v-if="content.closingMessage" :text="content.closingMessage" class="letter__closing" />
-            <p class="letter__sign">{{ content.signature || content.senderName }}</p>
-            <ShareBar v-if="mode === 'full' && shareUrl" :url="shareUrl" :text="content.title" />
-          </footer>
+        <footer v-if="showLetterFooter" class="letter__foot">
+          <RichText
+            v-if="content.includeClosingMessage && content.closingMessage"
+            :text="content.closingMessage"
+            class="letter__closing"
+          />
+          <p v-if="signatureLabel" class="letter__sign">{{ signatureLabel }}</p>
+          <ShareBar v-if="mode === 'full' && shareUrl" :url="shareUrl" :text="content.title" />
+        </footer>
         </div>
       </article>
     </div>
@@ -115,6 +119,14 @@ let morphTimer: number | undefined
 let readingTimer: number | undefined
 
 const initial = computed(() => (props.content.senderName || props.content.honoreeName || 'M').charAt(0).toUpperCase())
+const signatureLabel = computed(() => props.content.signature || props.content.senderName || '')
+const showLetterFooter = computed(
+  () =>
+    doneTyping.value &&
+    ((props.content.includeClosingMessage && props.content.closingMessage) ||
+      Boolean(signatureLabel.value) ||
+      (props.mode === 'full' && props.shareUrl)),
+)
 const introHtml = computed(() =>
   props.content.includeOpeningMessage && containsHtml(props.content.message)
     ? props.content.message
