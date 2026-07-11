@@ -8,7 +8,13 @@
       {{ content.subtitle }}
     </p>
 
-    <div class="env-stage" :class="{ 'env-stage--reading': reading }">
+    <div
+      class="env-stage"
+      :class="{
+        'env-stage--reading': reading,
+        'env-stage--animating': animating,
+      }"
+    >
       <div
         class="env-mail"
         :class="{
@@ -35,6 +41,7 @@
               class="letter"
               :class="{
                 'letter--pulling': animating,
+                'letter--unfolding': unfolding,
                 'letter--reading': reading,
               }"
               :aria-hidden="!reading"
@@ -42,7 +49,8 @@
               <div
                 class="letter__surface"
                 :class="{
-                  'letter__surface--paper': animating,
+                  'letter__surface--paper': animating && !unfolding,
+                  'letter__surface--unfolding': unfolding && !reading,
                   'letter__surface--ready': reading,
                 }"
               >
@@ -111,12 +119,16 @@ interface LetterBeat {
   photo?: ExperienceMediaItem
 }
 
-const OPEN_DURATION_MS = 3500
+const EMERGE_MS = 2600
+const RELEASE_MS = 2800
+const SHELL_MS = 3400
+const OPEN_DURATION_MS = 5200
 
 const props = defineProps<LayoutComponentProps>()
 const audio = useExperienceAudio()
 
 const animating = ref(false)
+const unfolding = ref(false)
 const reading = ref(false)
 const releasing = ref(false)
 const shellHidden = ref(false)
@@ -127,6 +139,7 @@ const typedText = ref('')
 const doneTyping = ref(false)
 const readingStarted = ref(false)
 let timer: number | undefined
+let unfoldTimer: number | undefined
 let releaseTimer: number | undefined
 let shellTimer: number | undefined
 let readingTimer: number | undefined
@@ -206,14 +219,18 @@ function open() {
   }
 
   animating.value = true
+  unfoldTimer = window.setTimeout(() => {
+    unfolding.value = true
+  }, EMERGE_MS)
   releaseTimer = window.setTimeout(() => {
     releasing.value = true
-  }, 2300)
+  }, RELEASE_MS)
   shellTimer = window.setTimeout(() => {
     shellHidden.value = true
-  }, 2800)
+  }, SHELL_MS)
   readingTimer = window.setTimeout(() => {
     animating.value = false
+    unfolding.value = false
     reading.value = true
     onLetterReady()
   }, OPEN_DURATION_MS)
@@ -231,7 +248,7 @@ function beginReading() {
     doneTyping.value = true
     return
   }
-  window.setTimeout(startTyping, 550)
+  window.setTimeout(startTyping, 400)
 }
 
 function startTyping() {
@@ -269,6 +286,7 @@ function nextBeat() {
 
 onBeforeUnmount(() => {
   window.clearTimeout(timer)
+  window.clearTimeout(unfoldTimer)
   window.clearTimeout(releaseTimer)
   window.clearTimeout(shellTimer)
   window.clearTimeout(readingTimer)
@@ -303,6 +321,10 @@ onBeforeUnmount(() => {
   width: 100%;
   min-height: calc(var(--pack-h) + 80px);
   overflow: visible;
+  transition: min-height 0.6s var(--mail-ease);
+}
+.env-stage--animating {
+  min-height: calc(var(--pack-h) + clamp(180px, 34vw, 280px));
 }
 .env-stage--reading {
   min-height: auto;
@@ -444,8 +466,9 @@ onBeforeUnmount(() => {
   z-index: 1;
   opacity: 0;
   pointer-events: none;
-  transform: translateY(70%);
+  transform: translateY(62%);
   transform-origin: center bottom;
+  perspective: 900px;
 }
 .env-mail--shell-hidden {
   filter: none;
@@ -463,8 +486,14 @@ onBeforeUnmount(() => {
   opacity: 1;
   clip-path: polygon(16% 46%, 84% 46%, 84% 100%, 16% 100%);
   animation:
-    letter-pull 3.1s var(--mail-ease) 0.4s forwards,
-    letter-slot-open 3.1s var(--mail-ease) 0.4s forwards;
+    letter-emerge 2.4s var(--mail-ease) 0.3s forwards,
+    letter-slot-open 2.4s var(--mail-ease) 0.3s forwards;
+}
+.letter--unfolding {
+  clip-path: none;
+  animation:
+    letter-emerge 2.4s var(--mail-ease) 0.3s forwards,
+    letter-expand 2.3s var(--mail-ease) forwards;
 }
 .letter--reading {
   position: relative;
@@ -485,6 +514,15 @@ onBeforeUnmount(() => {
 .letter--pulling .letter__body,
 .letter--pulling .letter__foot {
   display: none;
+}
+.letter--unfolding .letter__body,
+.letter--unfolding .letter__foot {
+  display: none;
+}
+.letter--unfolding .letter__head {
+  display: block;
+  opacity: 0;
+  animation: env-soft-in 0.75s var(--exp-ease) 1.1s forwards;
 }
 
 .env-mail--shell-hidden .env-mail__body,
@@ -533,8 +571,8 @@ onBeforeUnmount(() => {
     border-radius 0.4s ease;
 }
 .letter__surface--paper {
-  height: calc(var(--pack-h) * 0.52);
-  min-height: calc(var(--pack-h) * 0.52);
+  height: calc(var(--pack-h) * 0.46);
+  min-height: calc(var(--pack-h) * 0.46);
   padding: 0;
   border: none;
   border-radius: 4px 4px 0 0;
@@ -543,19 +581,24 @@ onBeforeUnmount(() => {
   background-image: none;
   overflow: hidden;
 }
+.letter__surface--unfolding {
+  transform-origin: center top;
+  overflow: hidden;
+  animation: surface-unfold 2.3s var(--mail-ease) forwards;
+}
 
 /* Sequência de abertura */
 .env-mail--animating .env-mail__seal {
   animation: mail-seal-break 0.5s var(--mail-ease) forwards;
 }
 .env-mail--animating .env-mail__flap {
-  animation: mail-flap-open 0.85s var(--mail-ease) 0.15s forwards;
+  animation: mail-flap-open 0.9s var(--mail-ease) 0.12s forwards;
 }
 .env-mail--animating .env-mail__pocket {
-  animation: mail-fade 0.5s ease 1.75s forwards;
+  animation: mail-fade 0.65s ease 1.85s forwards;
 }
 .env-mail--animating .env-mail__body {
-  animation: mail-fade 0.55s ease 2.35s forwards;
+  animation: mail-fade 0.6s ease 2.55s forwards;
 }
 
 @keyframes mail-flap-idle {
@@ -598,50 +641,108 @@ onBeforeUnmount(() => {
 
 @keyframes letter-slot-open {
   0%,
-  28% {
+  22% {
     clip-path: polygon(16% 46%, 84% 46%, 84% 100%, 16% 100%);
   }
-  56% {
-    clip-path: polygon(10% 26%, 90% 26%, 90% 100%, 10% 100%);
+  48% {
+    clip-path: polygon(10% 30%, 90% 30%, 90% 100%, 10% 100%);
   }
-  74%,
+  68%,
   100% {
     clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%);
   }
 }
 
-@keyframes letter-pull {
+@keyframes letter-emerge {
   0%,
-  16% {
+  10% {
     opacity: 0;
-    transform: translateY(68%);
+    transform: translateY(62%);
   }
-  26% {
+  20% {
     opacity: 1;
     transform: translateY(46%);
   }
-  56% {
-    transform: translateY(2%);
+  48% {
+    transform: translateY(18%);
   }
-  72% {
+  68% {
+    transform: translateY(-6%);
+  }
+  100% {
+    transform: translateY(-34%);
+  }
+}
+
+@keyframes letter-expand {
+  0% {
     left: 11%;
     right: 11%;
-    transform: translateY(-20%);
+    transform: translateY(-34%);
   }
-  86% {
+  55% {
     left: 11%;
     right: 11%;
-    bottom: 0;
-    top: auto;
-    transform: translateY(-26%);
+    transform: translateY(-42%);
   }
   100% {
     left: 50%;
     right: auto;
-    bottom: auto;
-    top: 0;
     width: min(680px, calc(100vw - 48px));
-    transform: translateX(-50%) translateY(0);
+    transform: translateX(-50%) translateY(-48%);
+  }
+}
+
+@keyframes surface-unfold {
+  0% {
+    height: calc(var(--pack-h) * 0.46);
+    min-height: calc(var(--pack-h) * 0.46);
+    padding: 0;
+    border: none;
+    border-radius: 4px 4px 2px 2px;
+    background: linear-gradient(180deg, #fffef9 0%, #f3ecdf 100%);
+    background-image: none;
+    box-shadow: 0 -2px 14px rgba(0, 0, 0, 0.1);
+    transform: rotateX(24deg);
+  }
+  35% {
+    height: calc(var(--pack-h) * 0.62);
+    min-height: calc(var(--pack-h) * 0.62);
+    transform: rotateX(14deg);
+  }
+  62% {
+    height: calc(var(--pack-h) * 0.78);
+    min-height: calc(var(--pack-h) * 0.78);
+    padding: clamp(16px, 3.5vw, 32px) clamp(14px, 3vw, 28px);
+    transform: rotateX(7deg);
+    background: var(--exp-surface, #fff);
+    border: 1px solid color-mix(in srgb, var(--exp-border) 70%, transparent);
+    box-shadow: 0 20px 50px -24px rgba(0, 0, 0, 0.32);
+  }
+  85% {
+    height: calc(var(--pack-h) * 0.9);
+    min-height: calc(var(--pack-h) * 0.9);
+    transform: rotateX(2deg);
+    background-image: repeating-linear-gradient(
+      transparent,
+      transparent 33px,
+      color-mix(in srgb, var(--exp-primary) 8%, transparent) 34px
+    );
+  }
+  100% {
+    height: auto;
+    min-height: calc(var(--pack-h) * 0.88);
+    padding: clamp(28px, 5vw, 56px) clamp(22px, 5vw, 52px);
+    border-radius: 6px;
+    background: var(--exp-surface, #fff);
+    border: 1px solid var(--exp-border);
+    box-shadow: 0 30px 70px -30px rgba(0, 0, 0, 0.4);
+    background-image: repeating-linear-gradient(
+      transparent,
+      transparent 33px,
+      color-mix(in srgb, var(--exp-primary) 10%, transparent) 34px
+    );
+    transform: rotateX(0deg);
   }
 }
 
@@ -803,6 +904,8 @@ onBeforeUnmount(() => {
   .env-mail--animating .env-mail__pocket,
   .env-mail--animating .env-mail__body,
   .letter--pulling,
+  .letter--unfolding,
+  .letter__surface--unfolding,
   .letter__photo {
     animation: none !important;
     transition: none !important;
