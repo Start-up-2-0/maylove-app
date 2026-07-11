@@ -8,12 +8,12 @@
       {{ content.subtitle }}
     </p>
 
-    <div class="env-stage">
+    <div class="env-stage" :class="{ 'env-stage--reading': reading }">
       <div
         class="env-pack"
         :class="{
           'env-pack--animating': animating,
-          'env-pack--fading': morphing,
+          'env-pack--fading': animating,
         }"
         role="button"
         tabindex="0"
@@ -26,55 +26,56 @@
       >
         <div class="env-pack__box">
           <span class="env-pack__body" />
-          <span class="env-pack__paper" aria-hidden="true" />
+
+          <article
+            class="letter"
+            :class="{
+              'letter--rising': animating,
+              'letter--above': letterAbovePocket,
+              'letter--open': reading,
+            }"
+            :aria-hidden="!reading"
+          >
+            <div class="letter__surface" :class="{ 'letter__surface--ready': reading }">
+              <header class="letter__head">
+                <p class="letter__place">Uma carta para você</p>
+                <h1 class="letter__title">{{ content.title }}</h1>
+              </header>
+
+              <div class="letter__body">
+                <RichText v-if="introHtml" :text="content.message" class="letter__para letter__intro" />
+
+                <template v-for="(beat, i) in beats" :key="i">
+                  <p v-if="beat.text && i <= activeIndex" class="letter__para">
+                    {{ i < activeIndex ? beat.text : typedText
+                    }}<span v-if="i === activeIndex && !doneTyping" class="letter__caret" />
+                  </p>
+                  <figure v-if="beat.photo && beatVisible(i)" class="letter__photo">
+                    <img :src="beat.photo.url" :alt="`Recordação ${i + 1}`" loading="lazy" />
+                  </figure>
+                </template>
+              </div>
+
+              <footer v-if="showLetterFooter" class="letter__foot">
+                <RichText
+                  v-if="content.includeClosingMessage && content.closingMessage"
+                  :text="content.closingMessage"
+                  class="letter__closing"
+                />
+                <p v-if="signatureLabel" class="letter__sign">{{ signatureLabel }}</p>
+                <ShareBar v-if="mode === 'full' && shareUrl" :url="shareUrl" :text="content.title" />
+              </footer>
+            </div>
+          </article>
+
           <span class="env-pack__pocket" aria-hidden="true" />
           <span class="env-pack__flap" aria-hidden="true" />
           <span class="env-pack__seal">{{ initial }}</span>
         </div>
       </div>
-
-      <article
-        class="letter"
-        :class="{
-          'letter--morph': morphing,
-          'letter--open': reading,
-        }"
-        :aria-hidden="!morphing && !reading"
-      >
-        <div class="letter__surface" :class="{ 'letter__surface--ready': reading }">
-          <header class="letter__head">
-            <p class="letter__place">Uma carta para você</p>
-            <h1 class="letter__title">{{ content.title }}</h1>
-          </header>
-
-          <div class="letter__body">
-            <RichText v-if="introHtml" :text="content.message" class="letter__para letter__intro" />
-
-            <template v-for="(beat, i) in beats" :key="i">
-              <p v-if="beat.text && i <= activeIndex" class="letter__para">
-                {{ i < activeIndex ? beat.text : typedText
-                }}<span v-if="i === activeIndex && !doneTyping" class="letter__caret" />
-              </p>
-              <figure v-if="beat.photo && beatVisible(i)" class="letter__photo">
-                <img :src="beat.photo.url" :alt="`Recordação ${i + 1}`" loading="lazy" />
-              </figure>
-            </template>
-          </div>
-
-        <footer v-if="showLetterFooter" class="letter__foot">
-          <RichText
-            v-if="content.includeClosingMessage && content.closingMessage"
-            :text="content.closingMessage"
-            class="letter__closing"
-          />
-          <p v-if="signatureLabel" class="letter__sign">{{ signatureLabel }}</p>
-          <ShareBar v-if="mode === 'full' && shareUrl" :url="shareUrl" :text="content.title" />
-        </footer>
-        </div>
-      </article>
     </div>
 
-    <template v-if="!opening">
+    <template v-if="sealed">
       <p class="env-scene__hint">Para {{ content.honoreeName || 'você' }}</p>
       <button class="env-open-btn" type="button" @click="open">
         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8">
@@ -100,23 +101,23 @@ interface LetterBeat {
   photo?: ExperienceMediaItem
 }
 
-const MORPH_START_MS = 1900
-const READING_START_MS = 2900
+const READING_START_MS = 3200
 
 const props = defineProps<LayoutComponentProps>()
 const audio = useExperienceAudio()
 
 const animating = ref(false)
-const morphing = ref(false)
 const reading = ref(false)
-const opening = computed(() => animating.value || morphing.value)
+const letterAbovePocket = ref(false)
+const opening = computed(() => animating.value || reading.value)
+const sealed = computed(() => !animating.value && !reading.value)
 const activeIndex = ref(0)
 const typedText = ref('')
 const doneTyping = ref(false)
 const readingStarted = ref(false)
 let timer: number | undefined
-let morphTimer: number | undefined
 let readingTimer: number | undefined
+let pocketTimer: number | undefined
 
 const initial = computed(() => (props.content.senderName || props.content.honoreeName || 'M').charAt(0).toUpperCase())
 const signatureLabel = computed(() => props.content.signature || props.content.senderName || '')
@@ -193,12 +194,11 @@ function open() {
   }
 
   animating.value = true
-  morphTimer = window.setTimeout(() => {
-    morphing.value = true
-  }, MORPH_START_MS)
+  pocketTimer = window.setTimeout(() => {
+    letterAbovePocket.value = true
+  }, 1850)
   readingTimer = window.setTimeout(() => {
     animating.value = false
-    morphing.value = false
     reading.value = true
     onLetterReady()
   }, READING_START_MS)
@@ -254,7 +254,7 @@ function nextBeat() {
 
 onBeforeUnmount(() => {
   window.clearTimeout(timer)
-  window.clearTimeout(morphTimer)
+  window.clearTimeout(pocketTimer)
   window.clearTimeout(readingTimer)
 })
 </script>
@@ -283,6 +283,19 @@ onBeforeUnmount(() => {
   place-items: center;
   width: 100%;
   min-height: calc(var(--pack-h) + 48px);
+  overflow: visible;
+}
+.env-stage--reading .env-pack {
+  pointer-events: none;
+  cursor: default;
+  filter: none;
+}
+.env-stage--reading .env-pack__body,
+.env-stage--reading .env-pack__pocket,
+.env-stage--reading .env-pack__flap,
+.env-stage--reading .env-pack__seal {
+  opacity: 0;
+  visibility: hidden;
 }
 
 .env-scene__eyebrow {
@@ -340,7 +353,6 @@ onBeforeUnmount(() => {
     opacity 0.65s ease;
 }
 .env-pack--fading {
-  opacity: 0;
   pointer-events: none;
 }
 .env-pack:not(.env-pack--animating):hover {
@@ -363,6 +375,10 @@ onBeforeUnmount(() => {
   height: var(--pack-h);
   overflow: hidden;
   border-radius: 14px;
+}
+.env-pack--animating .env-pack__box,
+.env-stage--reading .env-pack__box {
+  overflow: visible;
 }
 
 /* Corpo — retângulo único que ancora todo o envelope */
@@ -389,21 +405,47 @@ onBeforeUnmount(() => {
     linear-gradient(-45deg, transparent 49%, color-mix(in srgb, #000 16%, transparent) 50%, transparent 51%);
 }
 
-/* Carta — escondida no bolso, sobe depois da aba */
-.env-pack__paper {
+/* Carta — dentro do envelope, sobe e depois expande */
+.letter {
   position: absolute;
   left: 11%;
   right: 11%;
   bottom: 0;
-  height: 88%;
   z-index: 1;
-  border-radius: 5px 5px 0 0;
-  background: linear-gradient(180deg, #fffef9 0%, #f3ecdf 100%);
-  box-shadow: 0 -3px 14px rgba(0, 0, 0, 0.1);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
   transform: translateY(72%);
+  transform-origin: center bottom;
+  will-change: transform, opacity, width, left, right;
 }
-
-/* Bolso frontal — cobre a parte de baixo da carta */
+.letter--rising,
+.letter--open {
+  visibility: visible;
+}
+.letter--rising {
+  opacity: 1;
+  z-index: 1;
+  animation: letter-rise 2.2s var(--pack-ease) 1s forwards;
+}
+.letter--rising.letter--above {
+  z-index: 5;
+}
+.letter--open {
+  opacity: 1;
+  pointer-events: auto;
+  z-index: 6;
+  left: 50%;
+  right: auto;
+  width: calc(var(--pack-w) * 0.78);
+  transform: translateX(-50%) translateY(calc(var(--pack-h) * -0.48));
+  animation: letter-expand 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+.letter--rising .letter__head,
+.letter--rising .letter__body,
+.letter--rising .letter__foot {
+  visibility: hidden;
+}
 .env-pack__pocket {
   position: absolute;
   inset: 0;
@@ -464,15 +506,14 @@ onBeforeUnmount(() => {
 .env-pack--animating .env-pack__flap {
   animation: pack-flap-open 0.95s var(--pack-ease) 0.15s forwards;
 }
-.env-pack--animating .env-pack__paper {
-  z-index: 5;
-  animation: pack-paper-rise 2.2s var(--pack-ease) 0.65s forwards;
-}
 .env-pack--animating .env-pack__pocket {
   animation: pack-pocket-hide 0.8s ease 1.85s forwards;
 }
 .env-pack--animating .env-pack__body {
   animation: pack-body-hide 0.75s ease 2.15s forwards;
+}
+.env-pack--fading {
+  animation: pack-fade-out 0.9s ease 2.05s forwards;
 }
 
 @keyframes pack-flap-idle {
@@ -508,18 +549,46 @@ onBeforeUnmount(() => {
   }
 }
 
-@keyframes pack-paper-rise {
+@keyframes pack-fade-out {
   0% {
-    transform: translateY(72%);
-  }
-  40% {
-    transform: translateY(28%);
-  }
-  75% {
-    transform: translateY(-18%);
+    opacity: 1;
   }
   100% {
-    transform: translateY(-52%);
+    opacity: 0;
+    pointer-events: none;
+  }
+}
+
+@keyframes letter-rise {
+  0% {
+    opacity: 0.4;
+    transform: translateY(72%);
+  }
+  20% {
+    opacity: 1;
+    transform: translateY(48%);
+  }
+  65% {
+    transform: translateY(4%);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(-48%);
+  }
+}
+
+@keyframes letter-expand {
+  from {
+    left: 50%;
+    right: auto;
+    width: calc(var(--pack-w) * 0.78);
+    transform: translateX(-50%) translateY(calc(var(--pack-h) * -0.48));
+  }
+  to {
+    left: 50%;
+    right: auto;
+    width: min(680px, calc(100vw - 48px));
+    transform: translateX(-50%) translateY(0);
   }
 }
 
@@ -536,36 +605,6 @@ onBeforeUnmount(() => {
 }
 
 /* ---------- Carta de leitura ---------- */
-.letter {
-  grid-area: 1 / 1;
-  width: min(680px, 100%);
-  opacity: 0;
-  pointer-events: none;
-  transform: translateY(12%) scale(0.34);
-  transform-origin: center 72%;
-  will-change: transform, opacity, width;
-}
-.letter--morph {
-  opacity: 1;
-  width: calc(var(--pack-w) * 0.78);
-  transform: translateY(-8%) scale(0.42);
-  transition: none;
-}
-.letter--open {
-  opacity: 1;
-  pointer-events: auto;
-  width: min(680px, 100%);
-  transform: none;
-  transition:
-    width 0.85s cubic-bezier(0.22, 1, 0.36, 1),
-    transform 0.85s cubic-bezier(0.22, 1, 0.36, 1),
-    opacity 0.45s ease;
-}
-.letter--morph .letter__head,
-.letter--morph .letter__body,
-.letter--morph .letter__foot {
-  visibility: hidden;
-}
 .letter__surface {
   width: 100%;
   min-height: calc(var(--pack-h) * 0.88);
@@ -697,12 +736,11 @@ onBeforeUnmount(() => {
     animation: none !important;
   }
   .env-pack--animating .env-pack__flap,
-  .env-pack--animating .env-pack__paper,
   .env-pack--animating .env-pack__seal,
   .env-pack--animating .env-pack__pocket,
   .env-pack--animating .env-pack__body,
   .env-pack--fading,
-  .letter--morph,
+  .letter--rising,
   .letter--open,
   .letter__photo {
     animation: none !important;
