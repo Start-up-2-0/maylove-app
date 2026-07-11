@@ -38,12 +38,13 @@
             <!-- z:0 fundo / interior rosa -->
             <span class="env-mail__back" aria-hidden="true" />
 
-            <!-- z:1 carta — atrás do bolso -->
+            <!-- z:1 túnel — carta só existe durante animação -->
             <div
-              class="env-mail__slot"
-              :class="{ 'env-mail__slot--free': releasing || unfolding || reading }"
+              class="env-mail__tunnel"
+              :class="{ 'env-mail__tunnel--free': releasing || unfolding || reading }"
             >
               <article
+                v-if="animating || unfolding || reading"
                 class="letter"
                 :class="{
                   'letter--rising': animating && !unfolding,
@@ -52,18 +53,20 @@
                 }"
                 :aria-hidden="!reading"
               >
+                <!-- fase gif: cartão branco simples -->
+                <div v-if="animating && !unfolding" class="letter__card">
+                  <span class="letter__card-mark" aria-hidden="true">{{ initial }}</span>
+                </div>
+
+                <!-- fase leitura -->
                 <div
+                  v-else
                   class="letter__surface"
                   :class="{
-                    'letter__surface--peek': animating && !unfolding,
                     'letter__surface--unfolding': unfolding && !reading,
                     'letter__surface--ready': reading,
                   }"
                 >
-                  <span v-if="animating && !unfolding && !reading" class="letter__peek-mark" aria-hidden="true">
-                    {{ initial }}
-                  </span>
-
                   <header class="letter__head">
                     <p class="letter__place">Uma carta para você</p>
                     <h1 class="letter__title">{{ content.title }}</h1>
@@ -96,7 +99,7 @@
               </article>
             </div>
 
-            <!-- z:2 face frontal 100% opaca (retângulos sólidos, sem clip-path) -->
+            <!-- z:2 face frontal opaca -->
             <span class="env-mail__shade" aria-hidden="true" />
             <span class="env-mail__wing env-mail__wing--l" aria-hidden="true" />
             <span class="env-mail__wing env-mail__wing--r" aria-hidden="true" />
@@ -399,6 +402,7 @@ onBeforeUnmount(() => {
   overflow: hidden;
   border-radius: 14px;
   perspective: 900px;
+  isolation: isolate;
 }
 .env-mail--release .env-mail__box,
 .env-stage--reading .env-mail__box {
@@ -422,57 +426,54 @@ onBeforeUnmount(() => {
   box-shadow: inset 0 -10px 24px color-mix(in srgb, #000 12%, transparent);
 }
 
-/* z:1 — trilho: só a parte de baixo; overflow corta a carta até ela subir */
-.env-mail__slot {
+/* z:1 — túnel central: overflow corta carta até emergir pelo topo */
+.env-mail__tunnel {
   position: absolute;
-  left: 15%;
-  right: 15%;
+  left: 27%;
+  right: 27%;
+  top: 0;
   bottom: 0;
-  height: 54%;
   z-index: 1;
   overflow: hidden;
   pointer-events: none;
 }
-.env-mail__slot--free {
+.env-mail__tunnel--free {
   overflow: visible;
   left: 0;
   right: 0;
-  bottom: 0;
-  height: auto;
-  top: 0;
   z-index: 5;
 }
 
-/* z:2 — cortina inferior sólida (cobre carta por completo) */
+/* z:2 — bolso inferior sólido */
 .env-mail__shade {
   position: absolute;
   left: 0;
   right: 0;
   bottom: 0;
-  height: 54%;
+  height: 52%;
   z-index: 2;
   pointer-events: none;
-  background: linear-gradient(180deg, var(--mail-face) 0%, var(--mail-ink) 100%);
+  background: var(--mail-face);
   border-radius: 0 0 14px 14px;
+  box-shadow: inset 0 2px 0 color-mix(in srgb, #fff 12%, transparent);
 }
-.env-mail__shade::after {
+.env-mail__shade::before {
   content: '';
   position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background:
-    linear-gradient(128deg, transparent 49.5%, color-mix(in srgb, #000 16%, transparent) 50%, transparent 50.5%),
-    linear-gradient(52deg, transparent 49.5%, color-mix(in srgb, #000 16%, transparent) 50%, transparent 50.5%);
-  clip-path: polygon(0 12%, 50% 38%, 100% 12%, 100% 100%, 0 100%);
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 1px;
+  background: color-mix(in srgb, #000 10%, transparent);
 }
 
-/* z:2 — laterais superiores sólidas (fecham as quinas) */
+/* z:2 — laterais superiores */
 .env-mail__wing {
   position: absolute;
   top: 0;
   z-index: 2;
   width: 27%;
-  height: 46%;
+  height: 50%;
   pointer-events: none;
   background: var(--mail-face);
 }
@@ -500,15 +501,6 @@ onBeforeUnmount(() => {
   backface-visibility: hidden;
   box-shadow: 0 6px 14px color-mix(in srgb, #000 14%, transparent);
   pointer-events: none;
-}
-.env-mail__flap::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: var(--mail-lining);
-  clip-path: polygon(0 0, 100% 0, 50% 100%);
-  transform: rotateX(180deg);
-  backface-visibility: hidden;
 }
 .env-mail:not(.env-mail--animating) .env-mail__flap {
   animation: mail-flap-idle 4.5s ease-in-out infinite;
@@ -540,17 +532,13 @@ onBeforeUnmount(() => {
   left: 0;
   right: 0;
   bottom: 0;
-  opacity: 1;
-  visibility: hidden;
   pointer-events: none;
   transform: translateY(0);
   transform-origin: center bottom;
   will-change: transform;
 }
 .letter--rising {
-  animation:
-    letter-reveal 0s linear var(--mail-rise-delay) forwards,
-    letter-lift var(--mail-rise-dur) var(--mail-ease-lift) var(--mail-rise-delay) forwards;
+  animation: letter-lift var(--mail-rise-dur) var(--mail-ease-lift) var(--mail-rise-delay) forwards;
 }
 .letter--unfolding {
   opacity: 1;
@@ -580,36 +568,37 @@ onBeforeUnmount(() => {
 .letter--unfolding .letter__foot {
   display: none;
 }
+
+/* cartão branco da fase gif */
+.letter__card {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: calc(var(--pack-h) * 0.5);
+  display: grid;
+  place-items: center;
+  background: #fffefb;
+  border: 1px solid color-mix(in srgb, var(--exp-border) 18%, transparent);
+  border-radius: 4px 4px 2px 2px;
+  box-shadow: none;
+}
+.letter__card-mark {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  font-family: var(--exp-font-display);
+  font-size: 1.05rem;
+  color: #fff;
+  background: color-mix(in srgb, var(--exp-accent) 88%, var(--exp-primary));
+}
+
 .letter--unfolding .letter__head {
   display: block;
   opacity: 0;
   animation: env-soft-in 0.7s var(--exp-ease) 0.45s forwards;
-}
-
-/* Cartão fixo durante subida — altura só muda na fase de leitura */
-.letter__surface--peek {
-  display: grid;
-  place-items: center;
-  height: calc(var(--pack-h) * 0.52);
-  min-height: calc(var(--pack-h) * 0.52);
-  padding: 0;
-  border-radius: 5px 5px 3px 3px;
-  background: #fffefb;
-  border: 1px solid color-mix(in srgb, var(--exp-border) 20%, transparent);
-  box-shadow: none;
-  background-image: none;
-  overflow: hidden;
-}
-.letter__peek-mark {
-  display: grid;
-  place-items: center;
-  width: 42px;
-  height: 42px;
-  border-radius: 999px;
-  font-family: var(--exp-font-display);
-  font-size: 1.1rem;
-  color: #fff;
-  background: color-mix(in srgb, var(--exp-accent) 88%, var(--exp-primary));
 }
 
 .letter__surface--unfolding {
@@ -725,29 +714,23 @@ onBeforeUnmount(() => {
   }
 }
 
-/* Fase 2 — carta sobe contínua, ease-out, ~60% visível (como no gif) */
-@keyframes letter-reveal {
-  to {
-    visibility: visible;
-  }
-}
-
+/* Fase 2 — carta emerge gradualmente (~60% visível, como no gif) */
 @keyframes letter-lift {
   0% {
-    transform: translateY(0);
+    transform: translateY(8%);
   }
   100% {
-    transform: translateY(calc(-1 * var(--pack-h) * 0.33));
+    transform: translateY(calc(-1 * var(--pack-h) * 0.3));
   }
 }
 
-/* Fase 3 — após pausa, carta continua e centraliza */
+/* Fase 3 — após pausa, expande para carta completa */
 @keyframes letter-continue {
   0% {
-    left: 15%;
-    right: 15%;
+    left: 27%;
+    right: 27%;
     width: auto;
-    transform: translateY(calc(-1 * var(--pack-h) * 0.33));
+    transform: translateY(calc(-1 * var(--pack-h) * 0.3));
   }
   100% {
     left: 50%;
@@ -760,8 +743,8 @@ onBeforeUnmount(() => {
 /* Fase 4 — abrir carta de leitura */
 @keyframes surface-unfold {
   0% {
-    height: calc(var(--pack-h) * 0.52);
-    min-height: calc(var(--pack-h) * 0.52);
+    height: calc(var(--pack-h) * 0.5);
+    min-height: calc(var(--pack-h) * 0.5);
     padding: clamp(14px, 2.5vw, 24px);
     background: #fffefb;
     background-image: none;
