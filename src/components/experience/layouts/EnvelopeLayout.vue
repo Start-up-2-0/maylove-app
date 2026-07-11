@@ -96,10 +96,10 @@
               </article>
             </div>
 
-            <!-- z:2 bolso frontal opaco -->
-            <span class="env-mail__corner env-mail__corner--l" aria-hidden="true" />
-            <span class="env-mail__corner env-mail__corner--r" aria-hidden="true" />
-            <span class="env-mail__pocket" aria-hidden="true" />
+            <!-- z:2 face frontal 100% opaca (retângulos sólidos, sem clip-path) -->
+            <span class="env-mail__shade" aria-hidden="true" />
+            <span class="env-mail__wing env-mail__wing--l" aria-hidden="true" />
+            <span class="env-mail__wing env-mail__wing--r" aria-hidden="true" />
 
             <!-- z:3 aba -->
             <span class="env-mail__flap" aria-hidden="true" />
@@ -422,13 +422,13 @@ onBeforeUnmount(() => {
   box-shadow: inset 0 -10px 24px color-mix(in srgb, #000 12%, transparent);
 }
 
-/* z:1 — trilho da carta */
+/* z:1 — trilho: só a parte de baixo; overflow corta a carta até ela subir */
 .env-mail__slot {
   position: absolute;
   left: 15%;
   right: 15%;
-  top: 0;
   bottom: 0;
+  height: 54%;
   z-index: 1;
   overflow: hidden;
   pointer-events: none;
@@ -437,39 +437,52 @@ onBeforeUnmount(() => {
   overflow: visible;
   left: 0;
   right: 0;
+  bottom: 0;
+  height: auto;
+  top: 0;
   z-index: 5;
 }
 
-/* z:2 — bolso + quinas 100% opacos (sem raio-x, envelope limpo fechado) */
-.env-mail__pocket {
+/* z:2 — cortina inferior sólida (cobre carta por completo) */
+.env-mail__shade {
   position: absolute;
-  inset: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 54%;
   z-index: 2;
   pointer-events: none;
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--mail-face) 96%, #fff 4%) 36%,
-    var(--mail-ink) 100%
-  );
-  clip-path: polygon(0 50%, 50% 72%, 100% 50%, 100% 100%, 0 100%);
-  box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 14%, transparent);
+  background: linear-gradient(180deg, var(--mail-face) 0%, var(--mail-ink) 100%);
+  border-radius: 0 0 14px 14px;
 }
-.env-mail__corner {
+.env-mail__shade::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(128deg, transparent 49.5%, color-mix(in srgb, #000 16%, transparent) 50%, transparent 50.5%),
+    linear-gradient(52deg, transparent 49.5%, color-mix(in srgb, #000 16%, transparent) 50%, transparent 50.5%);
+  clip-path: polygon(0 12%, 50% 38%, 100% 12%, 100% 100%, 0 100%);
+}
+
+/* z:2 — laterais superiores sólidas (fecham as quinas) */
+.env-mail__wing {
   position: absolute;
   top: 0;
   z-index: 2;
-  width: 50%;
-  height: 54%;
+  width: 27%;
+  height: 46%;
   pointer-events: none;
   background: var(--mail-face);
 }
-.env-mail__corner--l {
+.env-mail__wing--l {
   left: 0;
-  clip-path: polygon(0 0, 0 50%, 50% 72%, 50% 0);
+  border-radius: 14px 0 0 0;
 }
-.env-mail__corner--r {
+.env-mail__wing--r {
   right: 0;
-  clip-path: polygon(100% 0, 100% 50%, 50% 72%, 50% 0);
+  border-radius: 0 14px 0 0;
 }
 
 /* z:3 — aba triangular */
@@ -526,7 +539,7 @@ onBeforeUnmount(() => {
   position: absolute;
   left: 0;
   right: 0;
-  bottom: 6%;
+  bottom: 0;
   opacity: 1;
   visibility: hidden;
   pointer-events: none;
@@ -626,15 +639,15 @@ onBeforeUnmount(() => {
 .env-mail--animating .env-mail__flap {
   animation: mail-flap-open var(--mail-flap-dur) var(--mail-ease-flap) var(--mail-flap-delay) forwards;
 }
-.env-mail--animating .env-mail__pocket,
-.env-mail--animating .env-mail__corner,
+.env-mail--animating .env-mail__shade,
+.env-mail--animating .env-mail__wing,
 .env-mail--animating .env-mail__back {
   animation: mail-fade 0.6s ease 3.15s forwards;
 }
 
 .env-mail--shell-hidden .env-mail__back,
-.env-mail--shell-hidden .env-mail__pocket,
-.env-mail--shell-hidden .env-mail__corner,
+.env-mail--shell-hidden .env-mail__shade,
+.env-mail--shell-hidden .env-mail__wing,
 .env-mail--shell-hidden .env-mail__flap,
 .env-mail--shell-hidden .env-mail__seal {
   opacity: 0;
@@ -647,8 +660,8 @@ onBeforeUnmount(() => {
 }
 
 .env-stage--reading .env-mail__back,
-.env-stage--reading .env-mail__pocket,
-.env-stage--reading .env-mail__corner,
+.env-stage--reading .env-mail__shade,
+.env-stage--reading .env-mail__wing,
 .env-stage--reading .env-mail__flap,
 .env-stage--reading .env-mail__seal {
   display: none;
@@ -924,8 +937,8 @@ onBeforeUnmount(() => {
   }
   .env-mail--animating .env-mail__flap,
   .env-mail--animating .env-mail__seal,
-  .env-mail--animating .env-mail__pocket,
-  .env-mail--animating .env-mail__corner,
+  .env-mail--animating .env-mail__shade,
+  .env-mail--animating .env-mail__wing,
   .env-mail--animating .env-mail__back,
   .letter--rising,
   .letter--unfolding,
