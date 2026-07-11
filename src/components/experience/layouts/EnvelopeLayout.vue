@@ -14,6 +14,7 @@
         :class="{
           'env-mail--animating': animating,
           'env-mail--release': releasing,
+          'env-mail--shell-hidden': shellHidden || reading,
         }"
       >
         <div
@@ -118,6 +119,7 @@ const audio = useExperienceAudio()
 const animating = ref(false)
 const reading = ref(false)
 const releasing = ref(false)
+const shellHidden = ref(false)
 const opening = computed(() => animating.value || reading.value)
 const sealed = computed(() => !animating.value && !reading.value)
 const activeIndex = ref(0)
@@ -126,6 +128,7 @@ const doneTyping = ref(false)
 const readingStarted = ref(false)
 let timer: number | undefined
 let releaseTimer: number | undefined
+let shellTimer: number | undefined
 let readingTimer: number | undefined
 
 const initial = computed(() => (props.content.senderName || props.content.honoreeName || 'M').charAt(0).toUpperCase())
@@ -206,6 +209,9 @@ function open() {
   releaseTimer = window.setTimeout(() => {
     releasing.value = true
   }, 2100)
+  shellTimer = window.setTimeout(() => {
+    shellHidden.value = true
+  }, 2650)
   readingTimer = window.setTimeout(() => {
     animating.value = false
     reading.value = true
@@ -264,6 +270,7 @@ function nextBeat() {
 onBeforeUnmount(() => {
   window.clearTimeout(timer)
   window.clearTimeout(releaseTimer)
+  window.clearTimeout(shellTimer)
   window.clearTimeout(readingTimer)
 })
 </script>
@@ -434,9 +441,19 @@ onBeforeUnmount(() => {
   transform: translateY(70%);
   transform-origin: center bottom;
 }
+.env-stage--reading .env-mail__body,
+.env-stage--reading .env-mail__pocket,
+.env-stage--reading .env-mail__flap,
+.env-stage--reading .env-mail__seal {
+  display: none;
+}
+
 .letter--pulling {
   opacity: 1;
-  animation: letter-pull 3.4s var(--mail-ease) forwards;
+  clip-path: polygon(12% 44%, 88% 44%, 88% 100%, 12% 100%);
+  animation:
+    letter-pull 3.4s var(--mail-ease) forwards,
+    letter-slot-open 3.4s var(--mail-ease) forwards;
 }
 .letter--reading {
   position: absolute;
@@ -449,6 +466,16 @@ onBeforeUnmount(() => {
   opacity: 1;
   pointer-events: auto;
   transform: translateX(-50%) translateY(0);
+  clip-path: none;
+}
+
+.env-mail--shell-hidden .env-mail__body,
+.env-mail--shell-hidden .env-mail__pocket,
+.env-mail--shell-hidden .env-mail__flap,
+.env-mail--shell-hidden .env-mail__seal {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
 }
 
 .env-stage--reading .env-mail {
@@ -529,6 +556,20 @@ onBeforeUnmount(() => {
 @keyframes mail-fade {
   to {
     opacity: 0;
+  }
+}
+
+@keyframes letter-slot-open {
+  0%,
+  24% {
+    clip-path: polygon(12% 44%, 88% 44%, 88% 100%, 12% 100%);
+  }
+  58% {
+    clip-path: polygon(8% 20%, 92% 20%, 92% 100%, 8% 100%);
+  }
+  78%,
+  100% {
+    clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%);
   }
 }
 
