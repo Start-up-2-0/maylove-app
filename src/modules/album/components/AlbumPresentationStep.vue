@@ -142,6 +142,10 @@ function select(id: BookPresentationId) {
   overflow: hidden;
   background: var(--surface-3);
 }
+
+.presentation-preview :deep(.book--preview) {
+  background: transparent;
+}
 .presentation-preview__title {
   display: flex;
   align-items: center;

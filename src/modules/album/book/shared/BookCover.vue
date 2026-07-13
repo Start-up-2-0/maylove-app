@@ -7,7 +7,7 @@
     <h1 class="book-cover__title">{{ book.title }}</h1>
     <p v-if="book.subtitle" class="book-cover__subtitle">{{ book.subtitle }}</p>
     <span class="book-cover__rule" aria-hidden="true" />
-    <p class="book-cover__hint">Deslize ou use as setas para folhear</p>
+    <p class="book-cover__hint">Role para folhear o álbum</p>
   </header>
 </template>
 
