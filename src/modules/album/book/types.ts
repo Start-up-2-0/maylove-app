@@ -1,9 +1,20 @@
+import type { PageLayoutId } from './layouts/types'
+
 export type BookPresentationId =
+  | 'classic-photobook'
+  | 'wedding-book'
+  | 'family-memories'
+  | 'polaroid-memories'
+  | 'scrapbook'
+  | 'travel-journal'
+  | 'magazine-style'
+  | 'luxury-album'
+  | 'timeline'
+  /** @deprecated slugs legados — normalizados em runtime */
   | 'family-album'
   | 'polaroid'
   | 'memory-notebook'
   | 'romantic-book'
-  | 'timeline'
   | 'photo-magazine'
 
 export interface MemoryBookPhoto {
@@ -17,11 +28,13 @@ export interface MemoryBookPhoto {
 export interface MemoryBookContentPage {
   kind: 'content'
   pageNo: number
+  layout: PageLayoutId
   photos: MemoryBookPhoto[]
   title?: string
   message?: string
   memoryDate?: string
   caption?: string
+  chapterTitle?: string
 }
 
 export interface MemoryBookCoverPage {
@@ -49,6 +62,7 @@ export interface BookPresentationDefinition {
   name: string
   description: string
   emoji: string
+  tagline?: string
 }
 
 export type BookRenderMode = 'preview' | 'full'
