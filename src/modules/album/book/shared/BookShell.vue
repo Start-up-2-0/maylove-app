@@ -113,7 +113,7 @@ const themeStyle = computed(() => ({
 }
 
 .book__sheet--content {
-  min-height: clamp(300px, 50vh, 480px);
+  min-height: auto;
 }
 
 .book__sheet--back {
@@ -170,7 +170,7 @@ const themeStyle = computed(() => ({
   }
 
   .book__sheet--content {
-    min-height: clamp(260px, 48vh, 400px);
+    min-height: auto;
   }
 
   .book__gutter {

@@ -364,15 +364,21 @@ async function saveCaption(mediaId: string, showError = true) {
 
 .photo-tile--timeline {
   display: grid;
-  grid-template-columns: 120px 1fr;
+  grid-template-columns: minmax(96px, 140px) 1fr;
   gap: 12px;
   align-items: start;
 }
 
-.photo-tile--timeline .photo-tile__img,
+.photo-tile--timeline .photo-tile__img {
+  aspect-ratio: auto;
+  max-height: 180px;
+  object-fit: contain;
+  background: var(--surface-3);
+}
+
 .photo-tile--timeline .photo-tile__placeholder {
-  aspect-ratio: 1;
-  min-height: 0;
+  min-height: 96px;
+  aspect-ratio: auto;
 }
 
 .photo-tile--timeline .photo-tile__bar {
@@ -420,9 +426,12 @@ async function saveCaption(mediaId: string, showError = true) {
 
 .photo-tile__img {
   width: 100%;
-  aspect-ratio: 4 / 3;
-  object-fit: cover;
+  height: auto;
+  max-height: 220px;
+  object-fit: contain;
+  object-position: center;
   display: block;
+  background: var(--surface-3);
 }
 
 .photo-tile__placeholder {

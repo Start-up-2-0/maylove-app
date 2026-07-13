@@ -104,7 +104,7 @@ const showCaptionBlock = computed(
   font-family: var(--book-font-body);
   color: var(--book-ink);
   background: var(--book-paper);
-  overflow: hidden;
+  overflow: visible;
 }
 
 .page-comp--texture::before {
@@ -210,42 +210,41 @@ const showCaptionBlock = computed(
   flex: 1;
   display: grid;
   grid-template-columns: 1fr;
-  min-height: inherit;
+  place-items: center;
 }
 
 .page-comp--full-bleed .page-comp__photo {
   margin: 0;
-  min-height: inherit;
+  width: 100%;
+  border-radius: 0;
+  box-shadow: none;
 }
 
 .page-comp--full-bleed .page-comp__photo img {
   width: 100%;
-  height: 100%;
-  min-height: inherit;
-  object-fit: cover;
+  height: auto;
+  max-height: min(82vh, 960px);
+  object-fit: contain;
 }
 
 /* Hero + legenda */
 .page-comp--hero-caption {
   display: grid;
-  grid-template-rows: 1fr auto;
+  grid-template-rows: auto auto;
   padding: 0;
 }
 
-.page-comp__media--hero-caption {
-  min-height: 62%;
-}
-
 .page-comp__media--hero-caption .page-comp__photo {
-  height: 100%;
   margin: 0;
+  border-radius: 0;
+  box-shadow: none;
 }
 
 .page-comp__media--hero-caption img {
   width: 100%;
-  height: 100%;
-  min-height: 220px;
-  object-fit: cover;
+  height: auto;
+  max-height: min(72vh, 820px);
+  object-fit: contain;
 }
 
 .page-comp--hero-caption .page-comp__caption-block {
@@ -256,10 +255,10 @@ const showCaptionBlock = computed(
 .page-comp--asymmetric-duo .page-comp__media--asymmetric-duo {
   display: grid;
   grid-template-columns: 1.15fr 0.85fr;
-  grid-template-rows: 1fr 0.72fr;
+  grid-template-rows: auto auto;
   gap: 10px;
+  align-items: start;
   flex: 1;
-  min-height: 240px;
 }
 
 .page-comp__media--asymmetric-duo .page-comp__photo--0 {
@@ -271,23 +270,25 @@ const showCaptionBlock = computed(
   overflow: hidden;
   border-radius: 4px;
   box-shadow: var(--book-shadow);
+  background: color-mix(in srgb, var(--book-paper) 88%, #ebe4dc);
 }
 
 .page-comp__photo img {
   display: block;
   width: 100%;
-  height: 100%;
-  object-fit: cover;
-  aspect-ratio: auto;
-  min-height: 100px;
+  height: auto;
+  max-height: min(70vh, 760px);
+  object-fit: contain;
+  object-position: center;
 }
 
 /* Editorial trio */
 .page-comp--editorial-trio .page-comp__media--editorial-trio {
   display: grid;
   grid-template-columns: 1.2fr 0.8fr;
-  grid-template-rows: 1fr 1fr;
+  grid-template-rows: auto auto;
   gap: 10px;
+  align-items: start;
   flex: 1;
 }
 
@@ -300,6 +301,7 @@ const showCaptionBlock = computed(
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 8px;
+  align-items: start;
   flex: 1;
 }
 
@@ -334,8 +336,10 @@ const showCaptionBlock = computed(
 .page-comp__polaroid-frame img {
   display: block;
   width: 100%;
-  aspect-ratio: 1;
-  object-fit: cover;
+  height: auto;
+  max-height: min(64vh, 640px);
+  object-fit: contain;
+  object-position: center;
   filter: sepia(0.12) contrast(1.06) saturate(0.92);
 }
 

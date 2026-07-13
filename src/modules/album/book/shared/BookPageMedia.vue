@@ -65,13 +65,16 @@ withDefaults(
 .book-page-media__figure {
   margin: 0;
   overflow: hidden;
+  background: color-mix(in srgb, var(--book-paper, #fffdf8) 88%, #ebe4dc);
 }
 
 .book-page-media__figure img {
   display: block;
   width: 100%;
-  aspect-ratio: 4 / 3;
-  object-fit: cover;
+  height: auto;
+  max-height: min(70vh, 760px);
+  object-fit: contain;
+  object-position: center;
 }
 
 .book-page-media__title {
@@ -115,8 +118,10 @@ withDefaults(
 .book-page-media__polaroid-photo img {
   display: block;
   width: 100%;
-  aspect-ratio: 1 / 1;
-  object-fit: cover;
+  height: auto;
+  max-height: min(64vh, 640px);
+  object-fit: contain;
+  object-position: center;
   filter: sepia(0.18) contrast(1.08) saturate(0.88) brightness(1.03);
 }
 
