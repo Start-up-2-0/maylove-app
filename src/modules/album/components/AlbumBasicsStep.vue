@@ -2,7 +2,7 @@
   <div class="basics-step">
     <WizardStepHeader
       title="Informações do álbum"
-      description="Título, subtítulo e mensagem de encerramento aparecem na capa e contracapa. As alterações são salvas automaticamente."
+      description="Título e subtítulo na capa; mensagem e assinatura só na contracapa se você preencher. Salvo automaticamente."
     />
 
     <form class="basics-form" @submit.prevent>
@@ -16,7 +16,12 @@
       </label>
       <label class="ml-field">
         <span>Mensagem de encerramento (opcional)</span>
-        <textarea v-model="form.closing_message" class="ml-input" rows="4" />
+        <textarea
+          v-model="form.closing_message"
+          class="ml-input"
+          rows="4"
+          placeholder="Se deixar em branco, a contracapa fica sem mensagem."
+        />
       </label>
       <label class="ml-field">
         <span>Assinatura (opcional)</span>

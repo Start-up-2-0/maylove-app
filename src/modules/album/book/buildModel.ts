@@ -30,12 +30,9 @@ interface AlbumInput {
 
 const MAX_PHOTOS_PER_PAGE = 4
 
-const DEFAULT_CLOSING_MESSAGE =
-  'Obrigado por folhear este livro de memórias. Que cada página guarde um pedaço de carinho para sempre.'
-
-function resolveClosingMessage(value?: string | null): string {
+function resolveClosingMessage(value?: string | null): string | undefined {
   const trimmed = value?.trim()
-  return trimmed || DEFAULT_CLOSING_MESSAGE
+  return trimmed || undefined
 }
 
 function resolvePresentation(value?: string | null): BookPresentationId {

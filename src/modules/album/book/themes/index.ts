@@ -65,7 +65,8 @@ export function normalizePresentationId(id: string | null | undefined): BookPres
 const BASE_FEATURES: BookTheme['features'] = {
   pageNumbers: true,
   showBinder: false,
-  chapterOpeners: true,
+  // Capítulos automáticos desligados até existirem controles no wizard
+  chapterOpeners: false,
   polaroidFrames: false,
   scrapbookDecor: false,
   textureOverlay: false,

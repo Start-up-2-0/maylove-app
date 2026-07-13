@@ -15,8 +15,9 @@
         </select>
       </label>
       <p class="layout-panel__hint text-muted">
-        {{ pageEstimate }} páginas no livro com {{ photos.length }} foto(s) enviada(s).
-        Textos de título e descrição aparecem em cada foto na prévia.
+        {{ pageEstimate }} páginas no livro com {{ photos.length }} foto(s) ·
+        {{ photosPerPage }} {{ photosPerPage === 1 ? 'foto' : 'fotos' }} por página
+        (a última pode ter menos). Título, data e descrição de cada foto aparecem sob a imagem.
       </p>
     </section>
 

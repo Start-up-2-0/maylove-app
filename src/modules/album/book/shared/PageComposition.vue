@@ -57,8 +57,14 @@
           :class="`page-comp__photo--${idx}`"
         >
           <img v-if="photo.url" :src="photo.url" :alt="photo.title || 'Memória'" loading="lazy" />
-          <figcaption v-if="photo.title && page.layout === 'collage-grid'" class="page-comp__mini-cap">
-            {{ photo.title }}
+          <figcaption
+            v-if="page.photos.length > 1 && hasPhotoMeta(photo)"
+            class="page-comp__mini-cap"
+            :class="{ 'page-comp__mini-cap--rich': Boolean(photo.caption || photo.memoryDate) }"
+          >
+            <span v-if="photo.memoryDate" class="page-comp__mini-date">{{ photo.memoryDate }}</span>
+            <span v-if="photo.title" class="page-comp__mini-title">{{ photo.title }}</span>
+            <RichText v-if="photo.caption" :text="photo.caption" class="page-comp__mini-body" />
           </figcaption>
         </figure>
       </div>
@@ -78,7 +84,7 @@
 import { computed } from 'vue'
 import RichText from '@/components/experience/shared/RichText.vue'
 import type { BookTheme } from '../themes'
-import type { MemoryBookContentPage } from '../types'
+import type { MemoryBookContentPage, MemoryBookPhoto } from '../types'
 
 const props = defineProps<{
   page: MemoryBookContentPage
@@ -87,11 +93,16 @@ const props = defineProps<{
 
 const showPageNumber = computed(() => props.theme.features.pageNumbers)
 
-const showCaptionBlock = computed(
-  () =>
-    props.page.layout !== 'full-bleed' &&
-    Boolean(props.page.title || props.page.message || props.page.memoryDate),
-)
+/** Bloco de página só em foto única — multi-foto usa legenda por imagem */
+const showCaptionBlock = computed(() => {
+  if (props.page.layout === 'full-bleed') return false
+  if (props.page.photos.length > 1) return false
+  return Boolean(props.page.title || props.page.message || props.page.memoryDate)
+})
+
+function hasPhotoMeta(photo: MemoryBookPhoto): boolean {
+  return Boolean(photo.title?.trim() || photo.caption?.trim() || photo.memoryDate)
+}
 </script>
 
 <style scoped>
@@ -306,10 +317,34 @@ const showCaptionBlock = computed(
 }
 
 .page-comp__mini-cap {
-  padding: 6px 8px;
-  font-size: 0.78rem;
+  display: grid;
+  gap: 4px;
+  padding: 8px 10px 10px;
   text-align: center;
-  background: color-mix(in srgb, var(--book-paper) 90%, transparent);
+  background: color-mix(in srgb, var(--book-paper) 92%, transparent);
+}
+
+.page-comp__mini-cap--rich {
+  text-align: left;
+}
+
+.page-comp__mini-date {
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--book-accent);
+}
+
+.page-comp__mini-title {
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--book-ink);
+}
+
+.page-comp__mini-body {
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: var(--book-muted);
 }
 
 /* Polaroid grid */
