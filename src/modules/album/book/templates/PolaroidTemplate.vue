@@ -8,7 +8,7 @@
     </template>
     <template #page="{ page }">
       <div class="pol-page">
-        <BookPageMedia :photos="page.photos" class="pol-frames" />
+        <BookPageMedia :photos="page.photos" variant="polaroid" class="pol-frames" />
         <div v-if="page.message && page.photos.length <= 1" class="pol-note">
           <RichText :text="page.message" />
         </div>
@@ -58,17 +58,9 @@ defineProps<{ book: MemoryBookModel; mode: BookRenderMode; shareUrl?: string }>(
   width: 100%;
   max-width: 720px;
 }
-.pol-frames :deep(.book-page-media__figure) {
-  padding: 14px 14px 42px;
-  background: #fff;
-  box-shadow: 0 14px 28px -16px rgba(0, 0, 0, 0.4);
-  transform: rotate(1.5deg);
-}
-.pol-frames :deep(.book-page-media__caption) {
-  font-family: 'Caveat', cursive;
-  font-size: 1.35rem;
-  text-align: center;
-  color: #444;
+
+.pol-frames :deep(.book-page-media--polaroid) {
+  gap: 22px;
 }
 .pol-note {
   max-width: 360px;
