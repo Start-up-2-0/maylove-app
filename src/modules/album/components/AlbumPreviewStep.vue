@@ -80,6 +80,7 @@ const bookModel = computed(() => {
     signature: props.form.signature || props.album.signature,
     color_primary: props.form.color_primary || props.album.color_primary,
     presentation: props.form.presentation,
+    photos_per_page: props.form.photos_per_page ?? props.album.photos_per_page,
   })
 })
 </script>

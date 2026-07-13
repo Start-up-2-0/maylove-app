@@ -13,11 +13,9 @@
           <span v-if="page.memoryDate" class="tl-date">{{ page.memoryDate }}</span>
         </div>
         <div class="tl-body">
-          <figure v-if="page.photos[0]" class="tl-photo">
-            <img :src="page.photos[0].url" alt="" loading="lazy" />
-          </figure>
+          <BookPageMedia v-if="page.photos.length" :photos="page.photos" />
           <h2 v-if="page.title">{{ page.title }}</h2>
-          <RichText v-if="page.message" :text="page.message" />
+          <RichText v-if="page.message && page.photos.length <= 1" :text="page.message" />
         </div>
       </div>
     </template>
@@ -33,6 +31,7 @@
 <script setup lang="ts">
 import RichText from '@/components/experience/shared/RichText.vue'
 import ShareBar from '@/components/experience/shared/ShareBar.vue'
+import BookPageMedia from '../shared/BookPageMedia.vue'
 import BookShell from '../shared/BookShell.vue'
 import type { BookRenderMode, MemoryBookModel } from '../types'
 

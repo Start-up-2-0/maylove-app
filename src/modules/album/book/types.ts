@@ -9,6 +9,9 @@ export type BookPresentationId =
 export interface MemoryBookPhoto {
   id: string
   url: string
+  title?: string
+  caption?: string
+  memoryDate?: string
 }
 
 export interface MemoryBookContentPage {

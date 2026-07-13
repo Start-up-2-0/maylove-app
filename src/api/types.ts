@@ -265,6 +265,7 @@ export interface AlbumSummary {
   subtitle: string | null
   color_primary: string | null
   presentation: string
+  photos_per_page: number
   is_public: boolean
   photo_count: number
   views_count: number
@@ -302,6 +303,7 @@ export interface PublicAlbum {
   signature: string | null
   color_primary: string | null
   presentation: string
+  photos_per_page: number
   published_at: string | null
   views_count: number
   photos: PublicAlbumPhoto[]

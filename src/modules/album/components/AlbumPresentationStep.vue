@@ -57,6 +57,7 @@ const previewBook = computed(() => {
   return buildMemoryBookModelFromDetail({
     ...props.album,
     presentation: props.form.presentation,
+    photos_per_page: props.form.photos_per_page ?? props.album.photos_per_page,
   })
 })
 

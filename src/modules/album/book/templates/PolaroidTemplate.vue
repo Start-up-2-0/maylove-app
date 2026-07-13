@@ -8,11 +8,8 @@
     </template>
     <template #page="{ page }">
       <div class="pol-page">
-        <figure v-if="page.photos[0]" class="pol-frame">
-          <img :src="page.photos[0].url" alt="" loading="lazy" />
-          <figcaption>{{ page.caption || page.title || `Memória ${page.pageNo}` }}</figcaption>
-        </figure>
-        <div v-if="page.message" class="pol-note">
+        <BookPageMedia :photos="page.photos" class="pol-frames" />
+        <div v-if="page.message && page.photos.length <= 1" class="pol-note">
           <RichText :text="page.message" />
         </div>
       </div>
@@ -30,6 +27,7 @@
 <script setup lang="ts">
 import RichText from '@/components/experience/shared/RichText.vue'
 import ShareBar from '@/components/experience/shared/ShareBar.vue'
+import BookPageMedia from '../shared/BookPageMedia.vue'
 import BookShell from '../shared/BookShell.vue'
 import type { BookRenderMode, MemoryBookModel } from '../types'
 
@@ -56,22 +54,17 @@ defineProps<{ book: MemoryBookModel; mode: BookRenderMode; shareUrl?: string }>(
   padding: 28px;
   background: #eceae4;
 }
-.pol-frame {
-  margin: 0;
+.pol-frames {
+  width: 100%;
+  max-width: 720px;
+}
+.pol-frames :deep(.book-page-media__figure) {
   padding: 14px 14px 42px;
   background: #fff;
   box-shadow: 0 14px 28px -16px rgba(0, 0, 0, 0.4);
   transform: rotate(1.5deg);
-  max-width: 320px;
 }
-.pol-frame img {
-  width: 100%;
-  aspect-ratio: 1;
-  object-fit: cover;
-  display: block;
-}
-.pol-frame figcaption {
-  margin-top: 12px;
+.pol-frames :deep(.book-page-media__caption) {
   font-family: 'Caveat', cursive;
   font-size: 1.35rem;
   text-align: center;

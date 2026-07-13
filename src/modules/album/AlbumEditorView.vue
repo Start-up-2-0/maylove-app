@@ -46,6 +46,7 @@
             v-else-if="currentStep === 'photos'"
             :album-id="albumId"
             :photos="photos"
+            :form="form"
             @changed="onMediaChanged"
           />
           <AlbumMusicStep
@@ -126,8 +127,11 @@ onMounted(async () => {
   }
 })
 
-watch(currentStep, (step) => {
+watch(currentStep, (step, previous) => {
   void router.replace({ query: { ...route.query, step } })
+  if (previous === 'photos' && step !== 'photos') {
+    void reload()
+  }
   if (step === 'preview') {
     void refreshPreview()
   }

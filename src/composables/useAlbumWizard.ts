@@ -18,6 +18,7 @@ export function useAlbumWizard(albumId: string) {
     color_primary: '#c45d7a',
     is_public: true,
     presentation: DEFAULT_BOOK_PRESENTATION as BookPresentationId,
+    photos_per_page: 1,
   })
 
   const autosavePayload = computed(() => ({
@@ -28,6 +29,7 @@ export function useAlbumWizard(albumId: string) {
     color_primary: form.color_primary,
     is_public: form.is_public,
     presentation: form.presentation,
+    photos_per_page: form.photos_per_page,
   }))
 
   const { saving, savedAt, error: saveError } = useAutosave(autosavePayload, async (payload) => {
@@ -66,6 +68,7 @@ export function useAlbumWizard(albumId: string) {
     form.color_primary = data.color_primary ?? '#c45d7a'
     form.is_public = data.is_public
     form.presentation = (data.presentation as BookPresentationId) || DEFAULT_BOOK_PRESENTATION
+    form.photos_per_page = data.photos_per_page ?? 1
   }
 
   async function reload() {

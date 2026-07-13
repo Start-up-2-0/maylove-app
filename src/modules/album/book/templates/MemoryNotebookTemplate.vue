@@ -1,5 +1,11 @@
 <template>
-  <BookShell :book="book" :mode="mode" :share-url="shareUrl" tpl-class="book-tpl--notebook">
+  <BookShell
+    :book="book"
+    :mode="mode"
+    :share-url="shareUrl"
+    tpl-class="book-tpl--notebook"
+    :show-binder="false"
+  >
     <template #cover="{ book: b }">
       <div class="nb-cover">
         <span class="nb-tape nb-tape--tl" />
@@ -12,10 +18,12 @@
       <div class="nb-page">
         <p v-if="page.memoryDate" class="nb-date">{{ page.memoryDate }}</p>
         <h2 v-if="page.title">{{ page.title }}</h2>
-        <figure v-if="page.photos[0]" class="nb-photo">
-          <img :src="page.photos[0].url" alt="" loading="lazy" />
-        </figure>
-        <RichText v-if="page.message" :text="page.message" class="nb-text" />
+        <BookPageMedia v-if="page.photos.length" :photos="page.photos" />
+        <RichText
+          v-if="page.message && page.photos.length <= 1"
+          :text="page.message"
+          class="nb-text"
+        />
       </div>
     </template>
     <template #back="{ book: b, shareUrl: url }">
@@ -31,6 +39,7 @@
 <script setup lang="ts">
 import RichText from '@/components/experience/shared/RichText.vue'
 import ShareBar from '@/components/experience/shared/ShareBar.vue'
+import BookPageMedia from '../shared/BookPageMedia.vue'
 import BookShell from '../shared/BookShell.vue'
 import type { BookRenderMode, MemoryBookModel } from '../types'
 
@@ -89,24 +98,12 @@ defineProps<{ book: MemoryBookModel; mode: BookRenderMode; shareUrl?: string }>(
   font-size: 1.8rem;
   margin-bottom: 12px;
 }
-.nb-photo {
-  margin: 0 0 14px;
-  max-width: 260px;
-  transform: rotate(-1deg);
-  border: 6px solid #fff;
-  box-shadow: 0 10px 24px -14px rgba(0, 0, 0, 0.35);
-}
-.nb-photo img {
-  width: 100%;
-  display: block;
-  aspect-ratio: 4/3;
-  object-fit: cover;
-}
 .nb-text {
   font-family: 'Caveat', cursive;
   font-size: 1.45rem;
   line-height: 1.55;
   max-width: 42ch;
+  margin-top: 12px;
 }
 .nb-sign {
   font-family: 'Caveat', cursive;

@@ -1,5 +1,5 @@
 <template>
-  <BookShell :book="book" :mode="mode" :share-url="shareUrl" tpl-class="book-tpl--family">
+  <BookShell :book="book" :mode="mode" :share-url="shareUrl" tpl-class="book-tpl--family" :show-binder="true">
     <template #cover="{ book: b }">
       <div class="fam-cover">
         <p class="fam-cover__eyebrow">Livro de memórias</p>
@@ -13,9 +13,7 @@
     <template #page="{ page }">
       <div class="fam-page">
         <div class="fam-page__photo">
-          <figure v-if="page.photos[0]" class="fam-polaroid">
-            <img :src="page.photos[0].url" :alt="page.title || 'Memória'" loading="lazy" />
-          </figure>
+          <BookPageMedia v-if="page.photos.length" :photos="page.photos" class="fam-page__grid" />
         </div>
         <div class="fam-page__text">
           <span class="fam-page__num">{{ String(page.pageNo).padStart(2, '0') }}</span>
@@ -39,6 +37,7 @@
 <script setup lang="ts">
 import RichText from '@/components/experience/shared/RichText.vue'
 import ShareBar from '@/components/experience/shared/ShareBar.vue'
+import BookPageMedia from '../shared/BookPageMedia.vue'
 import BookShell from '../shared/BookShell.vue'
 import type { BookRenderMode, MemoryBookModel } from '../types'
 
@@ -115,6 +114,14 @@ defineProps<{
   padding: 24px;
   background: color-mix(in srgb, var(--book-accent) 5%, var(--book-paper));
   border-right: 1px dashed color-mix(in srgb, var(--book-accent) 20%, transparent);
+}
+
+.fam-page__grid :deep(.book-page-media__figure) {
+  padding: 12px 12px 28px;
+  background: #fff;
+  box-shadow: 0 18px 36px -20px rgba(0, 0, 0, 0.45);
+  transform: rotate(-2deg);
+  border-radius: 3px;
 }
 
 .fam-polaroid {

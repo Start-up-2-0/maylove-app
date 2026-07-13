@@ -17,7 +17,7 @@
     >
       <div class="book__shadow book__shadow--left" aria-hidden="true" />
       <div class="book__shadow book__shadow--right" aria-hidden="true" />
-      <div v-if="current.kind === 'content'" class="book__binder" aria-hidden="true" />
+      <div v-if="showBinder && current.kind === 'content'" class="book__binder" aria-hidden="true" />
 
       <transition :name="flipName" mode="out-in">
         <article
@@ -63,12 +63,16 @@
 import { computed, onMounted, ref } from 'vue'
 import type { BookRenderMode, MemoryBookModel, MemoryBookPage } from '../types'
 
-const props = defineProps<{
-  book: MemoryBookModel
-  mode: BookRenderMode
-  shareUrl?: string
-  tplClass?: string
-}>()
+const props = withDefaults(
+  defineProps<{
+    book: MemoryBookModel
+    mode: BookRenderMode
+    shareUrl?: string
+    tplClass?: string
+    showBinder?: boolean
+  }>(),
+  { showBinder: false },
+)
 
 const index = ref(0)
 const dir = ref<'next' | 'prev'>('next')

@@ -9,14 +9,14 @@
     </template>
     <template #page="{ page }">
       <div class="mag-page" :class="{ 'mag-page--hero': page.pageNo % 2 === 1 }">
-        <figure v-if="page.photos[0]" class="mag-hero">
-          <img :src="page.photos[0].url" alt="" loading="lazy" />
-        </figure>
+        <div v-if="page.photos.length" class="mag-hero">
+          <BookPageMedia :photos="page.photos" />
+        </div>
         <div class="mag-copy">
           <span class="mag-kicker">Capítulo {{ page.pageNo }}</span>
           <h2 v-if="page.title">{{ page.title }}</h2>
           <p v-if="page.memoryDate" class="mag-date">{{ page.memoryDate }}</p>
-          <RichText v-if="page.message" :text="page.message" />
+          <RichText v-if="page.message && page.photos.length <= 1" :text="page.message" />
         </div>
       </div>
     </template>
@@ -32,6 +32,7 @@
 <script setup lang="ts">
 import RichText from '@/components/experience/shared/RichText.vue'
 import ShareBar from '@/components/experience/shared/ShareBar.vue'
+import BookPageMedia from '../shared/BookPageMedia.vue'
 import BookShell from '../shared/BookShell.vue'
 import type { BookRenderMode, MemoryBookModel } from '../types'
 
@@ -72,7 +73,7 @@ defineProps<{ book: MemoryBookModel; mode: BookRenderMode; shareUrl?: string }>(
   margin: 0;
   min-height: 220px;
 }
-.mag-hero img {
+.mag-hero :deep(.book-page-media__figure img) {
   width: 100%;
   height: 100%;
   min-height: 220px;

@@ -9,13 +9,13 @@
     </template>
     <template #page="{ page }">
       <div class="rom-page">
-        <div class="rom-page__media" v-if="page.photos[0]">
-          <img :src="page.photos[0].url" alt="" loading="lazy" />
+        <div v-if="page.photos.length" class="rom-page__media">
+          <BookPageMedia :photos="page.photos" />
         </div>
         <div class="rom-page__copy">
           <p v-if="page.memoryDate" class="rom-date">{{ page.memoryDate }}</p>
           <h2 v-if="page.title">{{ page.title }}</h2>
-          <RichText v-if="page.message" :text="page.message" />
+          <RichText v-if="page.message && page.photos.length <= 1" :text="page.message" />
         </div>
       </div>
     </template>
@@ -32,6 +32,7 @@
 <script setup lang="ts">
 import RichText from '@/components/experience/shared/RichText.vue'
 import ShareBar from '@/components/experience/shared/ShareBar.vue'
+import BookPageMedia from '../shared/BookPageMedia.vue'
 import BookShell from '../shared/BookShell.vue'
 import type { BookRenderMode, MemoryBookModel } from '../types'
 
@@ -67,7 +68,7 @@ defineProps<{ book: MemoryBookModel; mode: BookRenderMode; shareUrl?: string }>(
   grid-template-columns: 1.1fr 0.9fr;
   min-height: inherit;
 }
-.rom-page__media img {
+.rom-page__media :deep(.book-page-media__figure img) {
   width: 100%;
   height: 100%;
   min-height: 280px;
