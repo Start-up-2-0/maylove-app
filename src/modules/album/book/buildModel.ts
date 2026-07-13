@@ -24,6 +24,14 @@ interface AlbumInput {
 
 const MAX_PHOTOS_PER_PAGE = 4
 
+const DEFAULT_CLOSING_MESSAGE =
+  'Obrigado por folhear este livro de memórias. Que cada página guarde um pedaço de carinho para sempre.'
+
+function resolveClosingMessage(value?: string | null): string {
+  const trimmed = value?.trim()
+  return trimmed || DEFAULT_CLOSING_MESSAGE
+}
+
 function resolvePresentation(value?: string | null): BookPresentationId {
   const allowed: BookPresentationId[] = [
     'family-album',
@@ -103,7 +111,7 @@ export function buildMemoryBookModel(album: AlbumInput): MemoryBookModel {
     presentation: resolvePresentation(album.presentation),
     title: album.title ?? 'Livro de memórias',
     subtitle: album.subtitle ?? undefined,
-    closingMessage: album.closing_message ?? undefined,
+    closingMessage: resolveClosingMessage(album.closing_message),
     signature: album.signature ?? undefined,
     colorPrimary: album.color_primary ?? '#c45d7a',
     contentPages,
