@@ -101,7 +101,7 @@ async function remove() {
 .music-current__label {
   margin: 0 0 8px;
   font-size: 0.9rem;
-  color: var(--text-muted);
+  color: var(--muted);
 }
 
 .music-current__player {

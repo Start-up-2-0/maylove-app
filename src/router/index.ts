@@ -71,6 +71,11 @@ const router = createRouter({
           name: 'album-edit',
           component: () => import('@/modules/album/AlbumEditorView.vue'),
         },
+        {
+          path: 'albums/:id',
+          name: 'album-detail',
+          component: () => import('@/modules/album/AlbumDetailView.vue'),
+        },
       ],
     },
     {

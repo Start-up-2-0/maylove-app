@@ -1,118 +1,141 @@
 <template>
   <div class="preview-step">
     <WizardStepHeader
-      title="Preview e publicação"
-      description="Revise como o livro digital ficará antes de compartilhar o link público."
+      title="Revisar e concluir"
+      description="Confira como o livro digital ficará para quem receber o link. Se precisar ajustar algo, volte às etapas anteriores."
     />
 
-    <div v-if="bookModel" class="preview-frame">
-      <BookRenderer :book="bookModel" mode="preview" />
+    <div class="review-summary">
+      <div class="review-summary__item">
+        <span class="review-summary__label">Estilo</span>
+        <span class="review-summary__value">{{ presentationLabel }}</span>
+      </div>
+      <div class="review-summary__item">
+        <span class="review-summary__label">Fotos</span>
+        <span class="review-summary__value">{{ photoCount }}</span>
+      </div>
+      <div class="review-summary__item">
+        <span class="review-summary__label">Música</span>
+        <span class="review-summary__value">{{ musicLabel }}</span>
+      </div>
     </div>
 
-    <div v-if="validation && !validation.valid" class="ml-alert ml-alert--warn mt-4">
-      <p v-for="issue in validation.errors" :key="issue.code">{{ issue.message }}</p>
-    </div>
+    <section v-if="bookModel" class="review-preview">
+      <h3 class="review-preview__title">
+        <span class="review-preview__dot" />
+        Prévia do livro
+      </h3>
+      <BookRenderer :key="refreshToken" :book="bookModel" mode="preview" />
+    </section>
 
-    <div class="preview-actions">
-      <button class="ml-btn ml-btn--secondary" :disabled="validating" @click="runValidate">
-        {{ validating ? 'Validando...' : 'Validar livro' }}
+    <div class="review-actions">
+      <button class="ml-btn ml-btn--primary ml-btn--lg" @click="$emit('go-publish')">
+        Tudo certo — ir para publicar
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M5 12h14M13 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
       </button>
-      <button
-        class="ml-btn ml-btn--primary"
-        :disabled="publishing || album.status === 'published'"
-        @click="publish"
-      >
-        {{ album.status === 'published' ? 'Já publicado' : publishing ? 'Publicando...' : 'Publicar livro' }}
-      </button>
-      <a
-        v-if="album.status === 'published'"
-        :href="`/a/${album.slug}`"
-        target="_blank"
-        rel="noopener"
-        class="ml-btn ml-btn--ghost"
-      >
-        Abrir página pública
-      </a>
     </div>
-
-    <p v-if="error" class="ml-alert ml-alert--danger mt-4">{{ error }}</p>
-    <p v-if="success" class="ml-alert ml-alert--success mt-4">{{ success }}</p>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
-import { publishAlbum, validateAlbum } from '@/api/albums'
-import type { AlbumDetail, AlbumValidation } from '@/api/types'
-import { resolveApiError } from '@/api/errors'
+import { computed } from 'vue'
+import type { useAlbumWizard } from '@/composables/useAlbumWizard'
+import type { AlbumDetail } from '@/api/types'
+import { getBookPresentation } from '@/modules/album/book/presentations'
 import { buildMemoryBookModelFromDetail } from '@/modules/album/book/buildModel'
 import BookRenderer from '@/modules/album/book/BookRenderer.vue'
 import WizardStepHeader from '@/components/wizard/WizardStepHeader.vue'
 
-const props = defineProps<{ album: AlbumDetail }>()
+const props = defineProps<{
+  album: AlbumDetail | null
+  form: ReturnType<typeof useAlbumWizard>['form']
+  refreshToken: number
+}>()
 
-const emit = defineEmits<{ published: [AlbumDetail] }>()
+defineEmits<{ 'go-publish': [] }>()
 
-const validation = ref<AlbumValidation | null>(null)
-const validating = ref(false)
-const publishing = ref(false)
-const error = ref('')
-const success = ref('')
+const presentationLabel = computed(() => {
+  const item = getBookPresentation(props.form.presentation)
+  return item?.name ?? 'Álbum de Família'
+})
 
-const bookModel = computed(() => buildMemoryBookModelFromDetail(props.album))
+const photoCount = computed(
+  () => (props.album?.media ?? []).filter((m) => m.media_type === 'photo').length,
+)
 
-async function runValidate() {
-  validating.value = true
-  error.value = ''
-  try {
-    validation.value = await validateAlbum(props.album.id)
-  } catch (err) {
-    error.value = resolveApiError(err, 'Não foi possível validar.')
-  } finally {
-    validating.value = false
-  }
-}
+const musicLabel = computed(() => {
+  const hasAudio = (props.album?.media ?? []).some((m) => m.media_type === 'audio')
+  return hasAudio ? 'Com trilha' : 'Sem música'
+})
 
-async function publish() {
-  publishing.value = true
-  error.value = ''
-  success.value = ''
-  try {
-    const result = await validateAlbum(props.album.id)
-    validation.value = result
-    if (!result.valid) {
-      error.value = 'Corrija os itens pendentes antes de publicar.'
-      return
-    }
-    const updated = await publishAlbum(props.album.id)
-    success.value = 'Livro publicado com sucesso!'
-    emit('published', updated)
-  } catch (err) {
-    error.value = resolveApiError(err, 'Não foi possível publicar.')
-  } finally {
-    publishing.value = false
-  }
-}
-
-onMounted(runValidate)
+const bookModel = computed(() => {
+  if (!props.album) return null
+  return buildMemoryBookModelFromDetail({
+    ...props.album,
+    title: props.form.title || props.album.title,
+    subtitle: props.form.subtitle || props.album.subtitle,
+    closing_message: props.form.closing_message || props.album.closing_message,
+    signature: props.form.signature || props.album.signature,
+    color_primary: props.form.color_primary || props.album.color_primary,
+    presentation: props.form.presentation,
+  })
+})
 </script>
 
 <style scoped>
-.preview-frame {
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-  background: var(--surface-2);
-}
-
-.preview-actions {
+.review-summary {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 20px;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.review-summary__item {
+  flex: 1;
+  min-width: 140px;
+  padding: 14px 16px;
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+}
+.review-summary__label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.review-summary__value {
+  display: block;
+  margin-top: 4px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--ink);
 }
 
-.mt-4 {
-  margin-top: 16px;
+.review-preview {
+  margin-bottom: 24px;
+}
+.review-preview__title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 14px;
+  font-size: 1rem;
+  font-weight: 600;
+}
+.review-preview__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--primary);
+}
+
+.review-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 </style>

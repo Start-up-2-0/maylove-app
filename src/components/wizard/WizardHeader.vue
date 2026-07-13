@@ -1,11 +1,11 @@
 <template>
   <header class="wiz-header">
     <div class="wiz-header__main">
-      <RouterLink to="/dashboard" class="wiz-header__back">
+      <RouterLink :to="backHref" class="wiz-header__back">
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M19 12H5M11 6l-6 6 6 6" stroke-linecap="round" stroke-linejoin="round" />
         </svg>
-        Painel
+        {{ backLabel }}
       </RouterLink>
       <h1 class="wiz-header__title">{{ title }}</h1>
       <div class="wiz-header__meta">
@@ -28,13 +28,21 @@
 import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
 
-const props = defineProps<{
-  title: string
-  status: string
-  saving: boolean
-  savedAt: Date | null
-  saveError: string
-}>()
+const props = withDefaults(
+  defineProps<{
+    title: string
+    status: string
+    saving: boolean
+    savedAt: Date | null
+    saveError: string
+    backHref?: string
+    backLabel?: string
+  }>(),
+  {
+    backHref: '/dashboard',
+    backLabel: 'Painel',
+  },
+)
 
 const statusLabel = computed(() => {
   return (

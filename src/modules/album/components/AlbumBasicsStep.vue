@@ -2,10 +2,10 @@
   <div class="basics-step">
     <WizardStepHeader
       title="Informações do álbum"
-      description="Título, subtítulo e mensagem de encerramento aparecem na capa e contracapa."
+      description="Título, subtítulo e mensagem de encerramento aparecem na capa e contracapa. As alterações são salvas automaticamente."
     />
 
-    <form class="basics-form" @submit.prevent="save">
+    <form class="basics-form" @submit.prevent>
       <label class="ml-field">
         <span>Título</span>
         <input v-model="form.title" class="ml-input" maxlength="200" required />
@@ -30,62 +30,17 @@
         <input v-model="form.is_public" type="checkbox" />
         <span>Álbum público (visível pelo link após publicar)</span>
       </label>
-
-      <p v-if="error" class="ml-alert ml-alert--danger">{{ error }}</p>
-      <button class="ml-btn ml-btn--primary" :disabled="saving">
-        {{ saving ? 'Salvando...' : 'Salvar informações' }}
-      </button>
     </form>
   </div>
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, watch } from 'vue'
-import { updateAlbum } from '@/api/albums'
-import type { AlbumDetail } from '@/api/types'
-import { resolveApiError } from '@/api/errors'
+import type { useAlbumWizard } from '@/composables/useAlbumWizard'
 import WizardStepHeader from '@/components/wizard/WizardStepHeader.vue'
 
-const props = defineProps<{ album: AlbumDetail }>()
-const emit = defineEmits<{ saved: [AlbumDetail] }>()
-
-const form = reactive({
-  title: '',
-  subtitle: '',
-  closing_message: '',
-  signature: '',
-  color_primary: '#c45d7a',
-  is_public: true,
-})
-
-const saving = ref(false)
-const error = ref('')
-
-watch(
-  () => props.album,
-  (album) => {
-    form.title = album.title ?? ''
-    form.subtitle = album.subtitle ?? ''
-    form.closing_message = album.closing_message ?? ''
-    form.signature = album.signature ?? ''
-    form.color_primary = album.color_primary ?? '#c45d7a'
-    form.is_public = album.is_public
-  },
-  { immediate: true },
-)
-
-async function save() {
-  saving.value = true
-  error.value = ''
-  try {
-    const updated = await updateAlbum(props.album.id, { ...form })
-    emit('saved', updated)
-  } catch (err) {
-    error.value = resolveApiError(err, 'Não foi possível salvar.')
-  } finally {
-    saving.value = false
-  }
-}
+defineProps<{
+  form: ReturnType<typeof useAlbumWizard>['form']
+}>()
 </script>
 
 <style scoped>

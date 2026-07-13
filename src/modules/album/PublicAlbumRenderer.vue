@@ -6,6 +6,12 @@
     </section>
 
     <section v-else-if="error" class="public-state public-state--error">
+      <span class="public-state__glyph" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8">
+          <rect x="4" y="3" width="16" height="18" rx="2" />
+          <path d="M4 8h16M8 3v5M16 3v5" stroke-linecap="round" />
+        </svg>
+      </span>
       <h1>Livro indisponível</h1>
       <p>{{ error }}</p>
     </section>
@@ -16,7 +22,10 @@
       <audio v-if="album.music?.url" :src="album.music.url" autoplay loop class="public-audio" />
 
       <footer class="public-foot">
-        <RouterLink to="/register" class="public-foot__brand">Feito com <strong>MayLov</strong></RouterLink>
+        <RouterLink to="/register" class="public-foot__brand">
+          <LogoMark :size="15" variant="mono" class="public-foot__mark" />
+          Feito com <strong>MayLov</strong>
+        </RouterLink>
         <RouterLink to="/dashboard/albums/new" class="public-foot__cta">Crie seu livro →</RouterLink>
       </footer>
     </template>
@@ -30,6 +39,7 @@ import { fetchPublicAlbum, recordPublicAlbumView } from '@/api/albums'
 import type { PublicAlbum } from '@/api/types'
 import { buildMemoryBookModel } from '@/modules/album/book/buildModel'
 import BookRenderer from '@/modules/album/book/BookRenderer.vue'
+import LogoMark from '@/components/brand/LogoMark.vue'
 
 const route = useRoute()
 const album = ref<PublicAlbum | null>(null)
@@ -85,15 +95,49 @@ function getSessionId(): string {
 <style scoped>
 .public-page {
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
   background: var(--bg);
 }
 
 .public-state {
-  min-height: 60vh;
-  display: grid;
-  place-content: center;
+  margin: auto;
+  min-height: 100vh;
   text-align: center;
-  gap: 12px;
+  color: var(--muted);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+}
+.public-state h1 {
+  font-size: 1.6rem;
+}
+.public-state--error {
+  color: var(--text);
+}
+.public-state__glyph {
+  display: grid;
+  place-items: center;
+  width: 66px;
+  height: 66px;
+  border-radius: 20px;
+  color: var(--primary-strong);
+  background: var(--primary-soft);
+}
+.public-spinner {
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  border: 3px solid color-mix(in srgb, var(--primary) 25%, transparent);
+  border-top-color: var(--primary);
+  animation: public-spin 0.85s linear infinite;
+}
+@keyframes public-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .public-audio {
@@ -105,15 +149,44 @@ function getSessionId(): string {
 }
 
 .public-foot {
+  width: 100%;
+  padding: 26px clamp(20px, 5vw, 48px);
   display: flex;
-  justify-content: space-between;
+  flex-wrap: wrap;
   align-items: center;
+  justify-content: space-between;
   gap: 12px;
-  padding: 24px 20px 40px;
-  border-top: 1px solid var(--border);
+  background: var(--primary-softer);
+  border-top: 1px solid color-mix(in srgb, var(--primary) 12%, var(--border));
 }
-
+.public-foot__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+.public-foot__brand strong {
+  color: inherit;
+  font-weight: 700;
+}
+.public-foot__mark {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  color: #fff;
+  background: var(--primary);
+  padding: 5px;
+}
 .public-foot__cta {
-  color: var(--accent);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #e11d7a;
+  transition: opacity 0.2s ease;
+}
+.public-foot__cta:hover {
+  opacity: 0.75;
 }
 </style>

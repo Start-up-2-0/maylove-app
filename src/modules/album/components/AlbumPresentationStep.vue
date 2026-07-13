@@ -1,143 +1,157 @@
 <template>
-  <div class="presentation-step">
+  <div class="pres-step">
     <WizardStepHeader
       title="Estilo do livro digital"
       description="Escolha como suas memórias serão apresentadas. Você pode trocar o estilo a qualquer momento antes de publicar."
     />
 
-    <div class="presentation-grid">
+    <div class="pres-grid">
       <button
         v-for="item in presentations"
         :key="item.id"
         type="button"
-        class="presentation-card"
-        :class="{ 'presentation-card--active': selected === item.id }"
+        class="pres-card"
+        :class="{ 'pres-card--active': form.presentation === item.id }"
         @click="select(item.id)"
       >
-        <span class="presentation-card__emoji" aria-hidden="true">{{ item.emoji }}</span>
-        <span class="presentation-card__name">{{ item.name }}</span>
-        <span class="presentation-card__desc">{{ item.description }}</span>
+        <span class="pres-card__emoji" aria-hidden="true">{{ item.emoji }}</span>
+        <strong class="pres-card__label">{{ item.name }}</strong>
+        <span class="pres-card__desc">{{ item.description }}</span>
+        <span class="pres-card__check" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="3">
+            <path d="M20 6 9 17l-5-5" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </span>
       </button>
     </div>
 
-    <div v-if="previewBook" class="presentation-preview">
-      <p class="presentation-preview__label">Prévia do estilo</p>
+    <section v-if="previewBook" class="presentation-preview">
+      <h3 class="presentation-preview__title">
+        <span class="presentation-preview__dot" />
+        Prévia do estilo selecionado
+      </h3>
       <BookRenderer :book="previewBook" mode="preview" />
-    </div>
-
-    <p v-if="error" class="ml-alert ml-alert--danger">{{ error }}</p>
-    <button class="ml-btn ml-btn--primary" :disabled="saving" @click="save">
-      {{ saving ? 'Salvando...' : 'Confirmar estilo' }}
-    </button>
+    </section>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
-import { updateAlbum } from '@/api/albums'
+import { computed } from 'vue'
+import type { useAlbumWizard } from '@/composables/useAlbumWizard'
 import type { AlbumDetail } from '@/api/types'
-import { resolveApiError } from '@/api/errors'
 import WizardStepHeader from '@/components/wizard/WizardStepHeader.vue'
-import { BOOK_PRESENTATIONS, DEFAULT_BOOK_PRESENTATION } from '../book/presentations'
+import { BOOK_PRESENTATIONS } from '../book/presentations'
 import { buildMemoryBookModelFromDetail } from '../book/buildModel'
 import BookRenderer from '../book/BookRenderer.vue'
 import type { BookPresentationId } from '../book/types'
 
-const props = defineProps<{ album: AlbumDetail }>()
-const emit = defineEmits<{ saved: [AlbumDetail] }>()
+const props = defineProps<{
+  form: ReturnType<typeof useAlbumWizard>['form']
+  album: AlbumDetail | null
+}>()
 
 const presentations = BOOK_PRESENTATIONS
-const selected = ref<BookPresentationId>(DEFAULT_BOOK_PRESENTATION)
-const saving = ref(false)
-const error = ref('')
 
-watch(
-  () => props.album,
-  (album) => {
-    selected.value = (album.presentation as BookPresentationId) || DEFAULT_BOOK_PRESENTATION
-  },
-  { immediate: true },
-)
-
-const previewBook = computed(() =>
-  buildMemoryBookModelFromDetail({
+const previewBook = computed(() => {
+  if (!props.album) return null
+  return buildMemoryBookModelFromDetail({
     ...props.album,
-    presentation: selected.value,
-  }),
-)
+    presentation: props.form.presentation,
+  })
+})
 
 function select(id: BookPresentationId) {
-  selected.value = id
-}
-
-async function save() {
-  saving.value = true
-  error.value = ''
-  try {
-    const updated = await updateAlbum(props.album.id, { presentation: selected.value })
-    emit('saved', updated)
-  } catch (err) {
-    error.value = resolveApiError(err, 'Não foi possível salvar o estilo.')
-  } finally {
-    saving.value = false
-  }
+  props.form.presentation = id
 }
 </script>
 
 <style scoped>
-.presentation-grid {
+.pres-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 12px;
+  gap: 14px;
   margin-bottom: 24px;
 }
-
-.presentation-card {
+.pres-card {
+  position: relative;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 6px;
-  padding: 16px;
-  border: 2px solid var(--border);
-  border-radius: var(--radius-md);
-  background: var(--surface-2);
+  gap: 8px;
+  padding: 18px 18px 16px;
   text-align: left;
-  cursor: pointer;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  border-radius: var(--radius-lg);
+  border: 1.5px solid var(--border-strong);
+  background: var(--surface);
+  transition:
+    border-color var(--dur) var(--ease),
+    transform var(--dur) var(--ease),
+    box-shadow var(--dur) var(--ease);
 }
-
-.presentation-card--active {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 30%, transparent);
+.pres-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--primary);
+  box-shadow: var(--shadow-md);
 }
-
-.presentation-card__emoji {
-  font-size: 1.6rem;
+.pres-card--active {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-ring);
 }
-
-.presentation-card__name {
-  font-weight: 600;
+.pres-card__emoji {
+  font-size: 1.9rem;
+  line-height: 1;
 }
-
-.presentation-card__desc {
-  font-size: 0.85rem;
-  color: var(--text-muted);
-  line-height: 1.4;
+.pres-card__label {
+  font-size: 1.02rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+.pres-card__desc {
+  font-size: 0.86rem;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.pres-card__check {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  color: #fff;
+  background: var(--primary);
+  opacity: 0;
+  transform: scale(0.7);
+  transition:
+    opacity var(--dur) var(--ease),
+    transform var(--dur) var(--ease);
+}
+.pres-card--active .pres-card__check {
+  opacity: 1;
+  transform: scale(1);
 }
 
 .presentation-preview {
-  margin-bottom: 20px;
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   overflow: hidden;
   background: var(--surface-3);
 }
-
-.presentation-preview__label {
-  padding: 10px 14px;
+.presentation-preview__title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
   margin: 0;
-  font-size: 0.82rem;
-  color: var(--text-muted);
+  font-size: 0.95rem;
+  font-weight: 600;
   border-bottom: 1px solid var(--border);
+}
+.presentation-preview__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--primary);
 }
 </style>
