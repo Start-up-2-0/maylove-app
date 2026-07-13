@@ -32,6 +32,22 @@ export const ALL_BOOK_PRESENTATIONS: BookPresentationDefinition[] = [
     tagline: 'Instantâneos',
   },
   {
+    id: 'polaroid-board',
+    name: 'Quadro Polaroid',
+    description:
+      'Um mural com polaroids coladas no quadro — fitas, pins e fotos tortinhas.',
+    emoji: '🖼️',
+    tagline: 'Coladas com carinho',
+  },
+  {
+    id: 'portrait-album',
+    name: 'Álbum Retrato',
+    description:
+      'Página vintage: papel envelhecido, cantos de foto e bordas recortadas.',
+    emoji: '📔',
+    tagline: 'Memórias encadernadas',
+  },
+  {
     id: 'scrapbook',
     name: 'Scrapbook',
     description: 'Papéis texturizados, fitas e elementos artesanais com charme handmade.',
@@ -68,9 +84,12 @@ export const ALL_BOOK_PRESENTATIONS: BookPresentationDefinition[] = [
   },
 ]
 
-/** Catálogo visível no wizard — só Memory Book. */
+/** Catálogo visível — Memory Book + murais. */
 export const BOOK_PRESENTATIONS: BookPresentationDefinition[] = ALL_BOOK_PRESENTATIONS.filter(
-  (item) => item.id === 'classic-photobook',
+  (item) =>
+    item.id === 'classic-photobook' ||
+    item.id === 'polaroid-board' ||
+    item.id === 'portrait-album',
 )
 
 export function getBookPresentation(id: string): BookPresentationDefinition | undefined {
@@ -87,6 +106,19 @@ export function isTimelinePresentation(id: string | null | undefined): boolean {
 
 export function isMemoryBookPresentation(id: string | null | undefined): boolean {
   return normalizePresentationId(id) === 'classic-photobook'
+}
+
+export function isPolaroidBoardPresentation(id: string | null | undefined): boolean {
+  return normalizePresentationId(id) === 'polaroid-board'
+}
+
+export function isPortraitAlbumPresentation(id: string | null | undefined): boolean {
+  return normalizePresentationId(id) === 'portrait-album'
+}
+
+/** Murais sem editor de páginas (polaroid board / álbum retrato). */
+export function isMuralPresentation(id: string | null | undefined): boolean {
+  return isPolaroidBoardPresentation(id) || isPortraitAlbumPresentation(id)
 }
 
 export function normalizePresentationId(id: string | null | undefined): string {

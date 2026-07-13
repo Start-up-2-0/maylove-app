@@ -5,7 +5,7 @@
       :description="stepDescription"
     />
 
-    <section v-if="!isTimeline && !isMemoryBook" class="layout-panel ml-card">
+    <section v-if="!isTimeline && !isMemoryBook && !isMural" class="layout-panel ml-card">
       <label class="layout-panel__field">
         <span class="layout-panel__label">Fotos por página</span>
         <select v-model.number="photosPerPage" class="ml-input ml-input--sm">
@@ -18,6 +18,17 @@
         {{ pageEstimate }} páginas no livro com {{ photos.length }} foto(s) ·
         {{ photosPerPage }} {{ photosPerPage === 1 ? 'foto' : 'fotos' }} por página
         (a última pode ter menos). Título, data e descrição de cada foto aparecem sob a imagem.
+      </p>
+    </section>
+
+    <section v-else-if="isMural" class="layout-panel ml-card">
+      <p class="layout-panel__hint text-muted">
+        <template v-if="isPortraitAlbum">
+          {{ photos.length }} foto(s) no álbum retrato. Cada imagem entra com cantos e borda recortada.
+        </template>
+        <template v-else>
+          {{ photos.length }} foto(s) no quadro. Cada imagem vira uma polaroid colada no mural.
+        </template>
       </p>
     </section>
 
@@ -143,7 +154,7 @@ import { inferImageMimeType } from '@/storage/mime'
 import { photoUploadHint, validatePhotoUpload } from '@/storage/validateUpload'
 import { MEDIA_LIMITS } from '@/config/mediaLimits'
 import { estimateBookPageCount } from '@/modules/album/book/buildModel'
-import { isMemoryBookPresentation, isTimelinePresentation } from '@/modules/album/book/presentations'
+import { isMemoryBookPresentation, isMuralPresentation, isPortraitAlbumPresentation, isTimelinePresentation } from '@/modules/album/book/presentations'
 import { resolveMediaUrl } from '@/modules/album/book/mediaUrl'
 import type { useAlbumWizard } from '@/composables/useAlbumWizard'
 import WizardStepHeader from '@/components/wizard/WizardStepHeader.vue'
@@ -166,6 +177,8 @@ const showValidation = ref(false)
 
 const isTimeline = computed(() => isTimelinePresentation(props.form.presentation))
 const isMemoryBook = computed(() => isMemoryBookPresentation(props.form.presentation))
+const isMural = computed(() => isMuralPresentation(props.form.presentation))
+const isPortraitAlbum = computed(() => isPortraitAlbumPresentation(props.form.presentation))
 
 const photosPerPage = computed({
   get: () => props.form.photos_per_page,
@@ -186,6 +199,12 @@ const pageEstimate = computed(() =>
 const stepDescription = computed(() => {
   if (isTimeline.value) {
     return `Monte a linha do tempo: uma foto por momento, com data, título e descrição obrigatórios. Adicione até ${maxPhotos} fotos. ${photoUploadHint()}`
+  }
+  if (isPortraitAlbum.value) {
+    return `Envie as fotos do álbum retrato — papel, cantos e bordas recortadas. Até ${maxPhotos} fotos. ${photoUploadHint()}`
+  }
+  if (isMural.value) {
+    return `Envie as fotos que serão coladas no quadro polaroid. Rotações, fitas e pins entram automaticamente. Até ${maxPhotos} fotos. ${photoUploadHint()}`
   }
   return `Envie e organize as fotos usadas no Memory Book. Depois escolha layouts e slots em Páginas. Até ${maxPhotos} fotos. ${photoUploadHint()}`
 })

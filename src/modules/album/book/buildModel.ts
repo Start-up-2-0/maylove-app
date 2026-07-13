@@ -1,5 +1,6 @@
 import {
   DEFAULT_BOOK_PRESENTATION,
+  isMuralPresentation,
   isTimelinePresentation,
   normalizePresentationId,
 } from './presentations'
@@ -181,7 +182,7 @@ function buildPhotobookPages(album: AlbumInput, presentation: BookPresentationId
 function buildContentPages(album: AlbumInput): MemoryBookContentPage[] {
   const presentation = resolvePresentation(album.presentation)
 
-  if (isTimelinePresentation(presentation)) {
+  if (isTimelinePresentation(presentation) || isMuralPresentation(presentation)) {
     return buildTimelinePages(album)
   }
 
@@ -284,7 +285,7 @@ export function estimateBookPageCount(
 
   if (photoCount <= 0) return 2
 
-  if (isTimelinePresentation(presentation)) {
+  if (isTimelinePresentation(presentation) || isMuralPresentation(presentation)) {
     return photoCount + 2
   }
 

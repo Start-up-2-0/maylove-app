@@ -9,53 +9,61 @@
 
     <header class="new-head">
       <p class="eyebrow">Começar</p>
-      <h1 class="section-title">Novo Memory Book</h1>
-      <p class="text-muted">
-        Monte um livro editorial personalizável — capa, cores e páginas sob seu controle.
-      </p>
+      <h1 class="section-title">Novo álbum</h1>
+      <p class="text-muted">Escolha o formato do seu livro digital de memórias.</p>
     </header>
 
-    <div class="ml-card step-card">
-      <div class="hero-style">
-        <span class="hero-style__emoji" aria-hidden="true">📖</span>
+    <div class="style-grid">
+      <button
+        v-for="item in BOOK_PRESENTATIONS"
+        :key="item.id"
+        type="button"
+        class="style-card"
+        :class="{ 'style-card--active': selected === item.id }"
+        @click="selected = item.id"
+      >
+        <span class="style-card__emoji" aria-hidden="true">{{ item.emoji }}</span>
         <div>
-          <h2 class="step-title">{{ memoryBook.name }}</h2>
-          <p class="text-muted step-desc">{{ memoryBook.description }}</p>
+          <h2 class="style-card__title">{{ item.name }}</h2>
+          <p class="style-card__desc">{{ item.description }}</p>
         </div>
-      </div>
-
-      <p v-if="error" class="ml-alert ml-alert--danger">{{ error }}</p>
-
-      <button class="ml-btn ml-btn--primary ml-btn--lg" :disabled="creating" @click="create">
-        <span v-if="creating" class="ml-spinner ml-spinner--sm" />
-        {{ creating ? 'Criando álbum...' : 'Criar Memory Book' }}
       </button>
     </div>
+
+    <p v-if="error" class="ml-alert ml-alert--danger">{{ error }}</p>
+
+    <button class="ml-btn ml-btn--primary ml-btn--lg" :disabled="creating || !selected" @click="create">
+      <span v-if="creating" class="ml-spinner ml-spinner--sm" />
+      {{ creating ? 'Criando álbum...' : `Criar ${selectedLabel}` }}
+    </button>
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
-import { createAlbum } from '@/api/albums'
+import { createAlbum, updateAlbum } from '@/api/albums'
 import { resolveApiError } from '@/api/errors'
 import { BOOK_PRESENTATIONS, DEFAULT_BOOK_PRESENTATION } from './book/presentations'
+import type { BookPresentationId } from './book/types'
 
 const router = useRouter()
-const memoryBook = BOOK_PRESENTATIONS[0] ?? {
-  id: DEFAULT_BOOK_PRESENTATION,
-  name: 'Memory Book',
-  description: 'Livro editorial personalizável.',
-  emoji: '📖',
-}
+const selected = ref<BookPresentationId>(DEFAULT_BOOK_PRESENTATION)
 const creating = ref(false)
 const error = ref('')
+
+const selectedLabel = computed(
+  () => BOOK_PRESENTATIONS.find((item) => item.id === selected.value)?.name ?? 'álbum',
+)
 
 async function create() {
   creating.value = true
   error.value = ''
   try {
     const album = await createAlbum()
+    if (selected.value !== DEFAULT_BOOK_PRESENTATION) {
+      await updateAlbum(album.id, { presentation: selected.value })
+    }
     await router.replace({
       path: `/dashboard/albums/${album.id}/edit`,
       query: { step: 'basics' },
@@ -65,10 +73,6 @@ async function create() {
     creating.value = false
   }
 }
-
-onMounted(() => {
-  // Mantém página estável; criação sob demanda no botão.
-})
 </script>
 
 <style scoped>
@@ -87,32 +91,60 @@ onMounted(() => {
 }
 
 .new-head {
-  margin-bottom: 24px;
-}
-
-.step-card {
-  padding: clamp(20px, 3vw, 28px);
-  max-width: 560px;
-}
-
-.hero-style {
-  display: flex;
-  align-items: flex-start;
-  gap: 14px;
   margin-bottom: 22px;
 }
 
-.hero-style__emoji {
-  font-size: 2rem;
+.style-grid {
+  display: grid;
+  gap: 14px;
+  margin-bottom: 20px;
+  max-width: 640px;
+}
+
+.style-card {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  text-align: left;
+  padding: 18px 16px;
+  border-radius: var(--radius-lg);
+  border: 2px solid var(--border);
+  background: var(--surface);
+  cursor: pointer;
+  transition:
+    border-color var(--dur) var(--ease),
+    box-shadow var(--dur) var(--ease),
+    transform var(--dur) var(--ease);
+}
+
+.style-card:hover {
+  border-color: color-mix(in srgb, var(--primary) 45%, var(--border));
+  transform: translateY(-1px);
+}
+
+.style-card--active {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent);
+}
+
+.style-card__emoji {
+  font-size: 1.8rem;
   line-height: 1;
 }
 
-.step-title {
-  font-size: 1.15rem;
-  font-weight: 600;
+.style-card__title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 650;
 }
-.step-desc {
-  margin-top: 4px;
+
+.style-card__desc {
+  margin: 4px 0 0;
   font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.ml-btn {
+  margin-top: 4px;
 }
 </style>

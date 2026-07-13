@@ -5,6 +5,8 @@ export type BookPresentationId =
   | 'wedding-book'
   | 'family-memories'
   | 'polaroid-memories'
+  | 'polaroid-board'
+  | 'portrait-album'
   | 'scrapbook'
   | 'travel-journal'
   | 'magazine-style'

@@ -13,6 +13,7 @@
     <AlbumWizardStepper
       v-if="isEditable || album?.status !== 'published'"
       :current-step="currentStep"
+      :steps="wizardSteps"
       @go="goToStep"
     />
 
@@ -96,7 +97,7 @@ import { useAlbumWizard } from '@/composables/useAlbumWizard'
 import WizardHeader from '@/components/wizard/WizardHeader.vue'
 import WizardFooter from '@/components/wizard/WizardFooter.vue'
 import AlbumWizardStepper from './AlbumWizardStepper.vue'
-import { ALBUM_WIZARD_STEPS, type AlbumWizardStep } from './albumWizardSteps'
+import { wizardStepsFor, type AlbumWizardStep } from './albumWizardSteps'
 import AlbumBasicsStep from './components/AlbumBasicsStep.vue'
 import AlbumPagesStep from './components/AlbumPagesStep.vue'
 import AlbumPhotosStep from './components/AlbumPhotosStep.vue'
@@ -127,15 +128,26 @@ const {
   reload,
 } = useAlbumWizard(albumId)
 
+const wizardSteps = computed(() => wizardStepsFor(form.presentation))
+
 onMounted(async () => {
   await load()
   const step = route.query.step
-  if (typeof step === 'string' && ALBUM_WIZARD_STEPS.includes(step as AlbumWizardStep)) {
+  if (typeof step === 'string' && wizardSteps.value.includes(step as AlbumWizardStep)) {
     currentStep.value = step as AlbumWizardStep
-  } else if (step === 'presentation') {
+  } else if (step === 'presentation' || step === 'pages') {
     currentStep.value = 'basics'
   }
 })
+
+watch(
+  () => form.presentation,
+  () => {
+    if (!wizardSteps.value.includes(currentStep.value)) {
+      currentStep.value = 'basics'
+    }
+  },
+)
 
 watch(currentStep, (step, previous) => {
   void router.replace({ query: { ...route.query, step } })
@@ -148,19 +160,19 @@ watch(currentStep, (step, previous) => {
 })
 
 const hasPrevious = computed(() => stepIndex(currentStep.value) > 0)
-const hasNext = computed(() => stepIndex(currentStep.value) < ALBUM_WIZARD_STEPS.length - 1)
+const hasNext = computed(() => stepIndex(currentStep.value) < wizardSteps.value.length - 1)
 
 function stepIndex(step: AlbumWizardStep): number {
-  return ALBUM_WIZARD_STEPS.indexOf(step)
+  return wizardSteps.value.indexOf(step)
 }
 
 function goToStep(step: AlbumWizardStep) {
-  currentStep.value = step
+  if (wizardSteps.value.includes(step)) currentStep.value = step
 }
 
 function previousStep() {
   const index = stepIndex(currentStep.value)
-  if (index > 0) currentStep.value = ALBUM_WIZARD_STEPS[index - 1]
+  if (index > 0) currentStep.value = wizardSteps.value[index - 1]
 }
 
 function nextStep() {
@@ -179,7 +191,7 @@ function nextStep() {
 
 function advanceStep() {
   const index = stepIndex(currentStep.value)
-  if (index < ALBUM_WIZARD_STEPS.length - 1) currentStep.value = ALBUM_WIZARD_STEPS[index + 1]
+  if (index < wizardSteps.value.length - 1) currentStep.value = wizardSteps.value[index + 1]
 }
 
 async function refreshPreview() {

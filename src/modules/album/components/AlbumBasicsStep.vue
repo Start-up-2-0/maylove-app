@@ -1,8 +1,8 @@
 <template>
   <div class="basics-step">
     <WizardStepHeader
-      title="Identidade do Memory Book"
-      description="Título, capa, cores e tipografia. Mensagem e assinatura só aparecem na contracapa se você preencher."
+      :title="headerTitle"
+      :description="headerDescription"
     />
 
     <form class="basics-form" @submit.prevent>
@@ -16,15 +16,21 @@
           v-model="form.subtitle"
           class="ml-input"
           maxlength="200"
-          placeholder="— from dreams to memories —"
+          :placeholder="
+            isPortrait
+              ? 'Memórias no papel'
+              : isBoard
+                ? 'Memórias coladas com carinho'
+                : '— from dreams to memories —'
+          "
         />
       </label>
       <label class="ml-field">
-        <span>Eyebrow da capa</span>
+        <span>{{ isPortrait ? 'Eyebrow da página' : isBoard ? 'Eyebrow do quadro' : 'Eyebrow da capa' }}</span>
         <input v-model="form.book_config.cover.eyebrow" class="ml-input" maxlength="40" />
       </label>
 
-      <fieldset class="basics-fieldset">
+      <fieldset v-if="!isBoard" class="basics-fieldset">
         <legend>Modo da capa</legend>
         <div class="cover-modes">
           <label v-for="mode in coverModes" :key="mode.id" class="cover-mode">
@@ -38,7 +44,7 @@
       </fieldset>
 
       <label
-        v-if="form.book_config.cover.mode !== 'text' && photos.length"
+        v-if="!isBoard && form.book_config.cover.mode !== 'text' && photos.length"
         class="ml-field"
       >
         <span>Foto da capa</span>
@@ -49,7 +55,7 @@
           </option>
         </select>
       </label>
-      <p v-else-if="form.book_config.cover.mode !== 'text'" class="text-muted basics-hint">
+      <p v-else-if="!isBoard && form.book_config.cover.mode !== 'text'" class="text-muted basics-hint">
         Envie fotos na fototeca para escolher a imagem da capa.
       </p>
 
@@ -57,7 +63,7 @@
         <legend>Cores</legend>
         <div class="color-row">
           <label class="ml-field">
-            <span>Papel</span>
+            <span>{{ isPortrait ? 'Papel do álbum' : isBoard ? 'Fundo do quadro' : 'Papel' }}</span>
             <input v-model="form.book_config.colors.paper" type="color" class="basics-color" />
           </label>
           <label class="ml-field">
@@ -68,7 +74,7 @@
             <span>Destaque</span>
             <input v-model="form.book_config.colors.accent" type="color" class="basics-color" />
           </label>
-          <label class="ml-field">
+          <label v-if="!isBoard" class="ml-field">
             <span>Fundo das páginas</span>
             <input
               v-model="form.book_config.colors.page"
@@ -79,7 +85,7 @@
         </div>
       </fieldset>
 
-      <label class="ml-field">
+      <label v-if="!isBoard" class="ml-field">
         <span>Tipografia</span>
         <select v-model="form.book_config.fonts.preset" class="ml-input">
           <option value="editorial">Editorial (Memory Book)</option>
@@ -108,7 +114,9 @@
     </form>
 
     <section v-if="previewBook" class="basics-preview">
-      <h3 class="basics-preview__title">Prévia da capa</h3>
+      <h3 class="basics-preview__title">
+        {{ isPortrait ? 'Prévia do álbum' : isBoard ? 'Prévia do quadro' : 'Prévia da capa' }}
+      </h3>
       <BookRenderer :book="previewBook" mode="preview" />
     </section>
   </div>
@@ -122,12 +130,32 @@ import WizardStepHeader from '@/components/wizard/WizardStepHeader.vue'
 import { buildMemoryBookModelFromDetail } from '../book/buildModel'
 import BookRenderer from '../book/BookRenderer.vue'
 import type { CoverMode } from '../book/bookConfig'
+import { isMuralPresentation, isPortraitAlbumPresentation } from '../book/presentations'
 
 const props = defineProps<{
   form: ReturnType<typeof useAlbumWizard>['form']
   album: ReturnType<typeof useAlbumWizard>['album']['value']
   photos: AlbumMedia[]
 }>()
+
+const isBoard = computed(() => isMuralPresentation(props.form.presentation))
+const isPortrait = computed(() => isPortraitAlbumPresentation(props.form.presentation))
+
+const headerTitle = computed(() => {
+  if (isPortrait.value) return 'Identidade do Álbum Retrato'
+  if (isBoard.value) return 'Identidade do Quadro Polaroid'
+  return 'Identidade do Memory Book'
+})
+
+const headerDescription = computed(() => {
+  if (isPortrait.value) {
+    return 'Título e cores do papel. As fotos entram com cantos e borda recortada na fototeca.'
+  }
+  if (isBoard.value) {
+    return 'Título e cores do mural. As fotos vão direto para o quadro na fototeca.'
+  }
+  return 'Título, capa, cores e tipografia. Mensagem e assinatura só aparecem na contracapa se você preencher.'
+})
 
 const coverModes: Array<{ id: CoverMode; label: string; hint: string }> = [
   { id: 'text', label: 'Só tipografia', hint: 'Capa editorial sem foto' },
