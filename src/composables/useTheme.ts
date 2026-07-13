@@ -13,17 +13,23 @@ function applyTheme(value: ThemeMode) {
 }
 
 /**
- * Inicializa o tema global a partir do localStorage (ou preferencia do SO como
- * fallback na primeira visita). Deve ser chamado uma unica vez no bootstrap.
+ * Inicializa o tema global a partir do localStorage.
+ * Padrao: claro (nao segue prefers-color-scheme do SO).
  */
 export function initTheme() {
   const stored = localStorage.getItem(STORAGE_KEY) as ThemeMode | null
   if (stored === 'dark' || stored === 'light') {
     theme.value = stored
   } else {
-    theme.value = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+    theme.value = 'light'
   }
   applyTheme(theme.value)
+}
+
+/** Aplica tema sem persistir — usado em paginas publicas compartilhaveis. */
+export function forceTheme(value: ThemeMode) {
+  theme.value = value
+  applyTheme(value)
 }
 
 export function useTheme() {

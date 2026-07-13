@@ -1,5 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { forceTheme, initTheme } from '@/composables/useTheme'
+
+const PUBLIC_EXPERIENCE_ROUTES = new Set(['public-album', 'public-tribute'])
 
 const router = createRouter({
   history: createWebHistory(),
@@ -91,7 +94,7 @@ const router = createRouter({
   ],
 })
 
-router.beforeEach(async (to) => {
+router.beforeEach(async (to, from) => {
   const auth = useAuthStore()
   if (!auth.initialized) {
     await auth.bootstrap()
@@ -103,6 +106,15 @@ router.beforeEach(async (to) => {
 
   if (to.meta.guest && auth.isAuthenticated) {
     return { name: 'dashboard' }
+  }
+
+  const enteringPublic = typeof to.name === 'string' && PUBLIC_EXPERIENCE_ROUTES.has(to.name)
+  const leavingPublic = typeof from.name === 'string' && PUBLIC_EXPERIENCE_ROUTES.has(from.name)
+
+  if (enteringPublic) {
+    forceTheme('light')
+  } else if (leavingPublic) {
+    initTheme()
   }
 
   return true
