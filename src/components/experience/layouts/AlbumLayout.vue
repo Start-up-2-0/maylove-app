@@ -71,7 +71,7 @@ interface AlbumPage {
   pageNo?: number
 }
 
-const props = defineProps<LayoutComponentProps>()
+const props = defineProps<Pick<LayoutComponentProps, 'content' | 'mode' | 'shareUrl'>>()
 
 const index = ref(0)
 const dir = ref<'next' | 'prev'>('next')

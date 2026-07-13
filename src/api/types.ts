@@ -241,6 +241,87 @@ export interface PresignResponse {
   expires_at: string
 }
 
+export interface AlbumMedia {
+  id: string
+  storage_file_id: string
+  media_type: 'photo' | 'audio'
+  original_filename: string
+  mime_type: string | null
+  size_bytes: number | null
+  sort_order: number
+  title: string | null
+  caption: string | null
+  url_thumbnail: string | null
+  url?: string | null
+  created_at: string
+}
+
+export interface AlbumSummary {
+  id: string
+  slug: string
+  status: 'draft' | 'published' | 'archived'
+  title: string | null
+  subtitle: string | null
+  color_primary: string | null
+  is_public: boolean
+  photo_count: number
+  views_count: number
+  published_at: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface AlbumDetail extends AlbumSummary {
+  closing_message: string | null
+  signature: string | null
+  music_media_id: string | null
+  media: AlbumMedia[]
+}
+
+export interface AlbumValidation {
+  valid: boolean
+  errors: Array<{ field: string; code: string; message: string }>
+}
+
+export interface PublicAlbumPhoto {
+  id: string
+  url: string | null
+  title: string | null
+  caption: string | null
+  sort_order: number
+}
+
+export interface PublicAlbum {
+  slug: string
+  title: string | null
+  subtitle: string | null
+  closing_message: string | null
+  signature: string | null
+  color_primary: string | null
+  published_at: string | null
+  views_count: number
+  photos: PublicAlbumPhoto[]
+  music: { id: string; url: string | null } | null
+}
+
+export interface AlbumUploadPolicy {
+  photo: {
+    accepted_mimes: string[]
+    accepted_extensions: string[]
+    max_file_bytes: number
+    max_long_edge_px: number
+    max_count_per_album: number
+    output_format_hint: string
+  }
+  audio: {
+    accepted_mimes: string[]
+    accepted_extensions: string[]
+    max_file_bytes: number
+    max_count_per_album: number
+    output_format_hint: string
+  }
+}
+
 export interface CheckoutResponse {
   order_id: string
   tribute_id: string
