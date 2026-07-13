@@ -1,4 +1,10 @@
-import { DEFAULT_BOOK_PRESENTATION, isTimelinePresentation } from './presentations'
+import {
+  DEFAULT_BOOK_PRESENTATION,
+  isTimelinePresentation,
+  normalizePresentationId,
+} from './presentations'
+import { composePhotobookPages } from './layouts/layoutEngine'
+import { getBookTheme } from './themes'
 import { resolveMediaUrl } from './mediaUrl'
 import type { BookPresentationId, MemoryBookContentPage, MemoryBookModel, MemoryBookPhoto } from './types'
 
@@ -33,18 +39,7 @@ function resolveClosingMessage(value?: string | null): string {
 }
 
 function resolvePresentation(value?: string | null): BookPresentationId {
-  const allowed: BookPresentationId[] = [
-    'family-album',
-    'polaroid',
-    'memory-notebook',
-    'romantic-book',
-    'timeline',
-    'photo-magazine',
-  ]
-  if (value && allowed.includes(value as BookPresentationId)) {
-    return value as BookPresentationId
-  }
-  return DEFAULT_BOOK_PRESENTATION
+  return normalizePresentationId(value) as BookPresentationId
 }
 
 function resolvePhotosPerPage(value?: number | null): number {
@@ -77,14 +72,6 @@ function toBookPhoto(photo: PhotoInput): MemoryBookPhoto {
   }
 }
 
-function chunkPhotos<T>(items: T[], size: number): T[][] {
-  const chunks: T[][] = []
-  for (let index = 0; index < items.length; index += size) {
-    chunks.push(items.slice(index, index + size))
-  }
-  return chunks
-}
-
 function sortPhotosByTimelineDate(photos: PhotoInput[]): PhotoInput[] {
   return [...photos].sort((a, b) => {
     const dateA = a.memory_date?.trim() ?? ''
@@ -96,54 +83,50 @@ function sortPhotosByTimelineDate(photos: PhotoInput[]): PhotoInput[] {
   })
 }
 
-function buildContentPages(album: AlbumInput): MemoryBookContentPage[] {
-  const presentation = resolvePresentation(album.presentation)
+function buildTimelinePages(album: AlbumInput): MemoryBookContentPage[] {
+  const sorted = sortPhotosByTimelineDate(album.photos)
 
-  if (presentation === 'timeline') {
-    const sorted = sortPhotosByTimelineDate(album.photos)
-
-    return sorted.map((photo, index) => {
-      const bookPhoto = toBookPhoto(photo)
-
-      return {
-        kind: 'content',
-        pageNo: index + 1,
-        photos: [bookPhoto],
-        title: bookPhoto.title,
-        message: bookPhoto.caption,
-        memoryDate: bookPhoto.memoryDate,
-        caption: bookPhoto.caption,
-      }
-    })
-  }
-
-  const perPage = resolvePhotosPerPage(album.photos_per_page)
-  const sorted = [...album.photos].sort(
-    (a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0),
-  )
-  const groups = chunkPhotos(sorted, perPage)
-
-  return groups.map((group, index) => {
-    const bookPhotos = group.map(toBookPhoto)
-    const lead = bookPhotos[0]
+  return sorted.map((photo, index) => {
+    const bookPhoto = toBookPhoto(photo)
 
     return {
       kind: 'content',
       pageNo: index + 1,
-      photos: bookPhotos,
-      title: lead?.title,
-      message: perPage === 1 ? lead?.caption : undefined,
-      memoryDate: lead?.memoryDate,
-      caption: lead?.caption,
+      layout: 'hero-caption',
+      photos: [bookPhoto],
+      title: bookPhoto.title,
+      message: bookPhoto.caption,
+      memoryDate: bookPhoto.memoryDate,
+      caption: bookPhoto.caption,
     }
   })
 }
 
+function buildPhotobookPages(album: AlbumInput, presentation: BookPresentationId): MemoryBookContentPage[] {
+  const perPage = resolvePhotosPerPage(album.photos_per_page)
+  const sorted = [...album.photos].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+  const bookPhotos = sorted.map(toBookPhoto)
+  const theme = getBookTheme(presentation)
+
+  return composePhotobookPages(bookPhotos, perPage, theme)
+}
+
+function buildContentPages(album: AlbumInput): MemoryBookContentPage[] {
+  const presentation = resolvePresentation(album.presentation)
+
+  if (isTimelinePresentation(presentation)) {
+    return buildTimelinePages(album)
+  }
+
+  return buildPhotobookPages(album, presentation)
+}
+
 export function buildMemoryBookModel(album: AlbumInput): MemoryBookModel {
+  const presentation = resolvePresentation(album.presentation)
   const contentPages = buildContentPages(album)
 
   return {
-    presentation: resolvePresentation(album.presentation),
+    presentation,
     title: album.title ?? 'Livro de memórias',
     subtitle: album.subtitle ?? undefined,
     closingMessage: resolveClosingMessage(album.closing_message),
@@ -201,11 +184,18 @@ export function estimateBookPageCount(
   photosPerPage?: number | null,
   presentation?: string | null,
 ): number {
+  if (photoCount <= 0) return 2
+
   if (isTimelinePresentation(presentation)) {
-    return (photoCount > 0 ? photoCount : 0) + 2
+    return photoCount + 2
   }
 
   const perPage = resolvePhotosPerPage(photosPerPage)
-  const contentPages = photoCount > 0 ? Math.ceil(photoCount / perPage) : 0
-  return contentPages + 2
+  const theme = getBookTheme(presentation ?? DEFAULT_BOOK_PRESENTATION)
+  const dummyPhotos = Array.from({ length: photoCount }, (_, index) => ({
+    id: String(index),
+    url: '',
+  }))
+
+  return composePhotobookPages(dummyPhotos, perPage, theme).length + 2
 }

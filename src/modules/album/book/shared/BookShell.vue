@@ -70,6 +70,7 @@ const props = withDefaults(
     shareUrl?: string
     tplClass?: string
     showBinder?: boolean
+    shellStyle?: Record<string, string>
   }>(),
   { showBinder: false },
 )
@@ -82,6 +83,7 @@ const touchStartX = ref(0)
 
 const themeStyle = computed(() => ({
   '--book-accent': props.book.colorPrimary,
+  ...props.shellStyle,
 }))
 
 const pages = computed<MemoryBookPage[]>(() => [

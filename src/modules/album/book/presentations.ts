@@ -1,51 +1,100 @@
 import type { BookPresentationDefinition } from './types'
 
-/** Catálogo local — espelha o backend e permite extensão sem deploy da API. */
+/** Catálogo principal — inspirado em photobooks profissionais (Adobe Stock e afins) */
 export const BOOK_PRESENTATIONS: BookPresentationDefinition[] = [
   {
-    id: 'family-album',
-    name: 'Álbum de Família',
-    description: 'Fotos coladas à mão, anotações afetivas e aparência vintage.',
-    emoji: '📒',
+    id: 'classic-photobook',
+    name: 'Classic Photobook',
+    description: 'Minimalista e elegante. Tipografia refinada, margens generosas e fotos em destaque.',
+    emoji: '📖',
+    tagline: 'Atemporal',
   },
   {
-    id: 'polaroid',
-    name: 'Polaroid',
-    description: 'Molduras instantâneas com legendas escritas ao lado.',
+    id: 'wedding-book',
+    name: 'Wedding Book',
+    description: 'Romântico e sofisticado. Composições assimétricas para histórias de casamento.',
+    emoji: '💍',
+    tagline: 'Para sempre',
+  },
+  {
+    id: 'family-memories',
+    name: 'Family Memories',
+    description: 'Álbum de família acolhedor. Páginas quentes com espaço para relatos e datas.',
+    emoji: '👨‍👩‍👧',
+    tagline: 'Nossas memórias',
+  },
+  {
+    id: 'polaroid-memories',
+    name: 'Polaroid Memories',
+    description: 'Molduras instantâneas com anotações manuscritas na margem branca.',
     emoji: '📷',
+    tagline: 'Instantâneos',
   },
   {
-    id: 'memory-notebook',
-    name: 'Caderno de Memórias',
-    description: 'Diário ilustrado com papel texturizado e escrita manuscrita.',
-    emoji: '📓',
+    id: 'scrapbook',
+    name: 'Scrapbook',
+    description: 'Papéis texturizados, fitas e elementos artesanais com charme handmade.',
+    emoji: '✂️',
+    tagline: 'Artesanal',
   },
   {
-    id: 'romantic-book',
-    name: 'Livro Romântico',
-    description: 'Elegante e minimalista — ideal para casais e declarações.',
-    emoji: '💕',
+    id: 'travel-journal',
+    name: 'Travel Journal',
+    description: 'Diário de viagem editorial. Mapas mentais, datas e relatos por destino.',
+    emoji: '✈️',
+    tagline: 'Roteiro afetivo',
+  },
+  {
+    id: 'magazine-style',
+    name: 'Magazine Style',
+    description: 'Layout editorial ousado. Tipografia forte e fotos em múltiplas proporções.',
+    emoji: '📰',
+    tagline: 'Edição especial',
+  },
+  {
+    id: 'luxury-album',
+    name: 'Luxury Album',
+    description: 'Acabamento premium. Imagens grandes, pouco texto e muito espaço em branco.',
+    emoji: '✨',
+    tagline: 'Coleção privada',
   },
   {
     id: 'timeline',
     name: 'Linha do Tempo',
-    description: 'Momentos em ordem cronológica, com rolagem vertical — uma foto por capítulo.',
+    description: 'Momentos em ordem cronológica com rolagem vertical contínua.',
     emoji: '🕰️',
-  },
-  {
-    id: 'photo-magazine',
-    name: 'Revista Fotográfica',
-    description: 'Layout editorial moderno com fotos em grande destaque.',
-    emoji: '📰',
+    tagline: 'Capítulo a capítulo',
   },
 ]
 
 export function getBookPresentation(id: string): BookPresentationDefinition | undefined {
-  return BOOK_PRESENTATIONS.find((item) => item.id === id)
+  const normalized = normalizePresentationId(id)
+  return BOOK_PRESENTATIONS.find((item) => item.id === normalized)
+    ?? LEGACY_PRESENTATION_FALLBACKS[id]
 }
 
 export function isTimelinePresentation(id: string | null | undefined): boolean {
-  return id === 'timeline'
+  return normalizePresentationId(id) === 'timeline'
 }
 
-export const DEFAULT_BOOK_PRESENTATION = BOOK_PRESENTATIONS[0].id
+export function normalizePresentationId(id: string | null | undefined): string {
+  const map: Record<string, string> = {
+    'family-album': 'family-memories',
+    'romantic-book': 'wedding-book',
+    polaroid: 'polaroid-memories',
+    'memory-notebook': 'travel-journal',
+    'photo-magazine': 'magazine-style',
+  }
+  if (!id) return 'classic-photobook'
+  return map[id] ?? id
+}
+
+const LEGACY_PRESENTATION_FALLBACKS: Record<string, BookPresentationDefinition> = {
+  'family-album': BOOK_PRESENTATIONS.find((p) => p.id === 'family-memories')!,
+  'romantic-book': BOOK_PRESENTATIONS.find((p) => p.id === 'wedding-book')!,
+  polaroid: BOOK_PRESENTATIONS.find((p) => p.id === 'polaroid-memories')!,
+  'memory-notebook': BOOK_PRESENTATIONS.find((p) => p.id === 'travel-journal')!,
+  'photo-magazine': BOOK_PRESENTATIONS.find((p) => p.id === 'magazine-style')!,
+}
+
+export const DEFAULT_BOOK_PRESENTATION = 'classic-photobook' as const
