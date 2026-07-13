@@ -56,7 +56,27 @@ const router = createRouter({
           name: 'tribute-detail',
           component: () => import('@/modules/dashboard/TributeDetailView.vue'),
         },
+        {
+          path: 'albums',
+          name: 'albums-dashboard',
+          component: () => import('@/modules/album/AlbumsDashboardView.vue'),
+        },
+        {
+          path: 'albums/new',
+          name: 'album-new',
+          component: () => import('@/modules/album/NewAlbumView.vue'),
+        },
+        {
+          path: 'albums/:id/edit',
+          name: 'album-edit',
+          component: () => import('@/modules/album/AlbumEditorView.vue'),
+        },
       ],
+    },
+    {
+      path: '/a/:slug',
+      name: 'public-album',
+      component: () => import('@/modules/album/PublicAlbumRenderer.vue'),
     },
     {
       path: '/h/:slug',
