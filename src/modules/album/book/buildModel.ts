@@ -1,4 +1,4 @@
-import { DEFAULT_BOOK_PRESENTATION } from './presentations'
+import { DEFAULT_BOOK_PRESENTATION, isTimelinePresentation } from './presentations'
 import { resolveMediaUrl } from './mediaUrl'
 import type { BookPresentationId, MemoryBookContentPage, MemoryBookModel, MemoryBookPhoto } from './types'
 
@@ -85,14 +85,45 @@ function chunkPhotos<T>(items: T[], size: number): T[][] {
   return chunks
 }
 
-export function buildMemoryBookModel(album: AlbumInput): MemoryBookModel {
+function sortPhotosByTimelineDate(photos: PhotoInput[]): PhotoInput[] {
+  return [...photos].sort((a, b) => {
+    const dateA = a.memory_date?.trim() ?? ''
+    const dateB = b.memory_date?.trim() ?? ''
+    if (dateA && dateB && dateA !== dateB) {
+      return dateA.localeCompare(dateB)
+    }
+    return (a.sort_order ?? 0) - (b.sort_order ?? 0)
+  })
+}
+
+function buildContentPages(album: AlbumInput): MemoryBookContentPage[] {
+  const presentation = resolvePresentation(album.presentation)
+
+  if (presentation === 'timeline') {
+    const sorted = sortPhotosByTimelineDate(album.photos)
+
+    return sorted.map((photo, index) => {
+      const bookPhoto = toBookPhoto(photo)
+
+      return {
+        kind: 'content',
+        pageNo: index + 1,
+        photos: [bookPhoto],
+        title: bookPhoto.title,
+        message: bookPhoto.caption,
+        memoryDate: bookPhoto.memoryDate,
+        caption: bookPhoto.caption,
+      }
+    })
+  }
+
   const perPage = resolvePhotosPerPage(album.photos_per_page)
   const sorted = [...album.photos].sort(
     (a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0),
   )
   const groups = chunkPhotos(sorted, perPage)
 
-  const contentPages: MemoryBookContentPage[] = groups.map((group, index) => {
+  return groups.map((group, index) => {
     const bookPhotos = group.map(toBookPhoto)
     const lead = bookPhotos[0]
 
@@ -106,6 +137,10 @@ export function buildMemoryBookModel(album: AlbumInput): MemoryBookModel {
       caption: lead?.caption,
     }
   })
+}
+
+export function buildMemoryBookModel(album: AlbumInput): MemoryBookModel {
+  const contentPages = buildContentPages(album)
 
   return {
     presentation: resolvePresentation(album.presentation),
@@ -161,7 +196,15 @@ export function buildMemoryBookModelFromDetail(album: {
   })
 }
 
-export function estimateBookPageCount(photoCount: number, photosPerPage?: number | null): number {
+export function estimateBookPageCount(
+  photoCount: number,
+  photosPerPage?: number | null,
+  presentation?: string | null,
+): number {
+  if (isTimelinePresentation(presentation)) {
+    return (photoCount > 0 ? photoCount : 0) + 2
+  }
+
   const perPage = resolvePhotosPerPage(photosPerPage)
   const contentPages = photoCount > 0 ? Math.ceil(photoCount / perPage) : 0
   return contentPages + 2

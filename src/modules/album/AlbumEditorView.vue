@@ -44,6 +44,7 @@
           <AlbumBasicsStep v-else-if="currentStep === 'basics'" :form="form" />
           <AlbumPhotosStep
             v-else-if="currentStep === 'photos'"
+            ref="photosStepRef"
             :album-id="albumId"
             :photos="photos"
             :form="form"
@@ -103,6 +104,7 @@ const albumId = route.params.id as string
 
 const currentStep = ref<AlbumWizardStep>('presentation')
 const previewRefreshToken = ref(0)
+const photosStepRef = ref<InstanceType<typeof AlbumPhotosStep> | null>(null)
 
 const {
   album,
@@ -154,6 +156,20 @@ function previousStep() {
 }
 
 function nextStep() {
+  if (currentStep.value === 'photos') {
+    void (async () => {
+      await photosStepRef.value?.flushPendingCaptionSaves()
+      if (photosStepRef.value?.validateTimelineFields() === false) {
+        return
+      }
+      advanceStep()
+    })()
+    return
+  }
+  advanceStep()
+}
+
+function advanceStep() {
   const index = stepIndex(currentStep.value)
   if (index < ALBUM_WIZARD_STEPS.length - 1) currentStep.value = ALBUM_WIZARD_STEPS[index + 1]
 }

@@ -1,7 +1,7 @@
 import { computed, reactive, ref } from 'vue'
 import { fetchAlbum, updateAlbum } from '@/api/albums'
 import type { AlbumDetail } from '@/api/types'
-import { DEFAULT_BOOK_PRESENTATION } from '@/modules/album/book/presentations'
+import { DEFAULT_BOOK_PRESENTATION, isTimelinePresentation } from '@/modules/album/book/presentations'
 import type { BookPresentationId } from '@/modules/album/book/types'
 import { useAutosave } from './useAutosave'
 
@@ -68,7 +68,9 @@ export function useAlbumWizard(albumId: string) {
     form.color_primary = data.color_primary ?? '#c45d7a'
     form.is_public = data.is_public
     form.presentation = (data.presentation as BookPresentationId) || DEFAULT_BOOK_PRESENTATION
-    form.photos_per_page = data.photos_per_page ?? 1
+    form.photos_per_page = isTimelinePresentation(form.presentation)
+      ? 1
+      : (data.photos_per_page ?? 1)
   }
 
   async function reload() {

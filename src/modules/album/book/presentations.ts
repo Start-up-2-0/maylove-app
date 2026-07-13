@@ -29,7 +29,7 @@ export const BOOK_PRESENTATIONS: BookPresentationDefinition[] = [
   {
     id: 'timeline',
     name: 'Linha do Tempo',
-    description: 'História organizada cronologicamente, capítulo a capítulo.',
+    description: 'Momentos em ordem cronológica, com rolagem vertical — uma foto por capítulo.',
     emoji: '🕰️',
   },
   {
@@ -42,6 +42,10 @@ export const BOOK_PRESENTATIONS: BookPresentationDefinition[] = [
 
 export function getBookPresentation(id: string): BookPresentationDefinition | undefined {
   return BOOK_PRESENTATIONS.find((item) => item.id === id)
+}
+
+export function isTimelinePresentation(id: string | null | undefined): boolean {
+  return id === 'timeline'
 }
 
 export const DEFAULT_BOOK_PRESENTATION = BOOK_PRESENTATIONS[0].id

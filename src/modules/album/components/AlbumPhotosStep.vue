@@ -5,7 +5,7 @@
       :description="stepDescription"
     />
 
-    <section class="layout-panel ml-card">
+    <section v-if="!isTimeline" class="layout-panel ml-card">
       <label class="layout-panel__field">
         <span class="layout-panel__label">Fotos por página</span>
         <select v-model.number="photosPerPage" class="ml-input ml-input--sm">
@@ -20,8 +20,19 @@
       </p>
     </section>
 
-    <div v-if="photos.length" class="photo-grid">
-      <figure v-for="(photo, index) in photos" :key="photo.id" class="photo-tile">
+    <section v-else class="layout-panel ml-card layout-panel--timeline">
+      <p class="layout-panel__hint text-muted">
+        Cada foto vira um <strong>momento</strong> na linha do tempo. Informe
+        <strong>data</strong>, <strong>título</strong> e <strong>descrição</strong> em todas as fotos.
+        A ordem na prévia segue a data (da mais antiga para a mais recente).
+      </p>
+      <p class="layout-panel__hint text-muted">
+        {{ photos.length }} momento(s) · {{ pageEstimate }} seções no livro (capa + momentos + encerramento).
+      </p>
+    </section>
+
+    <div v-if="photos.length" :class="isTimeline ? 'timeline-photos' : 'photo-grid'">
+      <figure v-for="(photo, index) in photos" :key="photo.id" class="photo-tile" :class="{ 'photo-tile--timeline': isTimeline }">
         <img
           v-if="mediaPreviewUrl(photo)"
           class="photo-tile__img"
@@ -48,26 +59,35 @@
           </div>
         </figcaption>
         <div class="photo-meta">
-          <input
-            v-model="captions[photo.id].title"
-            class="ml-input ml-input--sm"
-            placeholder="Título (opcional)"
-            @input="queueCaptionSave(photo.id)"
-          />
           <label class="photo-meta__date">
-            <span class="photo-meta__date-label">Data (opcional)</span>
+            <span class="photo-meta__date-label">
+              Data<span v-if="isTimeline" class="photo-meta__req">*</span>
+              <span v-else> (opcional)</span>
+            </span>
             <input
               v-model="captions[photo.id].memory_date"
               class="ml-input ml-input--sm"
+              :class="{ 'ml-input--invalid': isTimeline && showValidation && !captions[photo.id]?.memory_date }"
               type="date"
+              :required="isTimeline"
               @change="queueCaptionSave(photo.id)"
             />
           </label>
+          <input
+            v-model="captions[photo.id].title"
+            class="ml-input ml-input--sm"
+            :class="{ 'ml-input--invalid': isTimeline && showValidation && !captions[photo.id]?.title?.trim() }"
+            :placeholder="isTimeline ? 'Título' : 'Título (opcional)'"
+            :required="isTimeline"
+            @input="queueCaptionSave(photo.id)"
+          />
           <textarea
             v-model="captions[photo.id].caption"
             class="ml-input ml-input--sm"
+            :class="{ 'ml-input--invalid': isTimeline && showValidation && !captions[photo.id]?.caption?.trim() }"
             rows="2"
-            placeholder="Descrição (opcional)"
+            :placeholder="isTimeline ? 'Descrição' : 'Descrição (opcional)'"
+            :required="isTimeline"
             @input="queueCaptionSave(photo.id)"
           />
         </div>
@@ -110,6 +130,7 @@ import { inferImageMimeType } from '@/storage/mime'
 import { photoUploadHint, validatePhotoUpload } from '@/storage/validateUpload'
 import { MEDIA_LIMITS } from '@/config/mediaLimits'
 import { estimateBookPageCount } from '@/modules/album/book/buildModel'
+import { isTimelinePresentation } from '@/modules/album/book/presentations'
 import { resolveMediaUrl } from '@/modules/album/book/mediaUrl'
 import type { useAlbumWizard } from '@/composables/useAlbumWizard'
 import WizardStepHeader from '@/components/wizard/WizardStepHeader.vue'
@@ -128,6 +149,9 @@ const uploading = ref(false)
 const error = ref('')
 const captions = reactive<Record<string, { title: string; caption: string; memory_date: string }>>({})
 const saveTimers = new Map<string, ReturnType<typeof setTimeout>>()
+const showValidation = ref(false)
+
+const isTimeline = computed(() => isTimelinePresentation(props.form.presentation))
 
 const photosPerPage = computed({
   get: () => props.form.photos_per_page,
@@ -137,12 +161,24 @@ const photosPerPage = computed({
 })
 
 const pageEstimate = computed(() =>
-  estimateBookPageCount(props.photos.length, photosPerPage.value),
+  estimateBookPageCount(props.photos.length, photosPerPage.value, props.form.presentation),
 )
 
-const stepDescription = computed(
-  () =>
-    `Organize as fotos e os textos de cada página. Adicione até ${maxPhotos} fotos. ${photoUploadHint()}`,
+const stepDescription = computed(() => {
+  if (isTimeline.value) {
+    return `Monte a linha do tempo: uma foto por momento, com data, título e descrição obrigatórios. Adicione até ${maxPhotos} fotos. ${photoUploadHint()}`
+  }
+  return `Organize as fotos e os textos de cada página. Adicione até ${maxPhotos} fotos. ${photoUploadHint()}`
+})
+
+watch(
+  () => props.form.presentation,
+  (presentation) => {
+    if (isTimelinePresentation(presentation)) {
+      props.form.photos_per_page = 1
+    }
+    showValidation.value = false
+  },
 )
 
 watch(
@@ -186,6 +222,27 @@ async function flushPendingCaptionSaves() {
   saveTimers.clear()
   await Promise.all(props.photos.map((photo) => saveCaption(photo.id, false)))
 }
+
+function isPhotoTimelineComplete(photoId: string): boolean {
+  const meta = captions[photoId]
+  if (!meta) return false
+  return Boolean(meta.memory_date && meta.title.trim() && meta.caption.trim())
+}
+
+function validateTimelineFields(): boolean {
+  if (!isTimeline.value) return true
+  showValidation.value = true
+  const valid = props.photos.every((photo) => isPhotoTimelineComplete(photo.id))
+  if (!valid) {
+    error.value = 'Preencha data, título e descrição em todas as fotos da linha do tempo.'
+  }
+  return valid
+}
+
+defineExpose({
+  flushPendingCaptionSaves,
+  validateTimelineFields,
+})
 
 async function onFilesSelected(event: Event) {
   const input = event.target as HTMLInputElement
@@ -297,6 +354,53 @@ async function saveCaption(mediaId: string, showError = true) {
 .layout-panel__hint {
   font-size: 0.86rem;
   line-height: 1.45;
+}
+
+.timeline-photos {
+  display: grid;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.photo-tile--timeline {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 12px;
+  align-items: start;
+}
+
+.photo-tile--timeline .photo-tile__img,
+.photo-tile--timeline .photo-tile__placeholder {
+  aspect-ratio: 1;
+  min-height: 0;
+}
+
+.photo-tile--timeline .photo-tile__bar {
+  grid-column: 1 / -1;
+}
+
+.photo-tile--timeline .photo-meta {
+  padding: 0 10px 10px 0;
+}
+
+.photo-meta__req {
+  color: var(--error);
+  margin-left: 2px;
+}
+
+.ml-input--invalid {
+  border-color: var(--error);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--error) 20%, transparent);
+}
+
+@media (max-width: 560px) {
+  .photo-tile--timeline {
+    grid-template-columns: 1fr;
+  }
+
+  .photo-tile--timeline .photo-meta {
+    padding: 0 10px 10px;
+  }
 }
 
 .photo-grid {
