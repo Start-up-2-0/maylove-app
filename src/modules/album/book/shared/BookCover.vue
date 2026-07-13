@@ -1,24 +1,37 @@
 <template>
   <header
     class="book-cover"
-    :class="[`book-cover--${theme.cover.variant}`, { 'book-cover--texture': theme.features.textureOverlay }]"
+    :class="[
+      `book-cover--${theme.cover.variant}`,
+      { 'book-cover--texture': theme.features.textureOverlay },
+      { 'book-cover--opened': opened },
+    ]"
   >
     <span v-if="theme.cover.eyebrow" class="book-cover__eyebrow">{{ theme.cover.eyebrow }}</span>
     <h1 class="book-cover__title">{{ book.title }}</h1>
     <p v-if="book.subtitle" class="book-cover__subtitle">{{ book.subtitle }}</p>
     <span class="book-cover__rule" aria-hidden="true" />
-    <p class="book-cover__hint">Role para folhear o álbum</p>
+    <p class="book-cover__hint">{{ hint }}</p>
   </header>
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import type { BookTheme } from '../themes'
 import type { MemoryBookModel } from '../types'
 
-defineProps<{
-  book: MemoryBookModel
-  theme: BookTheme
-}>()
+const props = withDefaults(
+  defineProps<{
+    book: MemoryBookModel
+    theme: BookTheme
+    opened?: boolean
+  }>(),
+  { opened: false },
+)
+
+const hint = computed(() =>
+  props.opened ? 'Álbum aberto' : 'Toque na capa para abrir',
+)
 </script>
 
 <style scoped>
@@ -33,6 +46,11 @@ defineProps<{
   padding: clamp(32px, 8vw, 64px) clamp(24px, 6vw, 48px);
   position: relative;
   overflow: hidden;
+}
+
+.book-cover--opened {
+  min-height: clamp(200px, 34vh, 300px);
+  padding-bottom: 8px;
 }
 
 .book-cover--texture::before {
@@ -63,6 +81,10 @@ defineProps<{
   max-width: 16ch;
 }
 
+.book-cover--opened .book-cover__title {
+  font-size: clamp(1.5rem, 5vw, 2.4rem);
+}
+
 .book-cover__subtitle {
   margin: 12px 0 0;
   font-family: var(--book-font-body);
@@ -84,6 +106,10 @@ defineProps<{
   font-size: 0.8rem;
   color: var(--book-muted);
   margin: 0;
+}
+
+.book-cover--opened .book-cover__hint {
+  opacity: 0.7;
 }
 
 /* Variantes */

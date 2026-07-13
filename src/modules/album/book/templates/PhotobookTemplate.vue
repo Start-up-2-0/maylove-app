@@ -7,8 +7,8 @@
     :show-binder="theme.features.showBinder"
     :shell-style="shellStyle"
   >
-    <template #cover>
-      <BookCover :book="book" :theme="theme" />
+    <template #cover="{ opened }">
+      <BookCover :book="book" :theme="theme" :opened="opened" />
     </template>
     <template #page="{ page }">
       <PageComposition :page="page" :theme="theme" />
