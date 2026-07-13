@@ -49,7 +49,11 @@
           <slot name="page" :page="page" :book="book" />
         </section>
 
-        <section class="book__sheet book__sheet--back" aria-label="Contracapa do álbum">
+        <section
+          v-if="showBackCover"
+          class="book__sheet book__sheet--back"
+          aria-label="Contracapa do álbum"
+        >
           <slot name="back" :book="book" :share-url="shareUrl" />
         </section>
       </div>
@@ -81,6 +85,14 @@ const themeStyle = computed(() => ({
   '--book-accent': props.book.colorPrimary,
   ...props.shellStyle,
 }))
+
+/** Evita folha branca vazia quando não há mensagem, assinatura nem compartilhar */
+const showBackCover = computed(() => {
+  const hasClosing = Boolean(props.book.closingMessage?.trim())
+  const hasSignature = Boolean(props.book.signature?.trim())
+  const hasShare = props.mode === 'full' && Boolean(props.shareUrl?.trim())
+  return hasClosing || hasSignature || hasShare
+})
 
 async function openAlbum() {
   opened.value = true
