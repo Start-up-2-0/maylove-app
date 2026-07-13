@@ -279,6 +279,8 @@ export interface AlbumDetail extends AlbumSummary {
   signature: string | null
   music_media_id: string | null
   media: AlbumMedia[]
+  book_config?: Record<string, unknown> | null
+  book_pages?: Array<Record<string, unknown>> | null
 }
 
 export interface AlbumValidation {
@@ -304,6 +306,8 @@ export interface PublicAlbum {
   color_primary: string | null
   presentation: string
   photos_per_page: number
+  book_config?: Record<string, unknown> | null
+  book_pages?: Array<Record<string, unknown>> | null
   published_at: string | null
   views_count: number
   photos: PublicAlbumPhoto[]

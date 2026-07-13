@@ -6,7 +6,14 @@ import {
 import { composePhotobookPages } from './layouts/layoutEngine'
 import { getBookTheme } from './themes'
 import { resolveMediaUrl } from './mediaUrl'
+import {
+  normalizeBookConfig,
+  type BookConfig,
+  type BookPage,
+  type BookPageLayout,
+} from './bookConfig'
 import type { BookPresentationId, MemoryBookContentPage, MemoryBookModel, MemoryBookPhoto } from './types'
+import type { PageLayoutId } from './layouts/types'
 
 interface PhotoInput {
   id: string
@@ -25,6 +32,8 @@ interface AlbumInput {
   color_primary?: string | null
   presentation?: string | null
   photos_per_page?: number | null
+  book_config?: BookConfig | Record<string, unknown> | null
+  book_pages?: BookPage[] | Array<Record<string, unknown>> | null
   photos: PhotoInput[]
 }
 
@@ -45,7 +54,6 @@ function resolvePhotosPerPage(value?: number | null): number {
   return Math.min(MAX_PHOTOS_PER_PAGE, Math.max(1, Math.round(parsed)))
 }
 
-/** Exibe ISO (YYYY-MM-DD) em português; mantém texto livre legado. */
 function formatMemoryDate(value?: string | null): string | undefined {
   const trimmed = value?.trim()
   if (!trimmed) return undefined
@@ -99,7 +107,69 @@ function buildTimelinePages(album: AlbumInput): MemoryBookContentPage[] {
   })
 }
 
+function mapLayout(layout: BookPageLayout, hasText: boolean): PageLayoutId {
+  if (layout === 'bleed') return 'full-bleed'
+  if (layout === 'text') return 'text-focus'
+  if (layout === 'two') return 'asymmetric-duo'
+  if (layout === 'three') return 'editorial-trio'
+  if (layout === 'text_photo') return 'hero-caption'
+  return hasText ? 'hero-caption' : 'full-bleed'
+}
+
+function buildPagesFromBookPages(
+  album: AlbumInput,
+  bookPages: BookPage[],
+): MemoryBookContentPage[] {
+  const byId = new Map(album.photos.map((photo) => [photo.id, photo]))
+
+  const sorted = [...bookPages].sort((a, b) => a.sort_order - b.sort_order)
+
+  return sorted.map((page, index) => {
+    const photos: MemoryBookPhoto[] = []
+    for (const slot of page.slots ?? []) {
+      if (!slot.media_id) continue
+      const raw = byId.get(slot.media_id)
+      if (!raw) continue
+      const photo = toBookPhoto(raw)
+      photos.push({
+        ...photo,
+        title: slot.show_title ? photo.title : undefined,
+        caption: slot.show_caption ? photo.caption : undefined,
+        memoryDate: slot.show_date ? photo.memoryDate : undefined,
+      })
+    }
+
+    const lead = photos[0]
+    const pageTitle = page.title?.trim() || lead?.title
+    const message =
+      page.layout === 'text' || page.layout === 'text_photo'
+        ? page.place_name?.trim() || lead?.caption
+        : photos.length === 1
+          ? lead?.caption
+          : undefined
+    const memoryDate = photos.length === 1 ? lead?.memoryDate : undefined
+    const hasText = Boolean(pageTitle || message || memoryDate || page.place_name)
+
+    return {
+      kind: 'content' as const,
+      pageNo: index + 1,
+      layout: mapLayout(page.layout, hasText),
+      photos,
+      title: pageTitle,
+      message,
+      memoryDate,
+      caption: message,
+      chapterTitle: pageTitle,
+    }
+  })
+}
+
 function buildPhotobookPages(album: AlbumInput, presentation: BookPresentationId): MemoryBookContentPage[] {
+  const rawPages = album.book_pages
+  if (Array.isArray(rawPages) && rawPages.length > 0) {
+    return buildPagesFromBookPages(album, rawPages as BookPage[])
+  }
+
   const perPage = resolvePhotosPerPage(album.photos_per_page)
   const sorted = [...album.photos].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
   const bookPhotos = sorted.map(toBookPhoto)
@@ -121,6 +191,9 @@ function buildContentPages(album: AlbumInput): MemoryBookContentPage[] {
 export function buildMemoryBookModel(album: AlbumInput): MemoryBookModel {
   const presentation = resolvePresentation(album.presentation)
   const contentPages = buildContentPages(album)
+  const bookConfig = normalizeBookConfig(album.book_config as BookConfig | null | undefined)
+  const coverId = bookConfig.cover.media_id
+  const coverPhoto = coverId ? album.photos.find((p) => p.id === coverId) : undefined
 
   return {
     presentation,
@@ -128,8 +201,10 @@ export function buildMemoryBookModel(album: AlbumInput): MemoryBookModel {
     subtitle: album.subtitle ?? undefined,
     closingMessage: resolveClosingMessage(album.closing_message),
     signature: album.signature ?? undefined,
-    colorPrimary: album.color_primary ?? '#c45d7a',
+    colorPrimary: bookConfig.colors.accent || album.color_primary || '#c45d7a',
     contentPages,
+    bookConfig,
+    coverPhotoUrl: coverPhoto ? resolveMediaUrl(coverPhoto.url) ?? undefined : undefined,
   }
 }
 
@@ -141,6 +216,8 @@ export function buildMemoryBookModelFromDetail(album: {
   color_primary?: string | null
   presentation?: string | null
   photos_per_page?: number | null
+  book_config?: BookConfig | Record<string, unknown> | null
+  book_pages?: BookPage[] | Array<Record<string, unknown>> | null
   media?: Array<{
     id: string
     media_type: string
@@ -150,6 +227,14 @@ export function buildMemoryBookModelFromDetail(album: {
     title?: string | null
     caption?: string | null
     memory_date?: string | null
+  }>
+  photos?: Array<{
+    id: string
+    url?: string | null
+    title?: string | null
+    caption?: string | null
+    memory_date?: string | null
+    sort_order: number
   }>
 }): MemoryBookModel {
   const photos =
@@ -162,7 +247,16 @@ export function buildMemoryBookModelFromDetail(album: {
         title: m.title,
         caption: m.caption,
         memory_date: m.memory_date,
-      })) ?? []
+      })) ??
+    album.photos?.map((p) => ({
+      id: p.id,
+      url: resolveMediaUrl(p.url) ?? '',
+      sort_order: p.sort_order,
+      title: p.title,
+      caption: p.caption,
+      memory_date: p.memory_date,
+    })) ??
+    []
 
   return buildMemoryBookModel({
     title: album.title,
@@ -172,6 +266,8 @@ export function buildMemoryBookModelFromDetail(album: {
     color_primary: album.color_primary,
     presentation: album.presentation,
     photos_per_page: album.photos_per_page,
+    book_config: album.book_config,
+    book_pages: album.book_pages,
     photos,
   })
 }
@@ -180,7 +276,12 @@ export function estimateBookPageCount(
   photoCount: number,
   photosPerPage?: number | null,
   presentation?: string | null,
+  bookPages?: BookPage[] | null,
 ): number {
+  if (bookPages && bookPages.length > 0) {
+    return bookPages.length + 2
+  }
+
   if (photoCount <= 0) return 2
 
   if (isTimelinePresentation(presentation)) {

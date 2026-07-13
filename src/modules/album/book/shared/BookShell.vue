@@ -248,6 +248,7 @@ function closeAlbum() {
 
 .book__sheet--content {
   min-height: auto;
+  background: var(--book-paper-alt);
 }
 
 .book__sheet--back {

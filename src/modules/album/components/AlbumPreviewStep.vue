@@ -7,7 +7,7 @@
 
     <div class="review-summary">
       <div class="review-summary__item">
-        <span class="review-summary__label">Estilo</span>
+        <span class="review-summary__label">Livro</span>
         <span class="review-summary__value">{{ presentationLabel }}</span>
       </div>
       <div class="review-summary__item">
@@ -78,9 +78,11 @@ const bookModel = computed(() => {
     subtitle: props.form.subtitle || props.album.subtitle,
     closing_message: props.form.closing_message || props.album.closing_message,
     signature: props.form.signature || props.album.signature,
-    color_primary: props.form.color_primary || props.album.color_primary,
+    color_primary: props.form.book_config.colors.accent || props.album.color_primary,
     presentation: props.form.presentation,
     photos_per_page: props.form.photos_per_page ?? props.album.photos_per_page,
+    book_config: props.form.book_config,
+    book_pages: props.form.book_pages,
   })
 })
 </script>

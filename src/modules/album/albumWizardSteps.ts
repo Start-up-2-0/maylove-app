@@ -1,14 +1,14 @@
 export type AlbumWizardStep =
-  | 'presentation'
   | 'basics'
+  | 'pages'
   | 'photos'
   | 'music'
   | 'preview'
   | 'publish'
 
 export const ALBUM_WIZARD_STEPS: AlbumWizardStep[] = [
-  'presentation',
   'basics',
+  'pages',
   'photos',
   'music',
   'preview',
@@ -16,9 +16,9 @@ export const ALBUM_WIZARD_STEPS: AlbumWizardStep[] = [
 ]
 
 export const ALBUM_WIZARD_STEP_LABELS: Record<AlbumWizardStep, string> = {
-  presentation: 'Estilo do livro',
-  basics: 'Informações',
-  photos: 'Fotos',
+  basics: 'Identidade',
+  pages: 'Páginas',
+  photos: 'Fototeca',
   music: 'Música',
   preview: 'Preview',
   publish: 'Publicar',

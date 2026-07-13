@@ -56,6 +56,8 @@ const bookModel = computed(() => {
     color_primary: album.value.color_primary,
     presentation: album.value.presentation,
     photos_per_page: album.value.photos_per_page,
+    book_config: album.value.book_config,
+    book_pages: album.value.book_pages,
     photos: album.value.photos.map((photo) => ({
       id: photo.id,
       url: photo.url ?? '',

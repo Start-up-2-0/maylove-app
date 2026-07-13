@@ -75,22 +75,23 @@ const BASE_FEATURES: BookTheme['features'] = {
 const CANONICAL_THEMES: Record<CanonicalPresentationId, BookTheme> = {
   'classic-photobook': {
     id: 'classic-photobook',
-    name: 'Classic Photobook',
+    name: 'Memory Book',
     strategy: 'classic',
     fonts: {
-      display: "'Playfair Display', Georgia, serif",
-      body: "'Cormorant Garamond', Georgia, serif",
+      display: "'Archivo Black', 'Arial Black', sans-serif",
+      body: "'Libre Baskerville', Georgia, serif",
+      accent: "'Libre Baskerville', Georgia, serif",
     },
     tokens: {
-      paper: '#fffdf9',
-      paperAlt: '#f7f3ec',
-      ink: '#1f1a17',
-      muted: '#6f655c',
-      border: 'rgba(31, 26, 23, 0.1)',
-      shadow: '0 28px 60px -32px rgba(20, 16, 12, 0.45)',
+      paper: '#ffffff',
+      paperAlt: '#f4f4f4',
+      ink: '#111111',
+      muted: '#666666',
+      border: 'rgba(17, 17, 17, 0.12)',
+      shadow: '0 24px 48px -28px rgba(0, 0, 0, 0.35)',
     },
-    cover: { variant: 'minimal', eyebrow: 'Photobook' },
-    features: { ...BASE_FEATURES, showBinder: true },
+    cover: { variant: 'minimal', eyebrow: 'MEMORY' },
+    features: { ...BASE_FEATURES, showBinder: false },
   },
   'wedding-book': {
     id: 'wedding-book',
@@ -263,17 +264,46 @@ export function getBookTheme(presentation: string | null | undefined): BookTheme
   return CANONICAL_THEMES[canonical as CanonicalPresentationId] ?? CANONICAL_THEMES['classic-photobook']
 }
 
-export function getThemeCssVars(theme: BookTheme, accentColor: string): Record<string, string> {
+export function getThemeCssVars(
+  theme: BookTheme,
+  accentColor: string,
+  overrides?: {
+    paper?: string
+    ink?: string
+    page?: string
+    fontDisplay?: string
+    fontBody?: string
+  },
+): Record<string, string> {
   return {
-    '--book-paper': theme.tokens.paper,
-    '--book-paper-alt': theme.tokens.paperAlt,
-    '--book-ink': theme.tokens.ink,
+    '--book-paper': overrides?.paper ?? theme.tokens.paper,
+    '--book-paper-alt': overrides?.page ?? theme.tokens.paperAlt,
+    '--book-ink': overrides?.ink ?? theme.tokens.ink,
     '--book-muted': theme.tokens.muted,
     '--book-border': theme.tokens.border,
     '--book-shadow': theme.tokens.shadow,
     '--book-accent': accentColor,
-    '--book-font-display': theme.fonts.display,
-    '--book-font-body': theme.fonts.body,
+    '--book-font-display': overrides?.fontDisplay ?? theme.fonts.display,
+    '--book-font-body': overrides?.fontBody ?? theme.fonts.body,
     '--book-font-accent': theme.fonts.accent ?? theme.fonts.display,
   }
+}
+
+const FONT_PRESETS: Record<string, { display: string; body: string }> = {
+  editorial: {
+    display: "'Archivo Black', 'Arial Black', sans-serif",
+    body: "'Libre Baskerville', Georgia, serif",
+  },
+  classic: {
+    display: "'Playfair Display', Georgia, serif",
+    body: "'Cormorant Garamond', Georgia, serif",
+  },
+  modern: {
+    display: "'Space Grotesk', system-ui, sans-serif",
+    body: "'Hanken Grotesk', system-ui, sans-serif",
+  },
+}
+
+export function fontPresetVars(preset?: string): { display: string; body: string } {
+  return FONT_PRESETS[preset ?? 'editorial'] ?? FONT_PRESETS.editorial
 }

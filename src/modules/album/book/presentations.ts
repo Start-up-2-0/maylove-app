@@ -1,13 +1,14 @@
 import type { BookPresentationDefinition } from './types'
 
-/** Catálogo principal — inspirado em photobooks profissionais (Adobe Stock e afins) */
-export const BOOK_PRESENTATIONS: BookPresentationDefinition[] = [
+/** Catálogo completo (lookups + álbuns legados). */
+export const ALL_BOOK_PRESENTATIONS: BookPresentationDefinition[] = [
   {
     id: 'classic-photobook',
-    name: 'Classic Photobook',
-    description: 'Minimalista e elegante. Tipografia refinada, margens generosas e fotos em destaque.',
+    name: 'Memory Book',
+    description:
+      'Livro editorial personalizável: capa, cores e páginas sob seu controle.',
     emoji: '📖',
-    tagline: 'Atemporal',
+    tagline: 'Do sonho às memórias',
   },
   {
     id: 'wedding-book',
@@ -67,14 +68,25 @@ export const BOOK_PRESENTATIONS: BookPresentationDefinition[] = [
   },
 ]
 
+/** Catálogo visível no wizard — só Memory Book. */
+export const BOOK_PRESENTATIONS: BookPresentationDefinition[] = ALL_BOOK_PRESENTATIONS.filter(
+  (item) => item.id === 'classic-photobook',
+)
+
 export function getBookPresentation(id: string): BookPresentationDefinition | undefined {
   const normalized = normalizePresentationId(id)
-  return BOOK_PRESENTATIONS.find((item) => item.id === normalized)
-    ?? LEGACY_PRESENTATION_FALLBACKS[id]
+  return (
+    ALL_BOOK_PRESENTATIONS.find((item) => item.id === normalized) ??
+    LEGACY_PRESENTATION_FALLBACKS[id]
+  )
 }
 
 export function isTimelinePresentation(id: string | null | undefined): boolean {
   return normalizePresentationId(id) === 'timeline'
+}
+
+export function isMemoryBookPresentation(id: string | null | undefined): boolean {
+  return normalizePresentationId(id) === 'classic-photobook'
 }
 
 export function normalizePresentationId(id: string | null | undefined): string {
@@ -90,11 +102,11 @@ export function normalizePresentationId(id: string | null | undefined): string {
 }
 
 const LEGACY_PRESENTATION_FALLBACKS: Record<string, BookPresentationDefinition> = {
-  'family-album': BOOK_PRESENTATIONS.find((p) => p.id === 'family-memories')!,
-  'romantic-book': BOOK_PRESENTATIONS.find((p) => p.id === 'wedding-book')!,
-  polaroid: BOOK_PRESENTATIONS.find((p) => p.id === 'polaroid-memories')!,
-  'memory-notebook': BOOK_PRESENTATIONS.find((p) => p.id === 'travel-journal')!,
-  'photo-magazine': BOOK_PRESENTATIONS.find((p) => p.id === 'magazine-style')!,
+  'family-album': ALL_BOOK_PRESENTATIONS.find((p) => p.id === 'family-memories')!,
+  'romantic-book': ALL_BOOK_PRESENTATIONS.find((p) => p.id === 'wedding-book')!,
+  polaroid: ALL_BOOK_PRESENTATIONS.find((p) => p.id === 'polaroid-memories')!,
+  'memory-notebook': ALL_BOOK_PRESENTATIONS.find((p) => p.id === 'travel-journal')!,
+  'photo-magazine': ALL_BOOK_PRESENTATIONS.find((p) => p.id === 'magazine-style')!,
 }
 
 export const DEFAULT_BOOK_PRESENTATION = 'classic-photobook' as const

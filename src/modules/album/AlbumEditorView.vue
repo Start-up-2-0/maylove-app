@@ -36,12 +36,18 @@
     <div v-else class="wizard-body" :class="{ 'wizard-body--review': currentStep === 'preview' }">
       <div class="wizard-editor">
         <div class="ml-card wiz-panel" :class="{ 'wiz-panel--review': currentStep === 'preview' }">
-          <AlbumPresentationStep
-            v-if="currentStep === 'presentation'"
+          <AlbumBasicsStep
+            v-if="currentStep === 'basics'"
             :form="form"
             :album="album"
+            :photos="photos"
           />
-          <AlbumBasicsStep v-else-if="currentStep === 'basics'" :form="form" />
+          <AlbumPagesStep
+            v-else-if="currentStep === 'pages'"
+            :form="form"
+            :photos="photos"
+            :album="album"
+          />
           <AlbumPhotosStep
             v-else-if="currentStep === 'photos'"
             ref="photosStepRef"
@@ -91,8 +97,8 @@ import WizardHeader from '@/components/wizard/WizardHeader.vue'
 import WizardFooter from '@/components/wizard/WizardFooter.vue'
 import AlbumWizardStepper from './AlbumWizardStepper.vue'
 import { ALBUM_WIZARD_STEPS, type AlbumWizardStep } from './albumWizardSteps'
-import AlbumPresentationStep from './components/AlbumPresentationStep.vue'
 import AlbumBasicsStep from './components/AlbumBasicsStep.vue'
+import AlbumPagesStep from './components/AlbumPagesStep.vue'
 import AlbumPhotosStep from './components/AlbumPhotosStep.vue'
 import AlbumMusicStep from './components/AlbumMusicStep.vue'
 import AlbumPreviewStep from './components/AlbumPreviewStep.vue'
@@ -102,7 +108,7 @@ const route = useRoute()
 const router = useRouter()
 const albumId = route.params.id as string
 
-const currentStep = ref<AlbumWizardStep>('presentation')
+const currentStep = ref<AlbumWizardStep>('basics')
 const previewRefreshToken = ref(0)
 const photosStepRef = ref<InstanceType<typeof AlbumPhotosStep> | null>(null)
 
@@ -126,12 +132,14 @@ onMounted(async () => {
   const step = route.query.step
   if (typeof step === 'string' && ALBUM_WIZARD_STEPS.includes(step as AlbumWizardStep)) {
     currentStep.value = step as AlbumWizardStep
+  } else if (step === 'presentation') {
+    currentStep.value = 'basics'
   }
 })
 
 watch(currentStep, (step, previous) => {
   void router.replace({ query: { ...route.query, step } })
-  if (previous === 'photos' && step !== 'photos') {
+  if ((previous === 'photos' || previous === 'pages') && step !== previous) {
     void reload()
   }
   if (step === 'preview') {
@@ -184,10 +192,8 @@ async function onMediaChanged() {
   previewRefreshToken.value += 1
 }
 
-async function onPublished() {
-  await reload()
-  previewRefreshToken.value += 1
-  currentStep.value = 'publish'
+function onPublished() {
+  void router.push(`/dashboard/albums/${albumId}`)
 }
 </script>
 

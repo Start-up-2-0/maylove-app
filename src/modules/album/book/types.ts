@@ -55,6 +55,8 @@ export interface MemoryBookModel {
   signature?: string
   colorPrimary: string
   contentPages: MemoryBookContentPage[]
+  bookConfig?: import('./bookConfig').BookConfig
+  coverPhotoUrl?: string
 }
 
 export interface BookPresentationDefinition {

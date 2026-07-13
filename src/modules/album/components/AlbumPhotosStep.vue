@@ -1,11 +1,11 @@
 <template>
   <div class="photos-step">
     <WizardStepHeader
-      title="Páginas do livro"
+      title="Fototeca"
       :description="stepDescription"
     />
 
-    <section v-if="!isTimeline" class="layout-panel ml-card">
+    <section v-if="!isTimeline && !isMemoryBook" class="layout-panel ml-card">
       <label class="layout-panel__field">
         <span class="layout-panel__label">Fotos por página</span>
         <select v-model.number="photosPerPage" class="ml-input ml-input--sm">
@@ -18,6 +18,18 @@
         {{ pageEstimate }} páginas no livro com {{ photos.length }} foto(s) ·
         {{ photosPerPage }} {{ photosPerPage === 1 ? 'foto' : 'fotos' }} por página
         (a última pode ter menos). Título, data e descrição de cada foto aparecem sob a imagem.
+      </p>
+    </section>
+
+    <section v-else-if="!isTimeline" class="layout-panel ml-card">
+      <p class="layout-panel__hint text-muted">
+        {{ photos.length }} foto(s) na fototeca.
+        <template v-if="form.book_pages.length">
+          {{ form.book_pages.length }} página(s) montadas no editor de Páginas.
+        </template>
+        <template v-else>
+          Sem páginas salvas ainda — o livro usa o packing automático até você montar em Páginas.
+        </template>
       </p>
     </section>
 
@@ -131,7 +143,7 @@ import { inferImageMimeType } from '@/storage/mime'
 import { photoUploadHint, validatePhotoUpload } from '@/storage/validateUpload'
 import { MEDIA_LIMITS } from '@/config/mediaLimits'
 import { estimateBookPageCount } from '@/modules/album/book/buildModel'
-import { isTimelinePresentation } from '@/modules/album/book/presentations'
+import { isMemoryBookPresentation, isTimelinePresentation } from '@/modules/album/book/presentations'
 import { resolveMediaUrl } from '@/modules/album/book/mediaUrl'
 import type { useAlbumWizard } from '@/composables/useAlbumWizard'
 import WizardStepHeader from '@/components/wizard/WizardStepHeader.vue'
@@ -153,6 +165,7 @@ const saveTimers = new Map<string, ReturnType<typeof setTimeout>>()
 const showValidation = ref(false)
 
 const isTimeline = computed(() => isTimelinePresentation(props.form.presentation))
+const isMemoryBook = computed(() => isMemoryBookPresentation(props.form.presentation))
 
 const photosPerPage = computed({
   get: () => props.form.photos_per_page,
@@ -162,14 +175,19 @@ const photosPerPage = computed({
 })
 
 const pageEstimate = computed(() =>
-  estimateBookPageCount(props.photos.length, photosPerPage.value, props.form.presentation),
+  estimateBookPageCount(
+    props.photos.length,
+    photosPerPage.value,
+    props.form.presentation,
+    props.form.book_pages,
+  ),
 )
 
 const stepDescription = computed(() => {
   if (isTimeline.value) {
     return `Monte a linha do tempo: uma foto por momento, com data, título e descrição obrigatórios. Adicione até ${maxPhotos} fotos. ${photoUploadHint()}`
   }
-  return `Organize as fotos e os textos de cada página. Adicione até ${maxPhotos} fotos. ${photoUploadHint()}`
+  return `Envie e organize as fotos usadas no Memory Book. Depois escolha layouts e slots em Páginas. Até ${maxPhotos} fotos. ${photoUploadHint()}`
 })
 
 watch(
