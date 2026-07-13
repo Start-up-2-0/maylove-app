@@ -5,7 +5,7 @@
         <p class="eyebrow">Álbuns digitais</p>
         <h1 class="section-title">Seus álbuns</h1>
         <p class="text-muted dash-head__sub">
-          Monte álbuns de fotos independentes das homenagens e compartilhe com quem você ama.
+          Monte livros digitais de memórias, independentes das homenagens, e compartilhe com quem você ama.
         </p>
       </div>
       <RouterLink to="/dashboard/albums/new" class="ml-btn ml-btn--primary ml-btn--lg">

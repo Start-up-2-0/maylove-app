@@ -4,7 +4,7 @@
       <div>
         <RouterLink to="/dashboard/albums" class="editor-back">← Álbuns</RouterLink>
         <h1 class="section-title">{{ album?.title || 'Editar álbum' }}</h1>
-        <p class="text-muted">Monte fotos, textos e música de fundo. Publique quando estiver pronto.</p>
+        <p class="text-muted">Monte seu livro digital de memórias com fotos, textos e música de fundo.</p>
       </div>
       <span class="ml-chip" :class="{ 'ml-chip--active': album?.status === 'published' }">
         {{ album?.status === 'published' ? 'Publicado' : 'Rascunho' }}
@@ -33,8 +33,13 @@
     </section>
 
     <section v-else-if="album" class="ml-card editor-panel">
+      <AlbumPresentationStep
+        v-if="activeStep === 'presentation'"
+        :album="album"
+        @saved="onSaved"
+      />
       <AlbumBasicsStep
-        v-if="activeStep === 'basics'"
+        v-else-if="activeStep === 'basics'"
         :album="album"
         @saved="onSaved"
       />
@@ -53,7 +58,6 @@
       <AlbumPreviewStep
         v-else
         :album="album"
-        :photos="photos"
         @published="onPublished"
       />
     </section>
@@ -66,6 +70,7 @@ import { useRoute } from 'vue-router'
 import { fetchAlbum } from '@/api/albums'
 import type { AlbumDetail } from '@/api/types'
 import { resolveApiError } from '@/api/errors'
+import AlbumPresentationStep from './components/AlbumPresentationStep.vue'
 import AlbumBasicsStep from './components/AlbumBasicsStep.vue'
 import AlbumPhotosStep from './components/AlbumPhotosStep.vue'
 import AlbumMusicStep from './components/AlbumMusicStep.vue'
@@ -75,9 +80,10 @@ const route = useRoute()
 const album = ref<AlbumDetail | null>(null)
 const loading = ref(true)
 const error = ref('')
-const activeStep = ref<'basics' | 'photos' | 'music' | 'preview'>('basics')
+const activeStep = ref<'presentation' | 'basics' | 'photos' | 'music' | 'preview'>('presentation')
 
 const steps = [
+  { id: 'presentation' as const, label: 'Estilo do livro' },
   { id: 'basics' as const, label: 'Informações' },
   { id: 'photos' as const, label: 'Fotos' },
   { id: 'music' as const, label: 'Música' },

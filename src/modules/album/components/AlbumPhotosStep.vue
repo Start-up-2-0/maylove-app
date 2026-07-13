@@ -1,8 +1,8 @@
 <template>
   <div class="photos-step">
     <WizardStepHeader
-      title="Fotos do álbum"
-      :description="`Adicione até ${maxPhotos} fotos. ${photoUploadHint()}`"
+      title="Páginas do livro"
+      :description="`Cada foto é um capítulo da história. Adicione até ${maxPhotos} páginas. ${photoUploadHint()}`"
     />
 
     <div v-if="photos.length" class="photo-grid">
@@ -30,6 +30,12 @@
             v-model="captions[photo.id].title"
             class="ml-input ml-input--sm"
             placeholder="Título (opcional)"
+            @blur="saveCaption(photo.id)"
+          />
+          <input
+            v-model="captions[photo.id].memory_date"
+            class="ml-input ml-input--sm"
+            placeholder="Data ou período (opcional)"
             @blur="saveCaption(photo.id)"
           />
           <textarea
@@ -90,7 +96,7 @@ const emit = defineEmits<{ changed: [] }>()
 const maxPhotos = MEDIA_LIMITS.photo.maxCountPerAlbum
 const uploading = ref(false)
 const error = ref('')
-const captions = reactive<Record<string, { title: string; caption: string }>>({})
+const captions = reactive<Record<string, { title: string; caption: string; memory_date: string }>>({})
 
 watch(
   () => props.photos,
@@ -100,6 +106,7 @@ watch(
         captions[photo.id] = {
           title: photo.title ?? '',
           caption: photo.caption ?? '',
+          memory_date: photo.memory_date ?? '',
         }
       }
     }
@@ -179,7 +186,12 @@ async function saveCaption(mediaId: string) {
   if (!meta) return
   try {
     await updateAlbum(props.albumId, {
-      pages: [{ media_id: mediaId, title: meta.title, caption: meta.caption }],
+      pages: [{
+        media_id: mediaId,
+        title: meta.title,
+        caption: meta.caption,
+        memory_date: meta.memory_date,
+      }],
     })
   } catch {
     error.value = 'Não foi possível salvar o texto da foto.'

@@ -2,11 +2,11 @@
   <div class="preview-step">
     <WizardStepHeader
       title="Preview e publicação"
-      description="Revise como o álbum ficará antes de compartilhar o link público."
+      description="Revise como o livro digital ficará antes de compartilhar o link público."
     />
 
-    <div class="preview-frame" :style="{ '--album-accent': album.color_primary || '#c45d7a' }">
-      <AlbumLayout :content="layoutContent" mode="preview" />
+    <div v-if="bookModel" class="preview-frame">
+      <BookRenderer :book="bookModel" mode="preview" />
     </div>
 
     <div v-if="validation && !validation.valid" class="ml-alert ml-alert--warn mt-4">
@@ -15,14 +15,14 @@
 
     <div class="preview-actions">
       <button class="ml-btn ml-btn--secondary" :disabled="validating" @click="runValidate">
-        {{ validating ? 'Validando...' : 'Validar álbum' }}
+        {{ validating ? 'Validando...' : 'Validar livro' }}
       </button>
       <button
         class="ml-btn ml-btn--primary"
         :disabled="publishing || album.status === 'published'"
         @click="publish"
       >
-        {{ album.status === 'published' ? 'Já publicado' : publishing ? 'Publicando...' : 'Publicar álbum' }}
+        {{ album.status === 'published' ? 'Já publicado' : publishing ? 'Publicando...' : 'Publicar livro' }}
       </button>
       <a
         v-if="album.status === 'published'"
@@ -43,16 +43,13 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { publishAlbum, validateAlbum } from '@/api/albums'
-import type { AlbumDetail, AlbumMedia, AlbumValidation } from '@/api/types'
+import type { AlbumDetail, AlbumValidation } from '@/api/types'
 import { resolveApiError } from '@/api/errors'
-import AlbumLayout from '@/components/experience/layouts/AlbumLayout.vue'
-import { buildAlbumExperienceContent } from '@/modules/album/albumContent'
+import { buildMemoryBookModelFromDetail } from '@/modules/album/book/buildModel'
+import BookRenderer from '@/modules/album/book/BookRenderer.vue'
 import WizardStepHeader from '@/components/wizard/WizardStepHeader.vue'
 
-const props = defineProps<{
-  album: AlbumDetail
-  photos: AlbumMedia[]
-}>()
+const props = defineProps<{ album: AlbumDetail }>()
 
 const emit = defineEmits<{ published: [AlbumDetail] }>()
 
@@ -62,21 +59,7 @@ const publishing = ref(false)
 const error = ref('')
 const success = ref('')
 
-const layoutContent = computed(() =>
-  buildAlbumExperienceContent({
-    title: props.album.title,
-    subtitle: props.album.subtitle,
-    closingMessage: props.album.closing_message,
-    signature: props.album.signature,
-    photos: props.photos.map((photo) => ({
-      id: photo.id,
-      url: photo.url ?? photo.url_thumbnail ?? '',
-      sort_order: photo.sort_order,
-      title: photo.title,
-      caption: photo.caption,
-    })),
-  }),
-)
+const bookModel = computed(() => buildMemoryBookModelFromDetail(props.album))
 
 async function runValidate() {
   validating.value = true
@@ -102,7 +85,7 @@ async function publish() {
       return
     }
     const updated = await publishAlbum(props.album.id)
-    success.value = 'Álbum publicado com sucesso!'
+    success.value = 'Livro publicado com sucesso!'
     emit('published', updated)
   } catch (err) {
     error.value = resolveApiError(err, 'Não foi possível publicar.')
@@ -118,9 +101,8 @@ onMounted(runValidate)
 .preview-frame {
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  padding: 16px;
-  background: var(--surface-2);
   overflow: hidden;
+  background: var(--surface-2);
 }
 
 .preview-actions {

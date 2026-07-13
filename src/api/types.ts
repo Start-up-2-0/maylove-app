@@ -251,6 +251,7 @@ export interface AlbumMedia {
   sort_order: number
   title: string | null
   caption: string | null
+  memory_date: string | null
   url_thumbnail: string | null
   url?: string | null
   created_at: string
@@ -263,6 +264,7 @@ export interface AlbumSummary {
   title: string | null
   subtitle: string | null
   color_primary: string | null
+  presentation: string
   is_public: boolean
   photo_count: number
   views_count: number
@@ -288,6 +290,7 @@ export interface PublicAlbumPhoto {
   url: string | null
   title: string | null
   caption: string | null
+  memory_date: string | null
   sort_order: number
 }
 
@@ -298,6 +301,7 @@ export interface PublicAlbum {
   closing_message: string | null
   signature: string | null
   color_primary: string | null
+  presentation: string
   published_at: string | null
   views_count: number
   photos: PublicAlbumPhoto[]

@@ -1,23 +1,23 @@
 <template>
-  <div class="public-page" :style="{ '--album-accent': album?.color_primary || '#c45d7a' }">
+  <div class="public-page">
     <section v-if="loading" class="public-state">
       <span class="public-spinner" aria-hidden="true" />
-      <p>Carregando álbum...</p>
+      <p>Carregando livro de memórias...</p>
     </section>
 
     <section v-else-if="error" class="public-state public-state--error">
-      <h1>Álbum indisponível</h1>
+      <h1>Livro indisponível</h1>
       <p>{{ error }}</p>
     </section>
 
-    <template v-else-if="album && layoutContent">
-      <AlbumLayout :content="layoutContent" mode="full" :share-url="shareUrl" />
+    <template v-else-if="album && bookModel">
+      <BookRenderer :book="bookModel" mode="full" :share-url="shareUrl" />
 
       <audio v-if="album.music?.url" :src="album.music.url" autoplay loop class="public-audio" />
 
       <footer class="public-foot">
         <RouterLink to="/register" class="public-foot__brand">Feito com <strong>MayLov</strong></RouterLink>
-        <RouterLink to="/dashboard/albums/new" class="public-foot__cta">Crie seu álbum →</RouterLink>
+        <RouterLink to="/dashboard/albums/new" class="public-foot__cta">Crie seu livro →</RouterLink>
       </footer>
     </template>
   </div>
@@ -28,27 +28,30 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute, RouterLink } from 'vue-router'
 import { fetchPublicAlbum, recordPublicAlbumView } from '@/api/albums'
 import type { PublicAlbum } from '@/api/types'
-import AlbumLayout from '@/components/experience/layouts/AlbumLayout.vue'
-import { buildAlbumExperienceContent } from '@/modules/album/albumContent'
+import { buildMemoryBookModel } from '@/modules/album/book/buildModel'
+import BookRenderer from '@/modules/album/book/BookRenderer.vue'
 
 const route = useRoute()
 const album = ref<PublicAlbum | null>(null)
 const loading = ref(true)
 const error = ref('')
 
-const layoutContent = computed(() => {
+const bookModel = computed(() => {
   if (!album.value) return null
-  return buildAlbumExperienceContent({
+  return buildMemoryBookModel({
     title: album.value.title,
     subtitle: album.value.subtitle,
-    closingMessage: album.value.closing_message,
+    closing_message: album.value.closing_message,
     signature: album.value.signature,
+    color_primary: album.value.color_primary,
+    presentation: album.value.presentation,
     photos: album.value.photos.map((photo) => ({
       id: photo.id,
       url: photo.url ?? '',
       sort_order: photo.sort_order,
       title: photo.title,
       caption: photo.caption,
+      memory_date: photo.memory_date,
     })),
   })
 })
@@ -63,7 +66,7 @@ onMounted(async () => {
     album.value = await fetchPublicAlbum(slug)
     await recordPublicAlbumView(slug, getSessionId())
   } catch {
-    error.value = 'Álbum não encontrado ou indisponível no momento.'
+    error.value = 'Livro não encontrado ou indisponível no momento.'
   } finally {
     loading.value = false
   }
