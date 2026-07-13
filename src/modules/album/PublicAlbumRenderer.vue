@@ -190,4 +190,24 @@ function getSessionId(): string {
 .public-foot__cta:hover {
   opacity: 0.75;
 }
+
+@media (max-width: 640px) {
+  .public-foot {
+    padding: 18px 16px;
+    flex-direction: column;
+    align-items: stretch;
+    text-align: center;
+    gap: 10px;
+  }
+
+  .public-foot__brand {
+    justify-content: center;
+  }
+
+  .public-foot__cta {
+    display: block;
+    text-align: center;
+    padding: 10px 0;
+  }
+}
 </style>

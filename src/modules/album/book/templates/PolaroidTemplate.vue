@@ -73,4 +73,34 @@ defineProps<{ book: MemoryBookModel; mode: BookRenderMode; shareUrl?: string }>(
   font-size: 2rem;
   color: var(--book-accent);
 }
+
+@media (max-width: 640px) {
+  .pol-cover,
+  .pol-back {
+    padding: 24px 16px;
+  }
+
+  .pol-cover h1 {
+    font-size: clamp(1.75rem, 8vw, 2.5rem);
+    line-height: 1.1;
+  }
+
+  .pol-page {
+    padding: 14px 10px;
+    gap: 12px;
+  }
+
+  .pol-frames :deep(.book-page-media--polaroid) {
+    gap: 14px;
+  }
+
+  .pol-note {
+    font-size: 1.2rem;
+    padding: 0 8px;
+  }
+
+  .pol-sign {
+    font-size: 1.6rem;
+  }
+}
 </style>

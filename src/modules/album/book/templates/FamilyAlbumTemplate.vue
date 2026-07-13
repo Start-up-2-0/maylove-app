@@ -191,9 +191,28 @@ defineProps<{
   .fam-page {
     grid-template-columns: 1fr;
   }
+
+  .fam-cover,
+  .fam-back {
+    padding: 24px 16px;
+  }
+
   .fam-page__photo {
     border-right: none;
     border-bottom: 1px dashed color-mix(in srgb, var(--book-accent) 20%, transparent);
+    padding: 14px 12px;
+  }
+
+  .fam-page__text {
+    padding: 16px;
+  }
+
+  .fam-page__grid :deep(.book-page-media__figure) {
+    transform: none;
+  }
+
+  .fam-back__sign {
+    font-size: 1.6rem;
   }
 }
 </style>

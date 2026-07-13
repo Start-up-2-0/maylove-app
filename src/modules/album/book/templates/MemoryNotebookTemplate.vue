@@ -110,4 +110,31 @@ defineProps<{ book: MemoryBookModel; mode: BookRenderMode; shareUrl?: string }>(
   font-size: 2rem;
   color: var(--book-accent);
 }
+
+@media (max-width: 640px) {
+  .nb-cover,
+  .nb-back {
+    padding: 32px 18px;
+  }
+
+  .nb-cover h1 {
+    font-size: clamp(1.9rem, 8vw, 2.4rem);
+  }
+
+  .nb-page {
+    padding: 18px 14px 18px 24px;
+  }
+
+  .nb-page h2 {
+    font-size: 1.45rem;
+  }
+
+  .nb-text {
+    font-size: 1.2rem;
+  }
+
+  .nb-sign {
+    font-size: 1.6rem;
+  }
+}
 </style>

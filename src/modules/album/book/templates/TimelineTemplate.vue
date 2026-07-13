@@ -100,14 +100,30 @@ defineProps<{ book: MemoryBookModel; mode: BookRenderMode; shareUrl?: string }>(
   .tl-page {
     grid-template-columns: 1fr;
   }
+
+  .tl-cover,
+  .tl-back {
+    padding: 28px 18px;
+  }
+
+  .tl-cover h1 {
+    font-size: clamp(1.6rem, 7vw, 2rem);
+  }
+
   .tl-rail {
     flex-direction: row;
     border-right: none;
     border-bottom: 2px solid color-mix(in srgb, var(--book-accent) 35%, transparent);
+    padding: 12px 16px;
   }
+
   .tl-date {
     writing-mode: horizontal-tb;
     transform: none;
+  }
+
+  .tl-body {
+    padding: 16px;
   }
 }
 </style>

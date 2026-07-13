@@ -107,5 +107,26 @@ defineProps<{ book: MemoryBookModel; mode: BookRenderMode; shareUrl?: string }>(
   .rom-page {
     grid-template-columns: 1fr;
   }
+
+  .rom-cover,
+  .rom-back {
+    padding: 28px 18px;
+  }
+
+  .rom-page__media :deep(.book-page-media__figure img) {
+    min-height: 200px;
+  }
+
+  .rom-page__copy {
+    padding: 18px;
+  }
+
+  .rom-page__copy h2 {
+    font-size: 1.35rem;
+  }
+
+  .rom-sign {
+    font-size: 1.25rem;
+  }
 }
 </style>

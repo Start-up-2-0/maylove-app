@@ -106,5 +106,30 @@ defineProps<{ book: MemoryBookModel; mode: BookRenderMode; shareUrl?: string }>(
   .mag-page {
     grid-template-columns: 1fr;
   }
+
+  .mag-page--hero .mag-hero {
+    grid-row: auto;
+  }
+
+  .mag-cover,
+  .mag-back {
+    padding: 28px 18px;
+  }
+
+  .mag-hero {
+    min-height: 180px;
+  }
+
+  .mag-hero :deep(.book-page-media__figure img) {
+    min-height: 180px;
+  }
+
+  .mag-copy {
+    padding: 16px;
+  }
+
+  .mag-copy h2 {
+    font-size: 1.25rem;
+  }
 }
 </style>

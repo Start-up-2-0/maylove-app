@@ -278,6 +278,62 @@ function onTouchEnd(event: TouchEvent) {
   opacity: 0;
 }
 
+@media (max-width: 640px) {
+  .book {
+    gap: 12px;
+    min-height: auto;
+    padding:
+      max(10px, env(safe-area-inset-top))
+      max(8px, env(safe-area-inset-right))
+      max(10px, env(safe-area-inset-bottom))
+      max(8px, env(safe-area-inset-left));
+  }
+
+  .book--preview {
+    min-height: auto;
+  }
+
+  .book__stage {
+    width: 100%;
+    transform: none;
+    opacity: 1;
+  }
+
+  .book--opened .book__stage {
+    transform: none;
+  }
+
+  .book__spread {
+    min-height: clamp(300px, 62svh, 460px);
+    border-radius: 10px;
+  }
+
+  .book__shadow {
+    display: none;
+  }
+
+  .book__binder {
+    display: none;
+  }
+
+  .book__nav {
+    gap: 12px;
+    width: 100%;
+    justify-content: center;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .book__btn {
+    width: 42px;
+    height: 42px;
+  }
+
+  .book__count {
+    font-size: 0.82rem;
+    min-width: 60px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .book__stage {
     transform: none !important;

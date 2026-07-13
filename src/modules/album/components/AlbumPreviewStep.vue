@@ -118,6 +118,8 @@ const bookModel = computed(() => {
 
 .review-preview {
   margin-bottom: 24px;
+  overflow-x: clip;
+  border-radius: var(--radius-md);
 }
 .review-preview__title {
   display: flex;
@@ -138,5 +140,18 @@ const bookModel = computed(() => {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
+}
+
+@media (max-width: 640px) {
+  .review-summary__item {
+    min-width: calc(50% - 6px);
+    flex: 1 1 calc(50% - 6px);
+    padding: 12px;
+  }
+
+  .review-actions .ml-btn {
+    width: 100%;
+    justify-content: center;
+  }
 }
 </style>
