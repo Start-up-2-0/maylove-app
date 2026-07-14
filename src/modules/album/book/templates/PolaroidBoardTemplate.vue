@@ -2,25 +2,15 @@
   <div
     class="pb-board"
     :class="[`pb-board--${mode}`, { 'pb-board--editable': editable }]"
-    :style="boardStyle"
+    :style="boardRootStyle"
   >
-    <header class="pb-board__header">
-      <p v-if="eyebrow" class="pb-board__eyebrow">{{ eyebrow }}</p>
-      <h1 class="pb-board__title">{{ book.title }}</h1>
-      <p v-if="book.subtitle" class="pb-board__subtitle">{{ book.subtitle }}</p>
-      <p v-if="editable && shots.length" class="pb-board__hint">
-        Arraste para mover · clique na foto e gire com a alça vermelha ou os botões ↺ ↻.
-        <button type="button" class="pb-board__reset" @click="resetLayout">Resetar posições</button>
-      </p>
-    </header>
-
+    <!-- Canvas = quadro inteiro (sem caixa interna limitada) -->
     <div
       v-if="shots.length"
       ref="stageRef"
-      class="pb-board__stage pb-board__stage--freeform"
+      class="pb-board__canvas"
       role="list"
       aria-label="Quadro de polaroids"
-      :style="{ minHeight: stageMinHeight }"
       @pointerdown.self="selectedId = null"
     >
       <figure
@@ -72,7 +62,17 @@
       </figure>
     </div>
 
-    <p v-else class="pb-board__empty">Adicione fotos na fototeca para colar no quadro.</p>
+    <header class="pb-board__header">
+      <p v-if="eyebrow" class="pb-board__eyebrow">{{ eyebrow }}</p>
+      <h1 class="pb-board__title">{{ book.title }}</h1>
+      <p v-if="book.subtitle" class="pb-board__subtitle">{{ book.subtitle }}</p>
+      <p v-if="editable && shots.length" class="pb-board__hint">
+        Arraste por todo o quadro · clique e gire com a alça ou ↺ ↻.
+        <button type="button" class="pb-board__reset" @click="resetLayout">Resetar posições</button>
+      </p>
+    </header>
+
+    <p v-if="!shots.length" class="pb-board__empty">Adicione fotos na fototeca para colar no quadro.</p>
 
     <footer v-if="showFooter" class="pb-board__footer">
       <RichText v-if="book.closingMessage" :text="book.closingMessage" class="pb-board__msg" />
@@ -126,6 +126,11 @@ const boardStyle = computed(() =>
     fontBody: theme.value.fonts.body,
   }),
 )
+
+const boardRootStyle = computed(() => ({
+  ...boardStyle.value,
+  minHeight: stageMinHeight.value,
+}))
 
 const eyebrow = computed(
   () =>
@@ -229,10 +234,12 @@ const shots = computed(() => {
 
 const stageMinHeight = computed(() => {
   const count = localItems.value.length
-  if (count <= 0) return '240px'
+  if (count <= 0) return props.mode === 'preview' ? '360px' : '70svh'
   const maxY = Math.max(...localItems.value.map((item) => item.y), 0)
-  // Altura acompanha onde as fotos foram colocadas + folga.
-  return `${Math.max(360, maxY * 5.5 + 260)}px`
+  // Quadro alto o suficiente para posicionar em qualquer região (inclui “embaixo” do título).
+  const fromPositions = maxY * 7 + 320
+  const base = props.mode === 'preview' ? 520 : 720
+  return `${Math.max(base, fromPositions)}px`
 })
 
 const showFooter = computed(
@@ -267,13 +274,14 @@ function bringToFront(id: string) {
   )
 }
 
-function clampToStage(id: string, xPct: number, yPct: number): { x: number; y: number } {
+function clampToCanvas(id: string, xPct: number, yPct: number): { x: number; y: number } {
   const stage = stageRef.value
   const el = shotEls.get(id)
+  // Quase sem restrição: só evita perder a polaroid completamente fora do quadro.
   if (!stage || !el) {
     return {
-      x: Math.min(95, Math.max(-10, xPct)),
-      y: Math.min(95, Math.max(-10, yPct)),
+      x: Math.min(96, Math.max(-20, xPct)),
+      y: Math.min(96, Math.max(-20, yPct)),
     }
   }
 
@@ -284,13 +292,15 @@ function clampToStage(id: string, xPct: number, yPct: number): { x: number; y: n
     return { x: xPct, y: yPct }
   }
 
-  // Permite levar a foto a qualquer canto (borda da polaroid alinhada à borda do quadro).
-  const maxX = Math.max(0, ((stageBox.width - elW) / stageBox.width) * 100)
-  const maxY = Math.max(0, ((stageBox.height - elH) / stageBox.height) * 100)
+  const minVisible = 0.2
+  const minX = (-elW * (1 - minVisible) * 100) / stageBox.width
+  const minY = (-elH * (1 - minVisible) * 100) / stageBox.height
+  const maxX = ((stageBox.width - elW * minVisible) * 100) / stageBox.width
+  const maxY = ((stageBox.height - elH * minVisible) * 100) / stageBox.height
 
   return {
-    x: Math.min(maxX, Math.max(0, xPct)),
-    y: Math.min(maxY, Math.max(0, yPct)),
+    x: Math.min(maxX, Math.max(minX, xPct)),
+    y: Math.min(maxY, Math.max(minY, yPct)),
   }
 }
 
@@ -362,7 +372,7 @@ function onPointerMove(event: PointerEvent) {
     if (stage.width <= 0 || stage.height <= 0) return
     const rawX = ((event.clientX - dragOffsetX - stage.left) / stage.width) * 100
     const rawY = ((event.clientY - dragOffsetY - stage.top) / stage.height) * 100
-    const clamped = clampToStage(draggingId.value, rawX, rawY)
+    const clamped = clampToCanvas(draggingId.value, rawX, rawY)
 
     localItems.value = localItems.value.map((entry) =>
       entry.media_id === draggingId.value ? { ...entry, x: clamped.x, y: clamped.y } : entry,
@@ -431,10 +441,12 @@ onBeforeUnmount(() => {
 .pb-board {
   --pb-cork: var(--book-paper);
   --pb-cork-dark: var(--book-paper-alt);
+  position: relative;
   width: 100%;
-  min-height: var(--exp-stage, 100svh);
+  min-height: var(--exp-stage, 70svh);
   padding: clamp(20px, 4vw, 36px) clamp(14px, 3vw, 28px) clamp(36px, 6vw, 56px);
   color: var(--book-ink);
+  overflow: visible;
   background:
     radial-gradient(circle at 18% 22%, rgba(255, 255, 255, 0.18), transparent 42%),
     radial-gradient(circle at 82% 70%, rgba(0, 0, 0, 0.12), transparent 48%),
@@ -460,9 +472,25 @@ onBeforeUnmount(() => {
   min-height: auto;
 }
 
+.pb-board__canvas {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  touch-action: none;
+  overflow: visible;
+}
+
 .pb-board__header {
+  position: relative;
+  z-index: 2;
   text-align: center;
   margin-bottom: clamp(18px, 4vw, 28px);
+  pointer-events: none;
+}
+
+.pb-board__hint,
+.pb-board__reset {
+  pointer-events: auto;
 }
 
 .pb-board__eyebrow {
@@ -509,18 +537,9 @@ onBeforeUnmount(() => {
   cursor: pointer;
 }
 
-.pb-board__stage--freeform {
-  position: relative;
-  display: block;
-  width: 100%;
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: clamp(8px, 2vw, 16px);
-  touch-action: none;
-  overflow: visible;
-}
-
 .pb-board__empty {
+  position: relative;
+  z-index: 2;
   text-align: center;
   color: var(--book-muted);
   font-family: var(--book-font-display);
@@ -543,6 +562,7 @@ onBeforeUnmount(() => {
   transform-origin: center center;
   transition: box-shadow 180ms ease;
   user-select: none;
+  z-index: 3;
 }
 
 .pb-polaroid--draggable {
@@ -753,11 +773,13 @@ onBeforeUnmount(() => {
 }
 
 .pb-board__footer {
+  position: relative;
+  z-index: 2;
   max-width: 520px;
   margin: clamp(28px, 5vw, 44px) auto 0;
   text-align: center;
   padding: 18px;
-  background: color-mix(in srgb, #fff8ec 82%, transparent);
+  background: color-mix(in srgb, #fff8ec 75%, transparent);
   border-radius: 4px;
   box-shadow: 0 8px 20px -12px rgba(0, 0, 0, 0.35);
 }

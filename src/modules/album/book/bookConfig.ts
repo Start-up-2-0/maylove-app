@@ -138,8 +138,8 @@ export function normalizeBoardItems(raw?: BookBoardItem[] | null): BookBoardItem
 
 function clampPercent(value: number): number {
   if (!Number.isFinite(value)) return 0
-  // Permite ir quase de ponta a ponta (com leve overhang).
-  return Math.min(98, Math.max(-15, value))
+  // Quase sem teto: permite cobrir o quadro inteiro (e leve overhang).
+  return Math.min(120, Math.max(-30, value))
 }
 
 function clampRotation(value: number): number {
