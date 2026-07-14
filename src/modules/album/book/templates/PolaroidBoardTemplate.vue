@@ -9,7 +9,7 @@
       <h1 class="pb-board__title">{{ book.title }}</h1>
       <p v-if="book.subtitle" class="pb-board__subtitle">{{ book.subtitle }}</p>
       <p v-if="editable && shots.length" class="pb-board__hint">
-        Arraste as polaroids para posicioná-las no quadro.
+        Arraste para mover · clique na foto e gire com a alça vermelha ou os botões ↺ ↻.
         <button type="button" class="pb-board__reset" @click="resetLayout">Resetar posições</button>
       </p>
     </header>
@@ -21,29 +21,54 @@
       role="list"
       aria-label="Quadro de polaroids"
       :style="{ minHeight: stageMinHeight }"
+      @pointerdown.self="selectedId = null"
     >
       <figure
         v-for="shot in shots"
         :key="shot.id"
+        :ref="(el) => setShotEl(shot.id, el)"
         class="pb-polaroid"
         :class="[
           `pb-polaroid--decor-${shot.decor}`,
           `pb-polaroid--size-${shot.size}`,
           {
             'pb-polaroid--draggable': editable,
-            'pb-polaroid--dragging': draggingId === shot.id,
+            'pb-polaroid--dragging': dragMode === 'move' && draggingId === shot.id,
+            'pb-polaroid--selected': editable && selectedId === shot.id,
           },
         ]"
         :style="shot.style"
         role="listitem"
         :tabindex="editable ? 0 : undefined"
-        @pointerdown="editable ? onPointerDown(shot.id, $event) : undefined"
+        @pointerdown="editable ? onMovePointerDown(shot.id, $event) : undefined"
       >
         <span class="pb-polaroid__attach" aria-hidden="true" />
         <div class="pb-polaroid__frame">
           <img :src="shot.url" :alt="shot.title || 'Memória'" loading="lazy" draggable="false" />
         </div>
         <figcaption v-if="shot.caption" class="pb-polaroid__caption">{{ shot.caption }}</figcaption>
+
+        <template v-if="editable && selectedId === shot.id">
+          <div class="pb-polaroid__toolbar" @pointerdown.stop>
+            <button type="button" class="pb-polaroid__rot-btn" title="Girar -15°" @click="nudgeRotation(shot.id, -15)">
+              ↺
+            </button>
+            <span class="pb-polaroid__rot-label">{{ Math.round(shot.rotation) }}°</span>
+            <button type="button" class="pb-polaroid__rot-btn" title="Girar +15°" @click="nudgeRotation(shot.id, 15)">
+              ↻
+            </button>
+            <button type="button" class="pb-polaroid__rot-btn" title="Zerar rotação" @click="setRotation(shot.id, 0)">
+              0°
+            </button>
+          </div>
+          <button
+            type="button"
+            class="pb-polaroid__rotate-handle"
+            title="Arraste para girar"
+            aria-label="Girar polaroid"
+            @pointerdown.stop="onRotatePointerDown(shot.id, $event)"
+          />
+        </template>
       </figure>
     </div>
 
@@ -59,6 +84,7 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import type { ComponentPublicInstance } from 'vue'
 import RichText from '@/components/experience/shared/RichText.vue'
 import ShareBar from '@/components/experience/shared/ShareBar.vue'
 import { getBookTheme, getThemeCssVars } from '../themes'
@@ -72,6 +98,7 @@ import {
 import type { BookRenderMode, MemoryBookModel } from '../types'
 
 type Decor = 'tape-amber' | 'tape-mint' | 'tape-rose' | 'pin-red' | 'pin-blue' | 'corners' | 'clip'
+type DragMode = 'move' | 'rotate' | null
 
 const props = withDefaults(
   defineProps<{
@@ -121,10 +148,16 @@ const DECORS: Decor[] = [
 const SIZES = ['md', 'sm', 'md', 'lg', 'sm', 'md'] as const
 
 const stageRef = ref<HTMLElement | null>(null)
+const shotEls = new Map<string, HTMLElement>()
 const localItems = ref<BookBoardItem[]>([])
+const selectedId = ref<string | null>(null)
 const draggingId = ref<string | null>(null)
+const dragMode = ref<DragMode>(null)
+
 let dragOffsetX = 0
 let dragOffsetY = 0
+let rotateStartPointerAngle = 0
+let rotateStartItemAngle = 0
 let topZ = 10
 
 const photoIds = computed(() =>
@@ -134,7 +167,7 @@ const photoIds = computed(() =>
 watch(
   () => [photoIds.value.join('|'), JSON.stringify(bookConfig.value.board?.items ?? [])] as const,
   () => {
-    if (draggingId.value) return
+    if (dragMode.value) return
     const previousIds = new Set(localItems.value.map((item) => item.media_id))
     const next = syncBoardItems(photoIds.value, bookConfig.value.board?.items)
     localItems.value = next
@@ -165,6 +198,7 @@ const shots = computed(() => {
     url: string
     title?: string
     caption?: string
+    rotation: number
     decor: Decor
     size: (typeof SIZES)[number]
     style: Record<string, string>
@@ -178,6 +212,7 @@ const shots = computed(() => {
       url: photo.url,
       title: photo.title,
       caption: photo.title || photo.caption || photo.memoryDate,
+      rotation: item.rotation ?? 0,
       decor: DECORS[index % DECORS.length],
       size: SIZES[index % SIZES.length],
       style: {
@@ -194,9 +229,10 @@ const shots = computed(() => {
 
 const stageMinHeight = computed(() => {
   const count = localItems.value.length
-  if (count <= 0) return '200px'
-  const rows = Math.ceil(count / 3)
-  return `${Math.max(280, rows * 200)}px`
+  if (count <= 0) return '240px'
+  const maxY = Math.max(...localItems.value.map((item) => item.y), 0)
+  // Altura acompanha onde as fotos foram colocadas + folga.
+  return `${Math.max(360, maxY * 5.5 + 260)}px`
 })
 
 const showFooter = computed(
@@ -206,14 +242,79 @@ const showFooter = computed(
     (props.mode === 'full' && Boolean(props.shareUrl?.trim())),
 )
 
-function emitBoard(items: BookBoardItem[]) {
-  emit('update:board', items.map((item) => ({ ...item })))
+function setShotEl(id: string, el: Element | ComponentPublicInstance | null) {
+  if (!el) {
+    shotEls.delete(id)
+    return
+  }
+  const node = (el as ComponentPublicInstance).$el
+    ? ((el as ComponentPublicInstance).$el as HTMLElement)
+    : (el as HTMLElement)
+  if (node instanceof HTMLElement) shotEls.set(id, node)
 }
 
-function onPointerDown(id: string, event: PointerEvent) {
+function emitBoard(items: BookBoardItem[]) {
+  emit(
+    'update:board',
+    items.map((item) => ({ ...item })),
+  )
+}
+
+function bringToFront(id: string) {
+  topZ += 1
+  localItems.value = localItems.value.map((entry) =>
+    entry.media_id === id ? { ...entry, z: topZ } : entry,
+  )
+}
+
+function clampToStage(id: string, xPct: number, yPct: number): { x: number; y: number } {
+  const stage = stageRef.value
+  const el = shotEls.get(id)
+  if (!stage || !el) {
+    return {
+      x: Math.min(95, Math.max(-10, xPct)),
+      y: Math.min(95, Math.max(-10, yPct)),
+    }
+  }
+
+  const stageBox = stage.getBoundingClientRect()
+  const elW = el.offsetWidth
+  const elH = el.offsetHeight
+  if (stageBox.width <= 0 || stageBox.height <= 0) {
+    return { x: xPct, y: yPct }
+  }
+
+  // Permite levar a foto a qualquer canto (borda da polaroid alinhada à borda do quadro).
+  const maxX = Math.max(0, ((stageBox.width - elW) / stageBox.width) * 100)
+  const maxY = Math.max(0, ((stageBox.height - elH) / stageBox.height) * 100)
+
+  return {
+    x: Math.min(maxX, Math.max(0, xPct)),
+    y: Math.min(maxY, Math.max(0, yPct)),
+  }
+}
+
+function pointerAngle(id: string, clientX: number, clientY: number): number {
+  const el = shotEls.get(id)
+  if (!el) return 0
+  const box = el.getBoundingClientRect()
+  const cx = box.left + box.width / 2
+  const cy = box.top + box.height / 2
+  return (Math.atan2(clientY - cy, clientX - cx) * 180) / Math.PI
+}
+
+function normalizeRotation(value: number): number {
+  let rot = ((value + 180) % 360 + 360) % 360 - 180
+  return Math.round(rot * 10) / 10
+}
+
+function onMovePointerDown(id: string, event: PointerEvent) {
   if (!props.editable || !stageRef.value) return
   if (event.button !== 0) return
   event.preventDefault()
+
+  selectedId.value = id
+  bringToFront(id)
 
   const stage = stageRef.value.getBoundingClientRect()
   const item = localItems.value.find((entry) => entry.media_id === id)
@@ -224,56 +325,105 @@ function onPointerDown(id: string, event: PointerEvent) {
   dragOffsetX = event.clientX - itemX
   dragOffsetY = event.clientY - itemY
 
-  topZ += 1
-  localItems.value = localItems.value.map((entry) =>
-    entry.media_id === id ? { ...entry, z: topZ } : entry,
-  )
   draggingId.value = id
+  dragMode.value = 'move'
 
   const target = event.currentTarget as HTMLElement
   target.setPointerCapture(event.pointerId)
-  window.addEventListener('pointermove', onPointerMove)
-  window.addEventListener('pointerup', onPointerUp)
-  window.addEventListener('pointercancel', onPointerUp)
+  bindDragListeners()
+}
+
+function onRotatePointerDown(id: string, event: PointerEvent) {
+  if (!props.editable) return
+  if (event.button !== 0) return
+  event.preventDefault()
+
+  selectedId.value = id
+  bringToFront(id)
+
+  const item = localItems.value.find((entry) => entry.media_id === id)
+  if (!item) return
+
+  rotateStartPointerAngle = pointerAngle(id, event.clientX, event.clientY)
+  rotateStartItemAngle = item.rotation ?? 0
+  draggingId.value = id
+  dragMode.value = 'rotate'
+
+  const target = event.currentTarget as HTMLElement
+  target.setPointerCapture(event.pointerId)
+  bindDragListeners()
 }
 
 function onPointerMove(event: PointerEvent) {
-  if (!draggingId.value || !stageRef.value) return
-  const stage = stageRef.value.getBoundingClientRect()
-  if (stage.width <= 0 || stage.height <= 0) return
+  if (!draggingId.value || !stageRef.value || !dragMode.value) return
 
-  const x = ((event.clientX - dragOffsetX - stage.left) / stage.width) * 100
-  const y = ((event.clientY - dragOffsetY - stage.top) / stage.height) * 100
+  if (dragMode.value === 'move') {
+    const stage = stageRef.value.getBoundingClientRect()
+    if (stage.width <= 0 || stage.height <= 0) return
+    const rawX = ((event.clientX - dragOffsetX - stage.left) / stage.width) * 100
+    const rawY = ((event.clientY - dragOffsetY - stage.top) / stage.height) * 100
+    const clamped = clampToStage(draggingId.value, rawX, rawY)
 
-  localItems.value = localItems.value.map((entry) =>
-    entry.media_id === draggingId.value
-      ? {
-          ...entry,
-          x: Math.min(88, Math.max(0, x)),
-          y: Math.min(88, Math.max(0, y)),
-        }
-      : entry,
-  )
+    localItems.value = localItems.value.map((entry) =>
+      entry.media_id === draggingId.value ? { ...entry, x: clamped.x, y: clamped.y } : entry,
+    )
+    return
+  }
+
+  if (dragMode.value === 'rotate') {
+    const current = pointerAngle(draggingId.value, event.clientX, event.clientY)
+    const delta = current - rotateStartPointerAngle
+    const next = normalizeRotation(rotateStartItemAngle + delta)
+    localItems.value = localItems.value.map((entry) =>
+      entry.media_id === draggingId.value ? { ...entry, rotation: next } : entry,
+    )
+  }
 }
 
 function onPointerUp() {
   if (!draggingId.value) return
   draggingId.value = null
+  dragMode.value = null
+  unbindDragListeners()
+  emitBoard(localItems.value)
+}
+
+function bindDragListeners() {
+  window.addEventListener('pointermove', onPointerMove)
+  window.addEventListener('pointerup', onPointerUp)
+  window.addEventListener('pointercancel', onPointerUp)
+}
+
+function unbindDragListeners() {
   window.removeEventListener('pointermove', onPointerMove)
   window.removeEventListener('pointerup', onPointerUp)
   window.removeEventListener('pointercancel', onPointerUp)
+}
+
+function nudgeRotation(id: string, delta: number) {
+  localItems.value = localItems.value.map((entry) =>
+    entry.media_id === id
+      ? { ...entry, rotation: normalizeRotation((entry.rotation ?? 0) + delta) }
+      : entry,
+  )
+  emitBoard(localItems.value)
+}
+
+function setRotation(id: string, value: number) {
+  localItems.value = localItems.value.map((entry) =>
+    entry.media_id === id ? { ...entry, rotation: normalizeRotation(value) } : entry,
+  )
   emitBoard(localItems.value)
 }
 
 function resetLayout() {
   localItems.value = photoIds.value.map((id, index) => defaultBoardItem(id, index))
+  selectedId.value = null
   emitBoard(localItems.value)
 }
 
 onBeforeUnmount(() => {
-  window.removeEventListener('pointermove', onPointerMove)
-  window.removeEventListener('pointerup', onPointerUp)
-  window.removeEventListener('pointercancel', onPointerUp)
+  unbindDragListeners()
 })
 </script>
 
@@ -367,6 +517,7 @@ onBeforeUnmount(() => {
   margin: 0 auto;
   padding: clamp(8px, 2vw, 16px);
   touch-action: none;
+  overflow: visible;
 }
 
 .pb-board__empty {
@@ -389,6 +540,7 @@ onBeforeUnmount(() => {
     0 14px 28px -12px rgba(0, 0, 0, 0.45),
     0 4px 10px -4px rgba(0, 0, 0, 0.25);
   transform: rotate(var(--pb-rot, 0deg));
+  transform-origin: center center;
   transition: box-shadow 180ms ease;
   user-select: none;
 }
@@ -403,6 +555,11 @@ onBeforeUnmount(() => {
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.7) inset,
     0 28px 42px -16px rgba(0, 0, 0, 0.55);
+}
+
+.pb-polaroid--selected {
+  outline: 2px dashed rgba(122, 59, 46, 0.55);
+  outline-offset: 4px;
 }
 
 .pb-board:not(.pb-board--editable) .pb-polaroid:hover {
@@ -447,6 +604,60 @@ onBeforeUnmount(() => {
   text-overflow: ellipsis;
   white-space: nowrap;
   pointer-events: none;
+}
+
+.pb-polaroid__toolbar {
+  position: absolute;
+  left: 50%;
+  top: -38px;
+  transform: translateX(-50%) rotate(calc(var(--pb-rot, 0deg) * -1));
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  border-radius: 999px;
+  background: rgba(255, 250, 240, 0.95);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.22);
+  z-index: 5;
+}
+
+.pb-polaroid__rot-btn {
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 999px;
+  background: #3b3228;
+  color: #fff8ec;
+  font-size: 0.85rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.pb-polaroid__rot-label {
+  min-width: 42px;
+  text-align: center;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #3b3228;
+}
+
+.pb-polaroid__rotate-handle {
+  position: absolute;
+  right: -10px;
+  bottom: -10px;
+  width: 22px;
+  height: 22px;
+  border: 2px solid #fff8ec;
+  border-radius: 50%;
+  background: #7a3b2e;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+  cursor: grab;
+  z-index: 6;
+  transform: rotate(calc(var(--pb-rot, 0deg) * -1));
+}
+
+.pb-polaroid__rotate-handle:active {
+  cursor: grabbing;
 }
 
 .pb-polaroid__attach {

@@ -112,7 +112,7 @@ export function syncBoardItems(
         ...prev,
         x: clampPercent(prev.x),
         y: clampPercent(prev.y),
-        rotation: prev.rotation ?? BOARD_ROTATIONS[index % BOARD_ROTATIONS.length],
+        rotation: clampRotation(prev.rotation ?? BOARD_ROTATIONS[index % BOARD_ROTATIONS.length]),
         z: prev.z ?? index + 1,
       }
     }
@@ -128,14 +128,25 @@ export function normalizeBoardItems(raw?: BookBoardItem[] | null): BookBoardItem
       media_id: item.media_id,
       x: clampPercent(Number(item.x) || 0),
       y: clampPercent(Number(item.y) || 0),
-      rotation: typeof item.rotation === 'number' ? item.rotation : BOARD_ROTATIONS[index % BOARD_ROTATIONS.length],
+      rotation:
+          typeof item.rotation === 'number'
+            ? clampRotation(item.rotation)
+            : BOARD_ROTATIONS[index % BOARD_ROTATIONS.length],
       z: typeof item.z === 'number' ? item.z : index + 1,
     }))
 }
 
 function clampPercent(value: number): number {
   if (!Number.isFinite(value)) return 0
-  return Math.min(90, Math.max(0, value))
+  // Permite ir quase de ponta a ponta (com leve overhang).
+  return Math.min(98, Math.max(-15, value))
+}
+
+function clampRotation(value: number): number {
+  if (!Number.isFinite(value)) return 0
+  // Normaliza para -180..180
+  let rot = ((value + 180) % 360 + 360) % 360 - 180
+  return Math.round(rot * 10) / 10
 }
 
 export function normalizeBookConfig(raw?: Partial<BookConfig> | null): BookConfig {
