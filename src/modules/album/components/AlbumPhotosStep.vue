@@ -5,7 +5,7 @@
       :description="stepDescription"
     />
 
-    <section v-if="!isTimeline && !isMemoryBook && !isMural" class="layout-panel ml-card">
+    <section v-if="!isTimeline && !isMemoryBook && !isPhotoFirst" class="layout-panel ml-card">
       <label class="layout-panel__field">
         <span class="layout-panel__label">Fotos por página</span>
         <select v-model.number="photosPerPage" class="ml-input ml-input--sm">
@@ -21,9 +21,12 @@
       </p>
     </section>
 
-    <section v-else-if="isMural" class="layout-panel ml-card">
+    <section v-else-if="isPhotoFirst" class="layout-panel ml-card">
       <p class="layout-panel__hint text-muted">
-        <template v-if="isPortraitAlbum">
+        <template v-if="isInstantPhoto">
+          {{ photos.length }} foto(s). O Instant Photo monta grids automáticos (até 6 por página) com moldura instantânea.
+        </template>
+        <template v-else-if="isPortraitAlbum">
           {{ photos.length }} foto(s) no álbum retrato. Cada imagem entra com cantos e borda recortada.
         </template>
         <template v-else>
@@ -154,7 +157,7 @@ import { inferImageMimeType } from '@/storage/mime'
 import { photoUploadHint, validatePhotoUpload } from '@/storage/validateUpload'
 import { MEDIA_LIMITS } from '@/config/mediaLimits'
 import { estimateBookPageCount } from '@/modules/album/book/buildModel'
-import { isMemoryBookPresentation, isMuralPresentation, isPortraitAlbumPresentation, isTimelinePresentation } from '@/modules/album/book/presentations'
+import { isInstantPhotoPresentation, isMemoryBookPresentation, isMuralPresentation, isPortraitAlbumPresentation, isTimelinePresentation } from '@/modules/album/book/presentations'
 import { resolveMediaUrl } from '@/modules/album/book/mediaUrl'
 import type { useAlbumWizard } from '@/composables/useAlbumWizard'
 import WizardStepHeader from '@/components/wizard/WizardStepHeader.vue'
@@ -179,6 +182,8 @@ const isTimeline = computed(() => isTimelinePresentation(props.form.presentation
 const isMemoryBook = computed(() => isMemoryBookPresentation(props.form.presentation))
 const isMural = computed(() => isMuralPresentation(props.form.presentation))
 const isPortraitAlbum = computed(() => isPortraitAlbumPresentation(props.form.presentation))
+const isInstantPhoto = computed(() => isInstantPhotoPresentation(props.form.presentation))
+const isPhotoFirst = computed(() => isMural.value || isInstantPhoto.value)
 
 const photosPerPage = computed({
   get: () => props.form.photos_per_page,
@@ -202,6 +207,9 @@ const stepDescription = computed(() => {
   }
   if (isPortraitAlbum.value) {
     return `Envie as fotos do álbum retrato — papel, cantos e bordas recortadas. Até ${maxPhotos} fotos. ${photoUploadHint()}`
+  }
+  if (isInstantPhoto.value) {
+    return `Envie só as fotos do Instant Photo — grids com moldura instantânea em fundo escuro. Até ${maxPhotos} fotos. ${photoUploadHint()}`
   }
   if (isMural.value) {
     return `Envie as fotos que serão coladas no quadro polaroid. Rotações, fitas e pins entram automaticamente. Até ${maxPhotos} fotos. ${photoUploadHint()}`

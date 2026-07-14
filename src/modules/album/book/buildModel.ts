@@ -1,5 +1,6 @@
 import {
   DEFAULT_BOOK_PRESENTATION,
+  isInstantPhotoPresentation,
   isMuralPresentation,
   isTimelinePresentation,
   normalizePresentationId,
@@ -179,8 +180,31 @@ function buildPhotobookPages(album: AlbumInput, presentation: BookPresentationId
   return composePhotobookPages(bookPhotos, perPage, theme)
 }
 
+function buildInstantPhotoPages(album: AlbumInput): MemoryBookContentPage[] {
+  const sorted = [...album.photos].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+  const photos = sorted.map(toBookPhoto)
+  if (photos.length === 0) return []
+
+  const perPage = 6
+  const pages: MemoryBookContentPage[] = []
+  for (let i = 0; i < photos.length; i += perPage) {
+    const chunk = photos.slice(i, i + perPage)
+    pages.push({
+      kind: 'content',
+      pageNo: pages.length + 1,
+      layout: chunk.length >= 4 ? 'editorial-trio' : 'asymmetric-duo',
+      photos: chunk,
+    })
+  }
+  return pages
+}
+
 function buildContentPages(album: AlbumInput): MemoryBookContentPage[] {
   const presentation = resolvePresentation(album.presentation)
+
+  if (isInstantPhotoPresentation(presentation)) {
+    return buildInstantPhotoPages(album)
+  }
 
   if (isTimelinePresentation(presentation) || isMuralPresentation(presentation)) {
     return buildTimelinePages(album)
@@ -284,6 +308,11 @@ export function estimateBookPageCount(
   }
 
   if (photoCount <= 0) return 2
+
+  if (isInstantPhotoPresentation(presentation)) {
+    if (photoCount <= 0) return 2
+    return Math.ceil(photoCount / 6) + 2
+  }
 
   if (isTimelinePresentation(presentation) || isMuralPresentation(presentation)) {
     return photoCount + 2

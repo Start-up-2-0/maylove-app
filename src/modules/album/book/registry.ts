@@ -1,5 +1,6 @@
 import { defineAsyncComponent, type Component } from 'vue'
 import {
+  isInstantPhotoPresentation,
   isPolaroidBoardPresentation,
   isPortraitAlbumPresentation,
   isTimelinePresentation,
@@ -15,6 +16,9 @@ const PolaroidBoardTemplate = defineAsyncComponent(
 const PortraitAlbumTemplate = defineAsyncComponent(
   () => import('./templates/PortraitAlbumTemplate.vue'),
 )
+const InstantPhotoTemplate = defineAsyncComponent(
+  () => import('./templates/InstantPhotoTemplate.vue'),
+)
 
 export function getBookTemplate(presentation: BookPresentationId | string): Component {
   const normalized = normalizePresentationId(presentation)
@@ -26,6 +30,9 @@ export function getBookTemplate(presentation: BookPresentationId | string): Comp
   }
   if (isPortraitAlbumPresentation(normalized)) {
     return PortraitAlbumTemplate
+  }
+  if (isInstantPhotoPresentation(normalized)) {
+    return InstantPhotoTemplate
   }
   return PhotobookTemplate
 }

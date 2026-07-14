@@ -1,7 +1,13 @@
 import { computed, reactive, ref } from 'vue'
 import { fetchAlbum, updateAlbum } from '@/api/albums'
 import type { AlbumDetail } from '@/api/types'
-import { DEFAULT_BOOK_PRESENTATION, isMuralPresentation, isPortraitAlbumPresentation, isTimelinePresentation } from '@/modules/album/book/presentations'
+import {
+  DEFAULT_BOOK_PRESENTATION,
+  isInstantPhotoPresentation,
+  isMuralPresentation,
+  isPortraitAlbumPresentation,
+  isTimelinePresentation,
+} from '@/modules/album/book/presentations'
 import {
   DEFAULT_BOOK_CONFIG,
   normalizeBookConfig,
@@ -80,18 +86,34 @@ export function useAlbumWizard(albumId: string) {
     form.presentation = (data.presentation as BookPresentationId) || DEFAULT_BOOK_PRESENTATION
     const isMural = isMuralPresentation(form.presentation)
     const isPortrait = isPortraitAlbumPresentation(form.presentation)
-    form.photos_per_page = isTimelinePresentation(form.presentation) || isMural
-      ? 1
-      : (data.photos_per_page ?? 1)
+    const isInstant = isInstantPhotoPresentation(form.presentation)
+    form.photos_per_page =
+      isTimelinePresentation(form.presentation) || isMural || isInstant
+        ? isInstant
+          ? 6
+          : 1
+        : (data.photos_per_page ?? 1)
 
     const savedConfig = data.book_config as BookConfig | null
-    const defaultPaper = isPortrait ? '#e8dcc8' : isMural ? '#c4a574' : DEFAULT_BOOK_CONFIG.colors.paper
-    const defaultInk = isMural ? '#2c241c' : DEFAULT_BOOK_CONFIG.colors.ink
-    const defaultEyebrow = isPortrait
-      ? 'ÁLBUM DE RETRATOS'
-      : isMural
-        ? 'COLADAS'
-        : DEFAULT_BOOK_CONFIG.cover.eyebrow
+    const defaultPaper = isInstant
+      ? '#141414'
+      : isPortrait
+        ? '#e8dcc8'
+        : isMural
+          ? '#c4a574'
+          : DEFAULT_BOOK_CONFIG.colors.paper
+    const defaultInk = isInstant
+      ? '#f5f5f5'
+      : isMural || isPortrait
+        ? '#2c241c'
+        : DEFAULT_BOOK_CONFIG.colors.ink
+    const defaultEyebrow = isInstant
+      ? 'INSTANT PHOTO'
+      : isPortrait
+        ? 'ÁLBUM DE RETRATOS'
+        : isMural
+          ? 'COLADAS'
+          : DEFAULT_BOOK_CONFIG.cover.eyebrow
 
     form.book_config = normalizeBookConfig({
       ...(savedConfig ?? undefined),

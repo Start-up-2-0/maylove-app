@@ -48,6 +48,14 @@ export const ALL_BOOK_PRESENTATIONS: BookPresentationDefinition[] = [
     tagline: 'Memórias encadernadas',
   },
   {
+    id: 'instant-photo',
+    name: 'Instant Photo',
+    description:
+      'Só fotos com moldura instantânea em fundo escuro — família, casamento, aniversário ou formatura.',
+    emoji: '📸',
+    tagline: 'Instant Photo',
+  },
+  {
     id: 'scrapbook',
     name: 'Scrapbook',
     description: 'Papéis texturizados, fitas e elementos artesanais com charme handmade.',
@@ -84,12 +92,13 @@ export const ALL_BOOK_PRESENTATIONS: BookPresentationDefinition[] = [
   },
 ]
 
-/** Catálogo visível — Memory Book + murais. */
+/** Catálogo visível — Memory Book + murais de foto. */
 export const BOOK_PRESENTATIONS: BookPresentationDefinition[] = ALL_BOOK_PRESENTATIONS.filter(
   (item) =>
     item.id === 'classic-photobook' ||
     item.id === 'polaroid-board' ||
-    item.id === 'portrait-album',
+    item.id === 'portrait-album' ||
+    item.id === 'instant-photo',
 )
 
 export function getBookPresentation(id: string): BookPresentationDefinition | undefined {
@@ -116,9 +125,18 @@ export function isPortraitAlbumPresentation(id: string | null | undefined): bool
   return normalizePresentationId(id) === 'portrait-album'
 }
 
-/** Murais sem editor de páginas (polaroid board / álbum retrato). */
+export function isInstantPhotoPresentation(id: string | null | undefined): boolean {
+  return normalizePresentationId(id) === 'instant-photo'
+}
+
+/** Murais livres (cork / papel vintage). */
 export function isMuralPresentation(id: string | null | undefined): boolean {
   return isPolaroidBoardPresentation(id) || isPortraitAlbumPresentation(id)
+}
+
+/** Estilos sem editor de páginas Memory Book. */
+export function isPhotoFirstPresentation(id: string | null | undefined): boolean {
+  return isMuralPresentation(id) || isInstantPhotoPresentation(id)
 }
 
 export function normalizePresentationId(id: string | null | undefined): string {

@@ -63,7 +63,17 @@
         <legend>Cores</legend>
         <div class="color-row">
           <label class="ml-field">
-            <span>{{ isPortrait ? 'Papel do álbum' : isBoard ? 'Fundo do quadro' : 'Papel' }}</span>
+            <span>
+              {{
+                isInstant
+                  ? 'Fundo'
+                  : isPortrait
+                    ? 'Papel do álbum'
+                    : isBoard
+                      ? 'Fundo do quadro'
+                      : 'Papel'
+              }}
+            </span>
             <input v-model="form.book_config.colors.paper" type="color" class="basics-color" />
           </label>
           <label class="ml-field">
@@ -115,7 +125,15 @@
 
     <section v-if="previewBook" class="basics-preview">
       <h3 class="basics-preview__title">
-        {{ isPortrait ? 'Prévia do álbum' : isPolaroid ? 'Prévia do quadro' : 'Prévia da capa' }}
+        {{
+          isInstant
+            ? 'Prévia Instant Photo'
+            : isPortrait
+              ? 'Prévia do álbum'
+              : isPolaroid
+                ? 'Prévia do quadro'
+                : 'Prévia da capa'
+        }}
       </h3>
       <p v-if="isPolaroid" class="basics-preview__hint text-muted">
         Arraste as polaroids no quadro para personalizar o layout. As posições são salvas automaticamente.
@@ -139,6 +157,7 @@ import { buildMemoryBookModelFromDetail } from '../book/buildModel'
 import BookRenderer from '../book/BookRenderer.vue'
 import type { BookBoardItem, CoverMode } from '../book/bookConfig'
 import {
+  isInstantPhotoPresentation,
   isMuralPresentation,
   isPolaroidBoardPresentation,
   isPortraitAlbumPresentation,
@@ -150,17 +169,26 @@ const props = defineProps<{
   photos: AlbumMedia[]
 }>()
 
-const isBoard = computed(() => isMuralPresentation(props.form.presentation))
+const isBoard = computed(
+  () =>
+    isMuralPresentation(props.form.presentation) ||
+    isInstantPhotoPresentation(props.form.presentation),
+)
 const isPolaroid = computed(() => isPolaroidBoardPresentation(props.form.presentation))
 const isPortrait = computed(() => isPortraitAlbumPresentation(props.form.presentation))
+const isInstant = computed(() => isInstantPhotoPresentation(props.form.presentation))
 
 const headerTitle = computed(() => {
+  if (isInstant.value) return 'Identidade do Instant Photo'
   if (isPortrait.value) return 'Identidade do Álbum Retrato'
   if (isPolaroid.value) return 'Identidade do Quadro Polaroid'
   return 'Identidade do Memory Book'
 })
 
 const headerDescription = computed(() => {
+  if (isInstant.value) {
+    return 'Título e fundo escuro. Só fotos com moldura instantânea — família, casamento, festa ou formatura.'
+  }
   if (isPortrait.value) {
     return 'Título e cores do papel. As fotos entram com cantos e borda recortada na fototeca.'
   }
