@@ -598,17 +598,19 @@ onBeforeUnmount(() => {
 }
 
 .pb-polaroid__frame {
-  aspect-ratio: 1;
   overflow: hidden;
   background: #1a1a1a;
+  line-height: 0;
   pointer-events: none;
 }
 
 .pb-polaroid__frame img {
   display: block;
   width: 100%;
-  height: 100%;
-  object-fit: cover;
+  height: auto;
+  max-height: min(56vw, 240px);
+  object-fit: contain;
+  object-position: center;
   pointer-events: none;
 }
 

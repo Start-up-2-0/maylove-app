@@ -274,30 +274,16 @@ const showFooter = computed(
 .ar-print__photo {
   overflow: hidden;
   background: #2a2723;
-}
-
-.ar-print--wide .ar-print__photo {
-  aspect-ratio: 4 / 3;
-}
-
-.ar-print--md .ar-print__photo {
-  aspect-ratio: 5 / 4;
-}
-
-.ar-print--square .ar-print__photo,
-.ar-print--sm .ar-print__photo {
-  aspect-ratio: 1;
-}
-
-.ar-print--tall .ar-print__photo {
-  aspect-ratio: 3 / 4;
+  line-height: 0;
 }
 
 .ar-print__photo img {
   display: block;
   width: 100%;
-  height: 100%;
-  object-fit: cover;
+  height: auto;
+  max-height: min(52vw, 280px);
+  object-fit: contain;
+  object-position: center;
   filter: sepia(0.12) contrast(1.05);
 }
 
