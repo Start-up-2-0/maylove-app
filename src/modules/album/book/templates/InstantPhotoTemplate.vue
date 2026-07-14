@@ -1,53 +1,97 @@
 <template>
-  <div class="ip-book" :class="[`ip-book--${mode}`]" :style="bookStyle">
-    <header class="ip-cover">
-      <p v-if="eyebrow" class="ip-cover__eyebrow">{{ eyebrow }}</p>
-      <div class="ip-cover__mosaic" aria-hidden="true">
-        <div
-          v-for="(tile, index) in coverTiles"
-          :key="`tile-${index}`"
-          class="ip-cover__tile"
-          :class="{ 'ip-cover__tile--center': tile.center }"
+  <div
+    class="ip-book"
+    :class="[`ip-book--${mode}`, { 'ip-book--open': opened, 'ip-book--closed': !opened }]"
+    :style="bookStyle"
+  >
+    <div ref="stageRef" class="ip-book__stage">
+      <section class="ip-cover" aria-label="Capa do álbum">
+        <button
+          v-if="!opened"
+          type="button"
+          class="ip-cover__btn"
+          aria-expanded="false"
+          aria-controls="ip-pages"
+          @click="openAlbum"
         >
-          <template v-if="tile.center">
-            <span class="ip-cover__badge">PHOTO</span>
-          </template>
-          <img v-else-if="tile.url" :src="tile.url" alt="" />
-        </div>
-      </div>
-      <h1 class="ip-cover__title">{{ book.title }}</h1>
-      <p v-if="book.subtitle" class="ip-cover__subtitle">{{ book.subtitle }}</p>
-      <p v-else class="ip-cover__brand">Instant Photo.</p>
-    </header>
-
-    <section
-      v-for="spread in spreads"
-      :key="spread.pageNo"
-      class="ip-spread"
-      :class="[`ip-spread--count-${spread.photos.length}`]"
-    >
-      <div class="ip-spread__grid">
-        <figure v-for="photo in spread.photos" :key="photo.id" class="ip-frame">
-          <div class="ip-frame__photo">
-            <img :src="photo.url" :alt="photo.title || 'Foto'" loading="lazy" />
+          <div class="ip-cover__face">
+            <p v-if="eyebrow" class="ip-cover__eyebrow">{{ eyebrow }}</p>
+            <div class="ip-cover__mosaic" aria-hidden="true">
+              <div
+                v-for="(tile, index) in coverTiles"
+                :key="`tile-${index}`"
+                class="ip-cover__tile"
+                :class="{ 'ip-cover__tile--center': tile.center }"
+              >
+                <template v-if="tile.center">
+                  <span class="ip-cover__badge">PHOTO</span>
+                </template>
+                <img v-else-if="tile.url" :src="tile.url" alt="" />
+              </div>
+            </div>
+            <h1 class="ip-cover__title">{{ book.title }}</h1>
+            <p v-if="book.subtitle" class="ip-cover__subtitle">{{ book.subtitle }}</p>
+            <p v-else class="ip-cover__brand">Instant Photo.</p>
+            <p class="ip-cover__hint">Toque na capa para abrir</p>
           </div>
-        </figure>
+        </button>
+        <div v-else class="ip-cover__open">
+          <div class="ip-cover__face">
+            <p v-if="eyebrow" class="ip-cover__eyebrow">{{ eyebrow }}</p>
+            <div class="ip-cover__mosaic" aria-hidden="true">
+              <div
+                v-for="(tile, index) in coverTiles"
+                :key="`tile-open-${index}`"
+                class="ip-cover__tile"
+                :class="{ 'ip-cover__tile--center': tile.center }"
+              >
+                <template v-if="tile.center">
+                  <span class="ip-cover__badge">PHOTO</span>
+                </template>
+                <img v-else-if="tile.url" :src="tile.url" alt="" />
+              </div>
+            </div>
+            <h1 class="ip-cover__title">{{ book.title }}</h1>
+            <p v-if="book.subtitle" class="ip-cover__subtitle">{{ book.subtitle }}</p>
+            <p v-else class="ip-cover__brand">Instant Photo.</p>
+          </div>
+          <button type="button" class="ip-cover__close" @click="closeAlbum">Fechar álbum</button>
+        </div>
+      </section>
+
+      <div v-if="opened" id="ip-pages" ref="pagesRef" class="ip-pages">
+        <section
+          v-for="spread in spreads"
+          :key="spread.pageNo"
+          class="ip-spread"
+          :class="[`ip-spread--count-${spread.photos.length}`]"
+        >
+          <div class="ip-spread__grid">
+            <figure v-for="photo in spread.photos" :key="photo.id" class="ip-frame">
+              <div class="ip-frame__photo">
+                <img :src="photo.url" :alt="photo.title || 'Foto'" loading="lazy" />
+              </div>
+            </figure>
+          </div>
+          <p v-if="spread.pageNo" class="ip-spread__page">{{ spread.pageNo }}</p>
+        </section>
+
+        <p v-if="!spreads.length" class="ip-empty">
+          Adicione fotos na fototeca para montar o Instant Photo.
+        </p>
+
+        <footer v-if="showFooter" class="ip-footer">
+          <RichText v-if="book.closingMessage" :text="book.closingMessage" class="ip-footer__msg" />
+          <p v-if="book.signature" class="ip-footer__sign">{{ book.signature }}</p>
+          <ShareBar v-if="mode === 'full' && shareUrl" :url="shareUrl" :text="book.title" />
+        </footer>
       </div>
-      <p v-if="spread.pageNo" class="ip-spread__page">{{ spread.pageNo }}</p>
-    </section>
-
-    <p v-if="!spreads.length" class="ip-empty">Adicione fotos na fototeca para montar o Instant Photo.</p>
-
-    <footer v-if="showFooter" class="ip-footer">
-      <RichText v-if="book.closingMessage" :text="book.closingMessage" class="ip-footer__msg" />
-      <p v-if="book.signature" class="ip-footer__sign">{{ book.signature }}</p>
-      <ShareBar v-if="mode === 'full' && shareUrl" :url="shareUrl" :text="book.title" />
-    </footer>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, nextTick, ref } from 'vue'
 import RichText from '@/components/experience/shared/RichText.vue'
 import ShareBar from '@/components/experience/shared/ShareBar.vue'
 import { getBookTheme, getThemeCssVars } from '../themes'
@@ -67,8 +111,8 @@ const bookConfig = computed(() => normalizeBookConfig(props.book.bookConfig))
 const bookStyle = computed(() =>
   getThemeCssVars(theme.value, bookConfig.value.colors.accent || props.book.colorPrimary, {
     paper: bookConfig.value.colors.paper || theme.value.tokens.paper,
-    ink: bookConfig.value.colors.ink,
-    page: bookConfig.value.colors.page || bookConfig.value.colors.paper,
+    ink: bookConfig.value.colors.ink || theme.value.tokens.ink,
+    page: bookConfig.value.colors.page || bookConfig.value.colors.paper || theme.value.tokens.paper,
     fontDisplay: theme.value.fonts.display,
     fontBody: theme.value.fonts.body,
   }),
@@ -111,12 +155,34 @@ const showFooter = computed(
     Boolean(props.book.signature?.trim()) ||
     (props.mode === 'full' && Boolean(props.shareUrl?.trim())),
 )
+
+/** Preview do wizard já começa aberto para ver as colagens. */
+const opened = ref(props.mode === 'preview')
+const pagesRef = ref<HTMLElement | null>(null)
+const stageRef = ref<HTMLElement | null>(null)
+
+async function openAlbum() {
+  opened.value = true
+  await nextTick()
+  pagesRef.value?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+}
+
+function closeAlbum() {
+  opened.value = false
+  nextTick(() => {
+    if (stageRef.value) stageRef.value.scrollTop = 0
+    if (props.mode === 'full') {
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+  })
+}
 </script>
 
 <style scoped>
 .ip-book {
   --ip-bg: var(--book-paper);
   --ip-ink: var(--book-ink);
+  --ip-ease: cubic-bezier(0.22, 1, 0.36, 1);
   width: 100%;
   min-height: var(--exp-stage, 100svh);
   background: var(--ip-bg);
@@ -127,17 +193,89 @@ const showFooter = computed(
   min-height: auto;
 }
 
-.ip-cover,
-.ip-spread,
-.ip-footer {
+.ip-book__stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.ip-book--closed .ip-book__stage {
+  justify-content: center;
+  min-height: inherit;
+}
+
+.ip-book--preview .ip-book__stage {
+  max-height: clamp(400px, 64vh, 680px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+}
+
+.ip-cover {
   width: min(920px, 100%);
   margin: 0 auto;
   padding: clamp(28px, 5vw, 48px) clamp(16px, 4vw, 32px);
 }
 
-.ip-cover {
+.ip-book--closed .ip-cover {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: inherit;
+}
+
+.ip-cover__btn {
+  display: block;
+  width: 100%;
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: inherit;
+  cursor: pointer;
+  transition:
+    transform 280ms var(--ip-ease),
+    filter 280ms var(--ip-ease);
+}
+
+.ip-cover__btn:hover {
+  transform: translateY(-4px) scale(1.01);
+  filter: brightness(1.06);
+}
+
+.ip-cover__face {
   text-align: center;
+}
+
+.ip-cover__open {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 20px;
+}
+
+.ip-cover__close {
+  padding: 8px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--ip-ink);
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition:
+    background 180ms var(--ip-ease),
+    border-color 180ms var(--ip-ease);
+}
+
+.ip-cover__close:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.4);
 }
 
 .ip-cover__eyebrow {
@@ -196,6 +334,7 @@ const showFooter = computed(
   line-height: 0.95;
   text-transform: uppercase;
   letter-spacing: -0.02em;
+  color: var(--ip-ink);
 }
 
 .ip-cover__subtitle,
@@ -208,6 +347,26 @@ const showFooter = computed(
 
 .ip-cover__brand {
   font-weight: 600;
+}
+
+.ip-cover__hint {
+  margin: 18px 0 0;
+  font-family: var(--book-font-body);
+  font-size: 0.85rem;
+  letter-spacing: 0.06em;
+  color: var(--book-muted);
+}
+
+.ip-pages {
+  width: 100%;
+  animation: ip-pages-in 420ms var(--ip-ease) both;
+}
+
+.ip-spread,
+.ip-footer {
+  width: min(920px, 100%);
+  margin: 0 auto;
+  padding: clamp(28px, 5vw, 48px) clamp(16px, 4vw, 32px);
 }
 
 .ip-spread {
@@ -234,10 +393,7 @@ const showFooter = computed(
 }
 
 .ip-spread--count-5 .ip-spread__grid,
-.ip-spread--count-6 .ip-spread__grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
+.ip-spread--count-6 .ip-spread__grid,
 .ip-spread--count-7 .ip-spread__grid,
 .ip-spread--count-8 .ip-spread__grid,
 .ip-spread--count-9 .ip-spread__grid {
@@ -300,6 +456,17 @@ const showFooter = computed(
   letter-spacing: 0.04em;
 }
 
+@keyframes ip-pages-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @media (max-width: 640px) {
   .ip-spread--count-5 .ip-spread__grid,
   .ip-spread--count-6 .ip-spread__grid,
@@ -316,6 +483,22 @@ const showFooter = computed(
   .ip-cover__tile {
     border-width: 4px;
     border-bottom-width: 12px;
+  }
+
+  .ip-book--preview .ip-book__stage {
+    max-height: clamp(340px, 58vh, 520px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ip-pages {
+    animation: none;
+  }
+
+  .ip-cover__btn,
+  .ip-cover__btn:hover {
+    transition: none;
+    transform: none;
   }
 }
 </style>
