@@ -25,7 +25,16 @@
         <span class="review-preview__dot" />
         Prévia do livro
       </h3>
-      <BookRenderer :key="refreshToken" :book="bookModel" mode="preview" />
+      <p v-if="isPolaroid" class="review-preview__hint text-muted">
+        Arraste as polaroids para ajustar a posição no quadro.
+      </p>
+      <BookRenderer
+        :key="refreshToken"
+        :book="bookModel"
+        mode="preview"
+        :editable="isPolaroid"
+        @update:board="onBoardLayout"
+      />
     </section>
 
     <div class="review-actions">
@@ -43,9 +52,10 @@
 import { computed } from 'vue'
 import type { useAlbumWizard } from '@/composables/useAlbumWizard'
 import type { AlbumDetail } from '@/api/types'
-import { getBookPresentation } from '@/modules/album/book/presentations'
+import { getBookPresentation, isPolaroidBoardPresentation } from '@/modules/album/book/presentations'
 import { buildMemoryBookModelFromDetail } from '@/modules/album/book/buildModel'
 import BookRenderer from '@/modules/album/book/BookRenderer.vue'
+import type { BookBoardItem } from '@/modules/album/book/bookConfig'
 import WizardStepHeader from '@/components/wizard/WizardStepHeader.vue'
 
 const props = defineProps<{
@@ -55,6 +65,8 @@ const props = defineProps<{
 }>()
 
 defineEmits<{ 'go-publish': [] }>()
+
+const isPolaroid = computed(() => isPolaroidBoardPresentation(props.form.presentation))
 
 const presentationLabel = computed(() => {
   const item = getBookPresentation(props.form.presentation)
@@ -69,6 +81,13 @@ const musicLabel = computed(() => {
   const hasAudio = (props.album?.media ?? []).some((m) => m.media_type === 'audio')
   return hasAudio ? 'Com trilha' : 'Sem música'
 })
+
+function onBoardLayout(items: BookBoardItem[]) {
+  props.form.book_config = {
+    ...props.form.book_config,
+    board: { items },
+  }
+}
 
 const bookModel = computed(() => {
   if (!props.album) return null
@@ -130,6 +149,10 @@ const bookModel = computed(() => {
   margin: 0 0 14px;
   font-size: 1rem;
   font-weight: 600;
+}
+.review-preview__hint {
+  margin: -6px 0 12px;
+  font-size: 0.88rem;
 }
 .review-preview__dot {
   width: 8px;

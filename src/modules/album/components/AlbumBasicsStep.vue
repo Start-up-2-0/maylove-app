@@ -115,9 +115,17 @@
 
     <section v-if="previewBook" class="basics-preview">
       <h3 class="basics-preview__title">
-        {{ isPortrait ? 'Prévia do álbum' : isBoard ? 'Prévia do quadro' : 'Prévia da capa' }}
+        {{ isPortrait ? 'Prévia do álbum' : isPolaroid ? 'Prévia do quadro' : 'Prévia da capa' }}
       </h3>
-      <BookRenderer :book="previewBook" mode="preview" />
+      <p v-if="isPolaroid" class="basics-preview__hint text-muted">
+        Arraste as polaroids no quadro para personalizar o layout. As posições são salvas automaticamente.
+      </p>
+      <BookRenderer
+        :book="previewBook"
+        mode="preview"
+        :editable="isPolaroid"
+        @update:board="onBoardLayout"
+      />
     </section>
   </div>
 </template>
@@ -129,8 +137,12 @@ import type { useAlbumWizard } from '@/composables/useAlbumWizard'
 import WizardStepHeader from '@/components/wizard/WizardStepHeader.vue'
 import { buildMemoryBookModelFromDetail } from '../book/buildModel'
 import BookRenderer from '../book/BookRenderer.vue'
-import type { CoverMode } from '../book/bookConfig'
-import { isMuralPresentation, isPortraitAlbumPresentation } from '../book/presentations'
+import type { BookBoardItem, CoverMode } from '../book/bookConfig'
+import {
+  isMuralPresentation,
+  isPolaroidBoardPresentation,
+  isPortraitAlbumPresentation,
+} from '../book/presentations'
 
 const props = defineProps<{
   form: ReturnType<typeof useAlbumWizard>['form']
@@ -139,11 +151,12 @@ const props = defineProps<{
 }>()
 
 const isBoard = computed(() => isMuralPresentation(props.form.presentation))
+const isPolaroid = computed(() => isPolaroidBoardPresentation(props.form.presentation))
 const isPortrait = computed(() => isPortraitAlbumPresentation(props.form.presentation))
 
 const headerTitle = computed(() => {
   if (isPortrait.value) return 'Identidade do Álbum Retrato'
-  if (isBoard.value) return 'Identidade do Quadro Polaroid'
+  if (isPolaroid.value) return 'Identidade do Quadro Polaroid'
   return 'Identidade do Memory Book'
 })
 
@@ -151,8 +164,8 @@ const headerDescription = computed(() => {
   if (isPortrait.value) {
     return 'Título e cores do papel. As fotos entram com cantos e borda recortada na fototeca.'
   }
-  if (isBoard.value) {
-    return 'Título e cores do mural. As fotos vão direto para o quadro na fototeca.'
+  if (isPolaroid.value) {
+    return 'Título e cores do mural. Arraste as fotos na prévia para posicioná-las no quadro.'
   }
   return 'Título, capa, cores e tipografia. Mensagem e assinatura só aparecem na contracapa se você preencher.'
 })
@@ -162,6 +175,13 @@ const coverModes: Array<{ id: CoverMode; label: string; hint: string }> = [
   { id: 'photo', label: 'Tipografia + foto', hint: 'Foto ao lado do título' },
   { id: 'full-bleed', label: 'Foto full-bleed', hint: 'Imagem de fundo na capa' },
 ]
+
+function onBoardLayout(items: BookBoardItem[]) {
+  props.form.book_config = {
+    ...props.form.book_config,
+    board: { items },
+  }
+}
 
 const previewBook = computed(() => {
   if (!props.album) return null
@@ -259,5 +279,11 @@ const previewBook = computed(() => {
   padding: 12px 16px;
   font-size: 0.95rem;
   border-bottom: 1px solid var(--border);
+}
+
+.basics-preview__hint {
+  margin: 0;
+  padding: 10px 16px 0;
+  font-size: 0.86rem;
 }
 </style>

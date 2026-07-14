@@ -1,23 +1,47 @@
 <template>
-  <div class="pb-board" :class="[`pb-board--${mode}`]" :style="boardStyle">
+  <div
+    class="pb-board"
+    :class="[`pb-board--${mode}`, { 'pb-board--editable': editable }]"
+    :style="boardStyle"
+  >
     <header class="pb-board__header">
       <p v-if="eyebrow" class="pb-board__eyebrow">{{ eyebrow }}</p>
       <h1 class="pb-board__title">{{ book.title }}</h1>
       <p v-if="book.subtitle" class="pb-board__subtitle">{{ book.subtitle }}</p>
+      <p v-if="editable && shots.length" class="pb-board__hint">
+        Arraste as polaroids para posicioná-las no quadro.
+        <button type="button" class="pb-board__reset" @click="resetLayout">Resetar posições</button>
+      </p>
     </header>
 
-    <div v-if="shots.length" class="pb-board__stage" role="list" aria-label="Quadro de polaroids">
+    <div
+      v-if="shots.length"
+      ref="stageRef"
+      class="pb-board__stage pb-board__stage--freeform"
+      role="list"
+      aria-label="Quadro de polaroids"
+      :style="{ minHeight: stageMinHeight }"
+    >
       <figure
         v-for="shot in shots"
         :key="shot.id"
         class="pb-polaroid"
-        :class="[`pb-polaroid--decor-${shot.decor}`, `pb-polaroid--size-${shot.size}`]"
+        :class="[
+          `pb-polaroid--decor-${shot.decor}`,
+          `pb-polaroid--size-${shot.size}`,
+          {
+            'pb-polaroid--draggable': editable,
+            'pb-polaroid--dragging': draggingId === shot.id,
+          },
+        ]"
         :style="shot.style"
         role="listitem"
+        :tabindex="editable ? 0 : undefined"
+        @pointerdown="editable ? onPointerDown(shot.id, $event) : undefined"
       >
         <span class="pb-polaroid__attach" aria-hidden="true" />
         <div class="pb-polaroid__frame">
-          <img :src="shot.url" :alt="shot.title || 'Memória'" loading="lazy" />
+          <img :src="shot.url" :alt="shot.title || 'Memória'" loading="lazy" draggable="false" />
         </div>
         <figcaption v-if="shot.caption" class="pb-polaroid__caption">{{ shot.caption }}</figcaption>
       </figure>
@@ -34,20 +58,33 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import RichText from '@/components/experience/shared/RichText.vue'
 import ShareBar from '@/components/experience/shared/ShareBar.vue'
 import { getBookTheme, getThemeCssVars } from '../themes'
 import { normalizePresentationId } from '../presentations'
-import { normalizeBookConfig } from '../bookConfig'
+import {
+  defaultBoardItem,
+  normalizeBookConfig,
+  syncBoardItems,
+  type BookBoardItem,
+} from '../bookConfig'
 import type { BookRenderMode, MemoryBookModel } from '../types'
 
 type Decor = 'tape-amber' | 'tape-mint' | 'tape-rose' | 'pin-red' | 'pin-blue' | 'corners' | 'clip'
 
-const props = defineProps<{
-  book: MemoryBookModel
-  mode: BookRenderMode
-  shareUrl?: string
+const props = withDefaults(
+  defineProps<{
+    book: MemoryBookModel
+    mode: BookRenderMode
+    shareUrl?: string
+    editable?: boolean
+  }>(),
+  { editable: false },
+)
+
+const emit = defineEmits<{
+  'update:board': [items: BookBoardItem[]]
 }>()
 
 const theme = computed(() => getBookTheme(normalizePresentationId(props.book.presentation)))
@@ -81,30 +118,85 @@ const DECORS: Decor[] = [
   'tape-amber',
 ]
 
-const ROTATIONS = [-8, 5, -3, 7, -6, 4, -9, 6, -2, 8, -5, 3]
 const SIZES = ['md', 'sm', 'md', 'lg', 'sm', 'md'] as const
 
+const stageRef = ref<HTMLElement | null>(null)
+const localItems = ref<BookBoardItem[]>([])
+const draggingId = ref<string | null>(null)
+let dragOffsetX = 0
+let dragOffsetY = 0
+let topZ = 10
+
+const photoIds = computed(() =>
+  props.book.contentPages.flatMap((page) => page.photos.map((photo) => photo.id)),
+)
+
+watch(
+  () => [photoIds.value.join('|'), JSON.stringify(bookConfig.value.board?.items ?? [])] as const,
+  () => {
+    if (draggingId.value) return
+    const previousIds = new Set(localItems.value.map((item) => item.media_id))
+    const next = syncBoardItems(photoIds.value, bookConfig.value.board?.items)
+    localItems.value = next
+    topZ = Math.max(10, ...next.map((item) => item.z ?? 1), 10)
+    if (!props.editable) return
+    const idsChanged =
+      previousIds.size !== next.length || next.some((item) => !previousIds.has(item.media_id))
+    const missingSaved = next.some(
+      (item) => !(bookConfig.value.board?.items ?? []).some((saved) => saved.media_id === item.media_id),
+    )
+    if (idsChanged || missingSaved) {
+      emitBoard(next)
+    }
+  },
+  { immediate: true },
+)
+
+const photosById = computed(() => {
+  const map = new Map(
+    props.book.contentPages.flatMap((page) => page.photos).map((photo) => [photo.id, photo]),
+  )
+  return map
+})
+
 const shots = computed(() => {
-  const photos = props.book.contentPages.flatMap((page) => page.photos)
-  return photos.map((photo, index) => {
-    const rot = ROTATIONS[index % ROTATIONS.length]
-    const size = SIZES[index % SIZES.length]
-    const decor = DECORS[index % DECORS.length]
-    const delay = Math.min(index * 45, 600)
-    return {
+  const list: Array<{
+    id: string
+    url: string
+    title?: string
+    caption?: string
+    decor: Decor
+    size: (typeof SIZES)[number]
+    style: Record<string, string>
+  }> = []
+
+  localItems.value.forEach((item, index) => {
+    const photo = photosById.value.get(item.media_id)
+    if (!photo) return
+    list.push({
       id: photo.id,
       url: photo.url,
       title: photo.title,
       caption: photo.title || photo.caption || photo.memoryDate,
-      decor,
-      size,
+      decor: DECORS[index % DECORS.length],
+      size: SIZES[index % SIZES.length],
       style: {
-        '--pb-rot': `${rot}deg`,
-        '--pb-delay': `${delay}ms`,
-        zIndex: String(10 + (index % 7)),
-      } as Record<string, string>,
-    }
+        left: `${item.x}%`,
+        top: `${item.y}%`,
+        '--pb-rot': `${item.rotation ?? 0}deg`,
+        zIndex: String(item.z ?? index + 1),
+      },
+    })
   })
+
+  return list
+})
+
+const stageMinHeight = computed(() => {
+  const count = localItems.value.length
+  if (count <= 0) return '200px'
+  const rows = Math.ceil(count / 3)
+  return `${Math.max(280, rows * 200)}px`
 })
 
 const showFooter = computed(
@@ -113,6 +205,76 @@ const showFooter = computed(
     Boolean(props.book.signature?.trim()) ||
     (props.mode === 'full' && Boolean(props.shareUrl?.trim())),
 )
+
+function emitBoard(items: BookBoardItem[]) {
+  emit('update:board', items.map((item) => ({ ...item })))
+}
+
+function onPointerDown(id: string, event: PointerEvent) {
+  if (!props.editable || !stageRef.value) return
+  if (event.button !== 0) return
+  event.preventDefault()
+
+  const stage = stageRef.value.getBoundingClientRect()
+  const item = localItems.value.find((entry) => entry.media_id === id)
+  if (!item) return
+
+  const itemX = stage.left + (item.x / 100) * stage.width
+  const itemY = stage.top + (item.y / 100) * stage.height
+  dragOffsetX = event.clientX - itemX
+  dragOffsetY = event.clientY - itemY
+
+  topZ += 1
+  localItems.value = localItems.value.map((entry) =>
+    entry.media_id === id ? { ...entry, z: topZ } : entry,
+  )
+  draggingId.value = id
+
+  const target = event.currentTarget as HTMLElement
+  target.setPointerCapture(event.pointerId)
+  window.addEventListener('pointermove', onPointerMove)
+  window.addEventListener('pointerup', onPointerUp)
+  window.addEventListener('pointercancel', onPointerUp)
+}
+
+function onPointerMove(event: PointerEvent) {
+  if (!draggingId.value || !stageRef.value) return
+  const stage = stageRef.value.getBoundingClientRect()
+  if (stage.width <= 0 || stage.height <= 0) return
+
+  const x = ((event.clientX - dragOffsetX - stage.left) / stage.width) * 100
+  const y = ((event.clientY - dragOffsetY - stage.top) / stage.height) * 100
+
+  localItems.value = localItems.value.map((entry) =>
+    entry.media_id === draggingId.value
+      ? {
+          ...entry,
+          x: Math.min(88, Math.max(0, x)),
+          y: Math.min(88, Math.max(0, y)),
+        }
+      : entry,
+  )
+}
+
+function onPointerUp() {
+  if (!draggingId.value) return
+  draggingId.value = null
+  window.removeEventListener('pointermove', onPointerMove)
+  window.removeEventListener('pointerup', onPointerUp)
+  window.removeEventListener('pointercancel', onPointerUp)
+  emitBoard(localItems.value)
+}
+
+function resetLayout() {
+  localItems.value = photoIds.value.map((id, index) => defaultBoardItem(id, index))
+  emitBoard(localItems.value)
+}
+
+onBeforeUnmount(() => {
+  window.removeEventListener('pointermove', onPointerMove)
+  window.removeEventListener('pointerup', onPointerUp)
+  window.removeEventListener('pointercancel', onPointerUp)
+})
 </script>
 
 <style scoped>
@@ -179,15 +341,32 @@ const showFooter = computed(
   color: var(--book-muted);
 }
 
-.pb-board__stage {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  align-items: flex-start;
-  gap: clamp(10px, 2.5vw, 22px) clamp(8px, 2vw, 18px);
-  padding: clamp(8px, 2vw, 16px);
+.pb-board__hint {
+  margin: 12px 0 0;
+  font-size: 0.9rem;
+  color: #4a3f34;
+  font-family: var(--book-font-display);
+}
+
+.pb-board__reset {
+  margin-left: 8px;
+  border: 0;
+  background: transparent;
+  color: #7a3b2e;
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.pb-board__stage--freeform {
+  position: relative;
+  display: block;
+  width: 100%;
   max-width: 1100px;
   margin: 0 auto;
+  padding: clamp(8px, 2vw, 16px);
+  touch-action: none;
 }
 
 .pb-board__empty {
@@ -199,9 +378,9 @@ const showFooter = computed(
 }
 
 .pb-polaroid {
-  position: relative;
+  position: absolute;
   width: min(42vw, 168px);
-  margin: 6px;
+  margin: 0;
   padding: 10px 10px 28px;
   background: #f7f4ee;
   border-radius: 2px;
@@ -210,17 +389,25 @@ const showFooter = computed(
     0 14px 28px -12px rgba(0, 0, 0, 0.45),
     0 4px 10px -4px rgba(0, 0, 0, 0.25);
   transform: rotate(var(--pb-rot, 0deg));
-  animation: pb-drop 520ms cubic-bezier(0.2, 0.9, 0.2, 1) both;
-  animation-delay: var(--pb-delay, 0ms);
-  transition: transform 220ms ease, box-shadow 220ms ease;
+  transition: box-shadow 180ms ease;
+  user-select: none;
 }
 
-.pb-polaroid:hover {
-  transform: rotate(0deg) translateY(-4px) scale(1.03);
-  z-index: 40 !important;
+.pb-polaroid--draggable {
+  cursor: grab;
+}
+
+.pb-polaroid--dragging {
+  cursor: grabbing;
+  transition: none;
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.7) inset,
-    0 22px 36px -14px rgba(0, 0, 0, 0.5);
+    0 28px 42px -16px rgba(0, 0, 0, 0.55);
+}
+
+.pb-board:not(.pb-board--editable) .pb-polaroid:hover {
+  transform: rotate(0deg) translateY(-4px) scale(1.03);
+  z-index: 40 !important;
 }
 
 .pb-polaroid--size-sm {
@@ -237,6 +424,7 @@ const showFooter = computed(
   aspect-ratio: 1;
   overflow: hidden;
   background: #1a1a1a;
+  pointer-events: none;
 }
 
 .pb-polaroid__frame img {
@@ -244,6 +432,7 @@ const showFooter = computed(
   width: 100%;
   height: 100%;
   object-fit: cover;
+  pointer-events: none;
 }
 
 .pb-polaroid__caption {
@@ -257,6 +446,7 @@ const showFooter = computed(
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  pointer-events: none;
 }
 
 .pb-polaroid__attach {
@@ -265,7 +455,6 @@ const showFooter = computed(
   z-index: 2;
 }
 
-/* Washi tapes */
 .pb-polaroid--decor-tape-amber .pb-polaroid__attach,
 .pb-polaroid--decor-tape-mint .pb-polaroid__attach,
 .pb-polaroid--decor-tape-rose .pb-polaroid__attach {
@@ -280,33 +469,20 @@ const showFooter = computed(
 }
 
 .pb-polaroid--decor-tape-amber .pb-polaroid__attach {
-  background: repeating-linear-gradient(
-    90deg,
-    #e8b84a 0 8px,
-    #f0c85c 8px 16px
-  );
+  background: repeating-linear-gradient(90deg, #e8b84a 0 8px, #f0c85c 8px 16px);
 }
 
 .pb-polaroid--decor-tape-mint .pb-polaroid__attach {
-  background: repeating-linear-gradient(
-    90deg,
-    #7ec8a4 0 7px,
-    #95d4b4 7px 14px
-  );
+  background: repeating-linear-gradient(90deg, #7ec8a4 0 7px, #95d4b4 7px 14px);
   transform: translateX(-50%) rotate(3deg);
 }
 
 .pb-polaroid--decor-tape-rose .pb-polaroid__attach {
-  background: repeating-linear-gradient(
-    90deg,
-    #e89aaa 0 6px,
-    #f0b0bc 6px 12px
-  );
+  background: repeating-linear-gradient(90deg, #e89aaa 0 6px, #f0b0bc 6px 12px);
   left: 18%;
   transform: rotate(-8deg);
 }
 
-/* Pins */
 .pb-polaroid--decor-pin-red .pb-polaroid__attach,
 .pb-polaroid--decor-pin-blue .pb-polaroid__attach {
   top: -6px;
@@ -329,7 +505,6 @@ const showFooter = computed(
   left: 22%;
 }
 
-/* Photo corners */
 .pb-polaroid--decor-corners .pb-polaroid__attach {
   inset: 6px;
   background:
@@ -340,7 +515,6 @@ const showFooter = computed(
   opacity: 0.9;
 }
 
-/* Binder clip */
 .pb-polaroid--decor-clip .pb-polaroid__attach {
   top: -14px;
   left: 50%;
@@ -388,17 +562,6 @@ const showFooter = computed(
   font-family: var(--book-font-display);
   font-size: 1.3rem;
   color: var(--book-muted);
-}
-
-@keyframes pb-drop {
-  from {
-    opacity: 0;
-    transform: rotate(var(--pb-rot, 0deg)) translateY(-18px) scale(0.92);
-  }
-  to {
-    opacity: 1;
-    transform: rotate(var(--pb-rot, 0deg)) translateY(0) scale(1);
-  }
 }
 
 @media (max-width: 640px) {

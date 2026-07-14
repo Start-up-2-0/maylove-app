@@ -22,10 +22,24 @@ export interface BookConfigFonts {
   preset: BookFontPreset
 }
 
+/** Posição de uma polaroid no quadro (coordenadas em % do palco). */
+export interface BookBoardItem {
+  media_id: string
+  x: number
+  y: number
+  rotation?: number
+  z?: number
+}
+
+export interface BookConfigBoard {
+  items: BookBoardItem[]
+}
+
 export interface BookConfig {
   cover: BookConfigCover
   colors: BookConfigColors
   fonts: BookConfigFonts
+  board?: BookConfigBoard
 }
 
 export type BookPageLayout =
@@ -67,6 +81,83 @@ export const DEFAULT_BOOK_CONFIG: BookConfig = {
   fonts: {
     preset: 'editorial',
   },
+  board: {
+    items: [],
+  },
+}
+
+const BOARD_ROTATIONS = [-8, 5, -3, 7, -6, 4, -9, 6, -2, 8, -5, 3]
+
+export function defaultBoardItem(mediaId: string, index: number): BookBoardItem {
+  const col = index % 4
+  const row = Math.floor(index / 4)
+  return {
+    media_id: mediaId,
+    x: Math.min(78, 6 + col * 22 + (index % 3) * 1.5),
+    y: Math.min(72, 6 + row * 26 + (index % 2) * 2),
+    rotation: BOARD_ROTATIONS[index % BOARD_ROTATIONS.length],
+    z: index + 1,
+  }
+}
+
+export function syncBoardItems(
+  photoIds: string[],
+  existing?: BookBoardItem[] | null,
+): BookBoardItem[] {
+  const byId = new Map((existing ?? []).map((item) => [item.media_id, item]))
+  return photoIds.map((id, index) => {
+    const prev = byId.get(id)
+    if (prev) {
+      return {
+        ...prev,
+        x: clampPercent(prev.x),
+        y: clampPercent(prev.y),
+        rotation: prev.rotation ?? BOARD_ROTATIONS[index % BOARD_ROTATIONS.length],
+        z: prev.z ?? index + 1,
+      }
+    }
+    return defaultBoardItem(id, index)
+  })
+}
+
+export function normalizeBoardItems(raw?: BookBoardItem[] | null): BookBoardItem[] {
+  if (!Array.isArray(raw)) return []
+  return raw
+    .filter((item) => item && typeof item.media_id === 'string')
+    .map((item, index) => ({
+      media_id: item.media_id,
+      x: clampPercent(Number(item.x) || 0),
+      y: clampPercent(Number(item.y) || 0),
+      rotation: typeof item.rotation === 'number' ? item.rotation : BOARD_ROTATIONS[index % BOARD_ROTATIONS.length],
+      z: typeof item.z === 'number' ? item.z : index + 1,
+    }))
+}
+
+function clampPercent(value: number): number {
+  if (!Number.isFinite(value)) return 0
+  return Math.min(90, Math.max(0, value))
+}
+
+export function normalizeBookConfig(raw?: Partial<BookConfig> | null): BookConfig {
+  return {
+    cover: {
+      mode: raw?.cover?.mode ?? DEFAULT_BOOK_CONFIG.cover.mode,
+      media_id: raw?.cover?.media_id ?? null,
+      eyebrow: raw?.cover?.eyebrow ?? DEFAULT_BOOK_CONFIG.cover.eyebrow,
+    },
+    colors: {
+      paper: raw?.colors?.paper ?? DEFAULT_BOOK_CONFIG.colors.paper,
+      ink: raw?.colors?.ink ?? DEFAULT_BOOK_CONFIG.colors.ink,
+      accent: raw?.colors?.accent ?? DEFAULT_BOOK_CONFIG.colors.accent,
+      page: raw?.colors?.page ?? raw?.colors?.paper ?? DEFAULT_BOOK_CONFIG.colors.paper,
+    },
+    fonts: {
+      preset: raw?.fonts?.preset ?? DEFAULT_BOOK_CONFIG.fonts.preset,
+    },
+    board: {
+      items: normalizeBoardItems(raw?.board?.items),
+    },
+  }
 }
 
 export const BOOK_PAGE_LAYOUTS: Array<{
@@ -101,25 +192,6 @@ export function createBookPage(layout: BookPageLayout, sortOrder: number): BookP
     title: null,
     place_name: null,
     slots: emptySlots(def.slots),
-  }
-}
-
-export function normalizeBookConfig(raw?: Partial<BookConfig> | null): BookConfig {
-  return {
-    cover: {
-      mode: raw?.cover?.mode ?? DEFAULT_BOOK_CONFIG.cover.mode,
-      media_id: raw?.cover?.media_id ?? null,
-      eyebrow: raw?.cover?.eyebrow ?? DEFAULT_BOOK_CONFIG.cover.eyebrow,
-    },
-    colors: {
-      paper: raw?.colors?.paper ?? DEFAULT_BOOK_CONFIG.colors.paper,
-      ink: raw?.colors?.ink ?? DEFAULT_BOOK_CONFIG.colors.ink,
-      accent: raw?.colors?.accent ?? DEFAULT_BOOK_CONFIG.colors.accent,
-      page: raw?.colors?.page ?? raw?.colors?.paper ?? DEFAULT_BOOK_CONFIG.colors.paper,
-    },
-    fonts: {
-      preset: raw?.fonts?.preset ?? DEFAULT_BOOK_CONFIG.fonts.preset,
-    },
   }
 }
 
