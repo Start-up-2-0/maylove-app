@@ -1,4 +1,12 @@
 import type { PageLayoutId } from './layouts/types'
+import {
+  DEFAULT_BOOK_FRAME_STYLE,
+  normalizeFrameStyle,
+  type BookFrameStyle,
+} from './frameStyles'
+
+export type { BookFrameStyle }
+export { BOOK_FRAME_STYLES, DEFAULT_BOOK_FRAME_STYLE, normalizeFrameStyle } from './frameStyles'
 
 export type CoverMode = 'text' | 'photo' | 'full-bleed'
 
@@ -55,6 +63,8 @@ export interface BookConfig {
   cover: BookConfigCover
   colors: BookConfigColors
   fonts: BookConfigFonts
+  /** Moldura Polaroid das fotos (todos os estilos de álbum). */
+  frame_style?: BookFrameStyle
   board?: BookConfigBoard
   music?: BookConfigMusic
 }
@@ -108,6 +118,7 @@ export const DEFAULT_BOOK_CONFIG: BookConfig = {
   fonts: {
     preset: 'editorial',
   },
+  frame_style: DEFAULT_BOOK_FRAME_STYLE,
   board: {
     items: [],
   },
@@ -205,6 +216,7 @@ export function normalizeBookConfig(raw?: Partial<BookConfig> | null): BookConfi
     fonts: {
       preset: raw?.fonts?.preset ?? DEFAULT_BOOK_CONFIG.fonts.preset,
     },
+    frame_style: normalizeFrameStyle(raw?.frame_style ?? DEFAULT_BOOK_FRAME_STYLE),
     board: {
       items: normalizeBoardItems(raw?.board?.items),
     },
@@ -212,32 +224,21 @@ export function normalizeBookConfig(raw?: Partial<BookConfig> | null): BookConfi
   }
 }
 
-/** Defaults visuais por apresentação (Instant Photo, murais, Memory Book). */
+/** Defaults visuais por apresentação (galeria Polaroid). */
 export function defaultBookConfigFor(presentation?: string | null): BookConfig {
   switch (presentation) {
     case 'instant-photo':
-      return normalizeBookConfig({
-        cover: { mode: 'text', media_id: null, eyebrow: 'INSTANT PHOTO' },
-        colors: { paper: '#141414', ink: '#f5f5f5', accent: '#c45d7a', page: '#141414' },
-        fonts: { preset: 'editorial' },
-        board: { items: [] },
-      })
     case 'polaroid-board':
-      return normalizeBookConfig({
-        cover: { mode: 'text', media_id: null, eyebrow: 'COLADAS' },
-        colors: { paper: '#c4a574', ink: '#2c241c', accent: '#c45d7a', page: '#c4a574' },
-        fonts: { preset: 'editorial' },
-        board: { items: [] },
-      })
     case 'portrait-album':
+    case 'classic-photobook':
+    default:
       return normalizeBookConfig({
-        cover: { mode: 'text', media_id: null, eyebrow: 'ÁLBUM DE RETRATOS' },
-        colors: { paper: '#e8dcc8', ink: '#2c241c', accent: '#c45d7a', page: '#e8dcc8' },
+        cover: { mode: 'text', media_id: null, eyebrow: 'ÁLBUM' },
+        colors: { paper: '#f3f5f8', ink: '#1c2a38', accent: '#c45d7a', page: '#f3f5f8' },
         fonts: { preset: 'editorial' },
+        frame_style: DEFAULT_BOOK_FRAME_STYLE,
         board: { items: [] },
       })
-    default:
-      return normalizeBookConfig(null)
   }
 }
 

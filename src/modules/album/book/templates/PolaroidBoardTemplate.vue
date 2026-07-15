@@ -14,7 +14,7 @@
         aria-label="Quadro de polaroids"
         @pointerdown.self="selectedId = null"
       >
-        <figure
+        <div
           v-for="shot in shots"
           :key="shot.id"
           :ref="(el) => setShotEl(shot.id, el)"
@@ -34,10 +34,14 @@
           @pointerdown="editable ? onMovePointerDown(shot.id, $event) : undefined"
         >
           <span class="pb-polaroid__attach" aria-hidden="true" />
-          <div class="pb-polaroid__frame">
-            <img :src="shot.url" :alt="shot.title || 'Memória'" loading="lazy" draggable="false" />
-          </div>
-          <figcaption v-if="shot.caption" class="pb-polaroid__caption">{{ shot.caption }}</figcaption>
+          <PolaroidFrame
+            :url="shot.url"
+            :title="shot.title"
+            :caption="shot.caption"
+            :memory-date="shot.memoryDate"
+            :frame-style="frameStyle"
+            compact
+          />
 
           <template v-if="editable && selectedId === shot.id">
             <div class="pb-polaroid__toolbar" @pointerdown.stop>
@@ -60,7 +64,7 @@
               @pointerdown.stop="onRotatePointerDown(shot.id, $event)"
             />
           </template>
-        </figure>
+        </div>
       </div>
 
       <header class="pb-board__header">
@@ -91,10 +95,12 @@ import { getBookTheme, getThemeCssVars } from '../themes'
 import { normalizePresentationId } from '../presentations'
 import {
   defaultBoardItem,
+  normalizeFrameStyle,
   resolveBookConfig,
   syncBoardItems,
   type BookBoardItem,
 } from '../bookConfig'
+import PolaroidFrame from '../shared/PolaroidFrame.vue'
 import type { BookRenderMode, MemoryBookModel } from '../types'
 
 type Decor = 'tape-amber' | 'tape-mint' | 'tape-rose' | 'pin-red' | 'pin-blue' | 'corners' | 'clip'
@@ -117,6 +123,7 @@ const emit = defineEmits<{
 const presentation = computed(() => normalizePresentationId(props.book.presentation))
 const theme = computed(() => getBookTheme(presentation.value))
 const bookConfig = computed(() => resolveBookConfig(props.book.bookConfig, presentation.value))
+const frameStyle = computed(() => normalizeFrameStyle(bookConfig.value.frame_style))
 
 const boardStyle = computed(() =>
   getThemeCssVars(theme.value, bookConfig.value.colors.accent || props.book.colorPrimary, {
@@ -205,6 +212,7 @@ const shots = computed(() => {
     url: string
     title?: string
     caption?: string
+    memoryDate?: string
     rotation: number
     decor: Decor
     size: (typeof SIZES)[number]
@@ -218,7 +226,8 @@ const shots = computed(() => {
       id: photo.id,
       url: photo.url,
       title: photo.title,
-      caption: photo.title || photo.caption || photo.memoryDate,
+      caption: photo.caption,
+      memoryDate: photo.memoryDate,
       rotation: item.rotation ?? 0,
       decor: DECORS[index % DECORS.length],
       size: SIZES[index % SIZES.length],
@@ -553,18 +562,15 @@ onBeforeUnmount(() => {
 
 .pb-polaroid {
   position: absolute;
-  width: min(42vw, 168px);
+  width: min(42vw, 176px);
   margin: 0;
-  padding: 10px 10px 28px;
-  background: #f7f4ee;
-  border-radius: 2px;
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.7) inset,
-    0 14px 28px -12px rgba(0, 0, 0, 0.45),
-    0 4px 10px -4px rgba(0, 0, 0, 0.25);
+  padding: 0;
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
   transform: rotate(var(--pb-rot, 0deg));
   transform-origin: center center;
-  transition: box-shadow 180ms ease;
+  transition: filter 180ms ease;
   user-select: none;
   z-index: 3;
 }
@@ -576,9 +582,7 @@ onBeforeUnmount(() => {
 .pb-polaroid--dragging {
   cursor: grabbing;
   transition: none;
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.7) inset,
-    0 28px 42px -16px rgba(0, 0, 0, 0.55);
+  filter: drop-shadow(0 22px 28px rgba(0, 0, 0, 0.35));
 }
 
 .pb-polaroid--selected {

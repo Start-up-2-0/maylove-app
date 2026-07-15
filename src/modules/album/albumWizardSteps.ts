@@ -1,5 +1,3 @@
-import { isMemoryBookPresentation, isPhotoFirstPresentation } from './book/presentations'
-
 export type AlbumWizardStep =
   | 'basics'
   | 'pages'
@@ -8,27 +6,18 @@ export type AlbumWizardStep =
   | 'preview'
   | 'publish'
 
-/** Steps padrão do Memory Book (fototeca antes das páginas, que usam as fotos). */
+/** Fluxo único do álbum galeria Polaroid. */
 export const ALBUM_WIZARD_STEPS: AlbumWizardStep[] = [
   'basics',
   'photos',
-  'pages',
   'music',
   'preview',
   'publish',
 ]
 
-/** Estilos só-foto: sem editor de páginas. */
-export const MURAL_WIZARD_STEPS: AlbumWizardStep[] = [
-  'basics',
-  'photos',
-  'music',
-  'preview',
-  'publish',
-]
-
-/** @deprecated use MURAL_WIZARD_STEPS */
-export const POLAROID_BOARD_WIZARD_STEPS = MURAL_WIZARD_STEPS
+/** @deprecated alias — todos os estilos usam o mesmo fluxo */
+export const MURAL_WIZARD_STEPS = ALBUM_WIZARD_STEPS
+export const POLAROID_BOARD_WIZARD_STEPS = ALBUM_WIZARD_STEPS
 
 export const ALBUM_WIZARD_STEP_LABELS: Record<AlbumWizardStep, string> = {
   basics: 'Identidade',
@@ -39,12 +28,6 @@ export const ALBUM_WIZARD_STEP_LABELS: Record<AlbumWizardStep, string> = {
   publish: 'Publicar',
 }
 
-export function wizardStepsFor(presentation: string | null | undefined): AlbumWizardStep[] {
-  if (isPhotoFirstPresentation(presentation)) {
-    return MURAL_WIZARD_STEPS
-  }
-  if (isMemoryBookPresentation(presentation) || !presentation) {
-    return ALBUM_WIZARD_STEPS
-  }
-  return MURAL_WIZARD_STEPS
+export function wizardStepsFor(_presentation?: string | null): AlbumWizardStep[] {
+  return ALBUM_WIZARD_STEPS
 }

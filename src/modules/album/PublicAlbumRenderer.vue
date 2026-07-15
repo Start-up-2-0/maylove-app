@@ -2,7 +2,7 @@
   <div class="public-page">
     <section v-if="loading" class="public-state">
       <span class="public-spinner" aria-hidden="true" />
-      <p>Carregando livro de memórias...</p>
+      <p>Carregando álbum...</p>
     </section>
 
     <section v-else-if="error" class="public-state public-state--error">
@@ -12,7 +12,7 @@
           <path d="M4 8h16M8 3v5M16 3v5" stroke-linecap="round" />
         </svg>
       </span>
-      <h1>Livro indisponível</h1>
+      <h1>Álbum indisponível</h1>
       <p>{{ error }}</p>
     </section>
 
@@ -20,13 +20,8 @@
       <BookRenderer
         :book="bookModel"
         mode="full"
-        :share-url="shareInsideBook ? shareUrl : undefined"
+        :share-url="shareUrl"
       />
-
-      <!-- Murais / Instant Photo: compartilhar no fim da página, fora da composição -->
-      <section v-if="shareAtPageEnd" class="public-share" aria-label="Compartilhar álbum">
-        <ShareBar :url="shareUrl" :text="bookModel.title" />
-      </section>
 
       <MusicPlayerFloat
         v-if="album.music?.url"
@@ -42,7 +37,7 @@
           <LogoMark :size="15" variant="mono" class="public-foot__mark" />
           Feito com <strong>MayLov</strong>
         </RouterLink>
-        <RouterLink to="/dashboard/albums/new" class="public-foot__cta">Crie seu livro →</RouterLink>
+        <RouterLink to="/dashboard/albums/new" class="public-foot__cta">Crie seu álbum →</RouterLink>
       </footer>
     </template>
   </div>
@@ -53,12 +48,10 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute, RouterLink } from 'vue-router'
 import { fetchPublicAlbum, recordPublicAlbumView } from '@/api/albums'
 import type { PublicAlbum } from '@/api/types'
-import ShareBar from '@/components/experience/shared/ShareBar.vue'
 import MusicPlayerFloat from '@/components/experience/shared/MusicPlayerFloat.vue'
 import LogoMark from '@/components/brand/LogoMark.vue'
 import { buildMemoryBookModel } from '@/modules/album/book/buildModel'
 import BookRenderer from '@/modules/album/book/BookRenderer.vue'
-import { isPhotoFirstPresentation } from '@/modules/album/book/presentations'
 
 const route = useRoute()
 const album = ref<PublicAlbum | null>(null)
@@ -92,20 +85,13 @@ const shareUrl = computed(() =>
   typeof window !== 'undefined' ? window.location.href : '',
 )
 
-const isPhotoFirst = computed(() => isPhotoFirstPresentation(album.value?.presentation))
-/** Memory Book mantém compartilhar na contracapa. */
-const shareInsideBook = computed(() => !isPhotoFirst.value)
-const shareAtPageEnd = computed(
-  () => isPhotoFirst.value && Boolean(shareUrl.value.trim()),
-)
-
 onMounted(async () => {
   const slug = route.params.slug as string
   try {
     album.value = await fetchPublicAlbum(slug)
     await recordPublicAlbumView(slug, getSessionId())
   } catch {
-    error.value = 'Livro não encontrado ou indisponível no momento.'
+    error.value = 'Álbum não encontrado ou indisponível no momento.'
   } finally {
     loading.value = false
   }

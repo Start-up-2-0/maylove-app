@@ -5,59 +5,11 @@
       :description="stepDescription"
     />
 
-    <section v-if="!isTimeline && !isMemoryBook && !isPhotoFirst" class="layout-panel ml-card">
-      <label class="layout-panel__field">
-        <span class="layout-panel__label">Fotos por página</span>
-        <select v-model.number="photosPerPage" class="ml-input ml-input--sm">
-          <option v-for="option in layoutOptions" :key="option" :value="option">
-            {{ option }} {{ option === 1 ? 'foto' : 'fotos' }} por página
-          </option>
-        </select>
-      </label>
+    <section class="layout-panel ml-card">
       <p class="layout-panel__hint text-muted">
-        {{ pageEstimate }} páginas no livro com {{ photos.length }} foto(s) ·
-        {{ photosPerPage }} {{ photosPerPage === 1 ? 'foto' : 'fotos' }} por página
-        (a última pode ter menos). Título, data e descrição de cada foto aparecem sob a imagem.
+        {{ photos.length }} foto(s) na galeria. Preencha título e descrição — eles aparecem sob cada moldura Polaroid.
       </p>
     </section>
-
-    <section v-else-if="isPhotoFirst" class="layout-panel ml-card">
-      <p class="layout-panel__hint text-muted">
-        <template v-if="isInstantPhoto">
-          {{ photos.length }} foto(s). O Instant Photo monta grids automáticos (até 6 por página) com moldura instantânea.
-        </template>
-        <template v-else-if="isPortraitAlbum">
-          {{ photos.length }} foto(s) no álbum retrato. Cada imagem entra com cantos e borda recortada.
-        </template>
-        <template v-else>
-          {{ photos.length }} foto(s) no quadro. Cada imagem vira uma polaroid colada no mural.
-        </template>
-      </p>
-    </section>
-
-    <section v-else-if="!isTimeline" class="layout-panel ml-card">
-      <p class="layout-panel__hint text-muted">
-        {{ photos.length }} foto(s) na fototeca.
-        <template v-if="form.book_pages.length">
-          {{ form.book_pages.length }} página(s) já montadas — você pode ajustar na etapa Páginas.
-        </template>
-        <template v-else>
-          Na próxima etapa você monta as páginas com essas fotos.
-        </template>
-      </p>
-    </section>
-
-    <section v-else class="layout-panel ml-card layout-panel--timeline">
-      <p class="layout-panel__hint text-muted">
-        Cada foto vira um <strong>momento</strong> na linha do tempo. Informe
-        <strong>data</strong>, <strong>título</strong> e <strong>descrição</strong> em todas as fotos.
-        A ordem na prévia segue a data (da mais antiga para a mais recente).
-      </p>
-      <p class="layout-panel__hint text-muted">
-        {{ photos.length }} momento(s) · {{ pageEstimate }} seções no livro (capa + momentos + encerramento).
-      </p>
-    </section>
-
     <div v-if="photos.length" :class="isTimeline ? 'timeline-photos' : 'photo-grid'">
       <figure v-for="(photo, index) in photos" :key="photo.id" class="photo-tile" :class="{ 'photo-tile--timeline': isTimeline }">
         <img
@@ -156,8 +108,7 @@ import { uploadFile } from '@/storage/upload'
 import { inferImageMimeType } from '@/storage/mime'
 import { photoUploadHint, validatePhotoUpload } from '@/storage/validateUpload'
 import { MEDIA_LIMITS } from '@/config/mediaLimits'
-import { estimateBookPageCount } from '@/modules/album/book/buildModel'
-import { isInstantPhotoPresentation, isMemoryBookPresentation, isMuralPresentation, isPortraitAlbumPresentation, isTimelinePresentation } from '@/modules/album/book/presentations'
+import { isTimelinePresentation } from '@/modules/album/book/presentations'
 import { resolveMediaUrl } from '@/modules/album/book/mediaUrl'
 import type { useAlbumWizard } from '@/composables/useAlbumWizard'
 import WizardStepHeader from '@/components/wizard/WizardStepHeader.vue'
@@ -171,7 +122,6 @@ const props = defineProps<{
 const emit = defineEmits<{ changed: [] }>()
 
 const maxPhotos = MEDIA_LIMITS.photo.maxCountPerAlbum
-const layoutOptions = [1, 2, 3, 4]
 const uploading = ref(false)
 const error = ref('')
 const captions = reactive<Record<string, { title: string; caption: string; memory_date: string }>>({})
@@ -179,43 +129,11 @@ const saveTimers = new Map<string, ReturnType<typeof setTimeout>>()
 const showValidation = ref(false)
 
 const isTimeline = computed(() => isTimelinePresentation(props.form.presentation))
-const isMemoryBook = computed(() => isMemoryBookPresentation(props.form.presentation))
-const isMural = computed(() => isMuralPresentation(props.form.presentation))
-const isPortraitAlbum = computed(() => isPortraitAlbumPresentation(props.form.presentation))
-const isInstantPhoto = computed(() => isInstantPhotoPresentation(props.form.presentation))
-const isPhotoFirst = computed(() => isMural.value || isInstantPhoto.value)
 
-const photosPerPage = computed({
-  get: () => props.form.photos_per_page,
-  set: (value: number) => {
-    props.form.photos_per_page = value
-  },
-})
-
-const pageEstimate = computed(() =>
-  estimateBookPageCount(
-    props.photos.length,
-    photosPerPage.value,
-    props.form.presentation,
-    props.form.book_pages,
-  ),
+const stepDescription = computed(
+  () =>
+    `Envie as fotos da galeria Polaroid. Título e descrição aparecem sob cada moldura. Até ${maxPhotos} fotos. ${photoUploadHint()}`,
 )
-
-const stepDescription = computed(() => {
-  if (isTimeline.value) {
-    return `Monte a linha do tempo: uma foto por momento, com data, título e descrição obrigatórios. Adicione até ${maxPhotos} fotos. ${photoUploadHint()}`
-  }
-  if (isPortraitAlbum.value) {
-    return `Envie as fotos do álbum retrato — papel, cantos e bordas recortadas. Até ${maxPhotos} fotos. ${photoUploadHint()}`
-  }
-  if (isInstantPhoto.value) {
-    return `Envie só as fotos do Instant Photo — grids com moldura instantânea em fundo escuro. Até ${maxPhotos} fotos. ${photoUploadHint()}`
-  }
-  if (isMural.value) {
-    return `Envie as fotos que serão coladas no quadro polaroid. Rotações, fitas e pins entram automaticamente. Até ${maxPhotos} fotos. ${photoUploadHint()}`
-  }
-  return `Envie e organize as fotos usadas no Memory Book. Depois escolha layouts e slots em Páginas. Até ${maxPhotos} fotos. ${photoUploadHint()}`
-})
 
 watch(
   () => props.form.presentation,

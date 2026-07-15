@@ -32,41 +32,40 @@
     <!-- Polaroid -->
     <template v-else-if="page.layout === 'polaroid-memory'">
       <div class="page-comp__polaroid-grid">
-        <article v-for="photo in page.photos" :key="photo.id" class="page-comp__polaroid">
-          <figure v-if="photo.url" class="page-comp__polaroid-frame">
-            <img :src="photo.url" :alt="photo.title || 'Memória'" loading="lazy" />
-            <figcaption class="page-comp__polaroid-cap">
-              <span v-if="photo.title">{{ photo.title }}</span>
-              <RichText v-if="photo.caption" :text="photo.caption" />
-            </figcaption>
-          </figure>
-        </article>
+        <template v-for="(photo, index) in page.photos" :key="photo.id">
+          <PolaroidFrame
+            v-if="photo.url"
+            :url="photo.url"
+            :title="photo.title"
+            :caption="photo.caption"
+            :memory-date="photo.memoryDate"
+            :frame-style="frameStyle"
+            :rotation="index % 2 === 0 ? -2 : 2"
+          />
+        </template>
       </div>
       <div v-if="page.message && page.photos.length <= 1" class="page-comp__aside">
         <RichText :text="page.message" />
       </div>
     </template>
 
-    <!-- Demais layouts com fotos -->
+    <!-- Demais layouts com fotos — galeria Polaroid -->
     <template v-else>
-      <div class="page-comp__media" :class="`page-comp__media--${page.layout}`">
-        <figure
-          v-for="(photo, idx) in page.photos"
-          :key="photo.id"
-          class="page-comp__photo"
-          :class="`page-comp__photo--${idx}`"
-        >
-          <img v-if="photo.url" :src="photo.url" :alt="photo.title || 'Memória'" loading="lazy" />
-          <figcaption
-            v-if="page.photos.length > 1 && hasPhotoMeta(photo)"
-            class="page-comp__mini-cap"
-            :class="{ 'page-comp__mini-cap--rich': Boolean(photo.caption || photo.memoryDate) }"
-          >
-            <span v-if="photo.memoryDate" class="page-comp__mini-date">{{ photo.memoryDate }}</span>
-            <span v-if="photo.title" class="page-comp__mini-title">{{ photo.title }}</span>
-            <RichText v-if="photo.caption" :text="photo.caption" class="page-comp__mini-body" />
-          </figcaption>
-        </figure>
+      <div
+        class="page-comp__polaroid-grid"
+        :class="`page-comp__polaroid-grid--${Math.min(page.photos.length, 3)}`"
+      >
+        <template v-for="(photo, index) in page.photos" :key="photo.id">
+          <PolaroidFrame
+            v-if="photo.url"
+            :url="photo.url"
+            :title="photo.title"
+            :caption="photo.caption"
+            :memory-date="photo.memoryDate"
+            :frame-style="frameStyle"
+            :rotation="index % 2 === 0 ? -1.5 : 1.5"
+          />
+        </template>
       </div>
 
       <aside v-if="showCaptionBlock" class="page-comp__caption-block">
@@ -84,12 +83,18 @@
 import { computed } from 'vue'
 import RichText from '@/components/experience/shared/RichText.vue'
 import type { BookTheme } from '../themes'
-import type { MemoryBookContentPage, MemoryBookPhoto } from '../types'
+import type { BookFrameStyle } from '../frameStyles'
+import PolaroidFrame from './PolaroidFrame.vue'
+import type { MemoryBookContentPage } from '../types'
 
-const props = defineProps<{
-  page: MemoryBookContentPage
-  theme: BookTheme
-}>()
+const props = withDefaults(
+  defineProps<{
+    page: MemoryBookContentPage
+    theme: BookTheme
+    frameStyle?: BookFrameStyle | string | null
+  }>(),
+  { frameStyle: 'classic' },
+)
 
 const showPageNumber = computed(() => props.theme.features.pageNumbers)
 
@@ -99,10 +104,6 @@ const showCaptionBlock = computed(() => {
   if (props.page.photos.length > 1) return false
   return Boolean(props.page.title || props.page.message || props.page.memoryDate)
 })
-
-function hasPhotoMeta(photo: MemoryBookPhoto): boolean {
-  return Boolean(photo.title?.trim() || photo.caption?.trim() || photo.memoryDate)
-}
 </script>
 
 <style scoped>
@@ -350,10 +351,19 @@ function hasPhotoMeta(photo: MemoryBookPhoto): boolean {
 /* Polaroid grid */
 .page-comp__polaroid-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: clamp(16px, 3vw, 24px);
   place-content: center;
   flex: 1;
+  width: 100%;
+}
+
+.page-comp__polaroid-grid--1 {
+  grid-template-columns: minmax(180px, 280px);
+}
+
+.page-comp__polaroid-grid--2 {
+  grid-template-columns: repeat(2, minmax(140px, 240px));
 }
 
 .page-comp__polaroid-frame {

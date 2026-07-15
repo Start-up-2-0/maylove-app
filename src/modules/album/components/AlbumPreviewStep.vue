@@ -2,12 +2,12 @@
   <div class="preview-step">
     <WizardStepHeader
       title="Revisar e concluir"
-      description="Confira como o livro digital ficará para quem receber o link. Se precisar ajustar algo, volte às etapas anteriores."
+      description="Confira como a galeria Polaroid ficará para quem receber o link."
     />
 
     <div class="review-summary">
       <div class="review-summary__item">
-        <span class="review-summary__label">Livro</span>
+        <span class="review-summary__label">Formato</span>
         <span class="review-summary__value">{{ presentationLabel }}</span>
       </div>
       <div class="review-summary__item">
@@ -23,18 +23,9 @@
     <section v-if="bookModel" class="review-preview">
       <h3 class="review-preview__title">
         <span class="review-preview__dot" />
-        Prévia do livro
+        Prévia do álbum
       </h3>
-      <p v-if="isPolaroid" class="review-preview__hint text-muted">
-        Arraste as polaroids para ajustar a posição no quadro.
-      </p>
-      <BookRenderer
-        :key="refreshToken"
-        :book="bookModel"
-        mode="preview"
-        :editable="isPolaroid"
-        @update:board="onBoardLayout"
-      />
+      <BookRenderer :key="refreshToken" :book="bookModel" mode="preview" />
     </section>
 
     <div class="review-actions">
@@ -52,10 +43,9 @@
 import { computed } from 'vue'
 import type { useAlbumWizard } from '@/composables/useAlbumWizard'
 import type { AlbumDetail } from '@/api/types'
-import { getBookPresentation, isPolaroidBoardPresentation } from '@/modules/album/book/presentations'
+import { getBookPresentation } from '@/modules/album/book/presentations'
 import { buildMemoryBookModelFromDetail } from '@/modules/album/book/buildModel'
 import BookRenderer from '@/modules/album/book/BookRenderer.vue'
-import type { BookBoardItem } from '@/modules/album/book/bookConfig'
 import WizardStepHeader from '@/components/wizard/WizardStepHeader.vue'
 
 const props = defineProps<{
@@ -66,11 +56,9 @@ const props = defineProps<{
 
 defineEmits<{ 'go-publish': [] }>()
 
-const isPolaroid = computed(() => isPolaroidBoardPresentation(props.form.presentation))
-
 const presentationLabel = computed(() => {
   const item = getBookPresentation(props.form.presentation)
-  return item?.name ?? 'Álbum de Família'
+  return item?.name ?? 'Álbum Polaroid'
 })
 
 const photoCount = computed(
@@ -81,13 +69,6 @@ const musicLabel = computed(() => {
   const hasAudio = (props.album?.media ?? []).some((m) => m.media_type === 'audio')
   return hasAudio ? 'Com trilha' : 'Sem música'
 })
-
-function onBoardLayout(items: BookBoardItem[]) {
-  props.form.book_config = {
-    ...props.form.book_config,
-    board: { items },
-  }
-}
 
 const bookModel = computed(() => {
   if (!props.album) return null
@@ -149,10 +130,6 @@ const bookModel = computed(() => {
   margin: 0 0 14px;
   font-size: 1rem;
   font-weight: 600;
-}
-.review-preview__hint {
-  margin: -6px 0 12px;
-  font-size: 0.88rem;
 }
 .review-preview__dot {
   width: 8px;

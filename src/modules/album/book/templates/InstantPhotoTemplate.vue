@@ -67,11 +67,16 @@
           :class="[`ip-spread--count-${spread.photos.length}`]"
         >
           <div class="ip-spread__grid">
-            <figure v-for="photo in spread.photos" :key="photo.id" class="ip-frame">
-              <div class="ip-frame__photo">
-                <img :src="photo.url" :alt="photo.title || 'Foto'" loading="lazy" />
-              </div>
-            </figure>
+            <PolaroidFrame
+              v-for="(photo, index) in spread.photos"
+              :key="photo.id"
+              :url="photo.url"
+              :title="photo.title"
+              :caption="photo.caption"
+              :memory-date="photo.memoryDate"
+              :frame-style="frameStyle"
+              :rotation="ROTATIONS[index % ROTATIONS.length]"
+            />
           </div>
           <p v-if="spread.pageNo" class="ip-spread__page">{{ spread.pageNo }}</p>
         </section>
@@ -94,8 +99,11 @@ import { computed, nextTick, ref } from 'vue'
 import RichText from '@/components/experience/shared/RichText.vue'
 import { getBookTheme, getThemeCssVars } from '../themes'
 import { normalizePresentationId } from '../presentations'
-import { resolveBookConfig } from '../bookConfig'
+import { resolveBookConfig, normalizeFrameStyle } from '../bookConfig'
+import PolaroidFrame from '../shared/PolaroidFrame.vue'
 import type { BookRenderMode, MemoryBookModel, MemoryBookPhoto } from '../types'
+
+const ROTATIONS = [-1.8, 1.4, -1.1, 1.7, -0.9, 1.2]
 
 const props = defineProps<{
   book: MemoryBookModel
@@ -106,6 +114,7 @@ const props = defineProps<{
 const presentation = computed(() => normalizePresentationId(props.book.presentation))
 const theme = computed(() => getBookTheme(presentation.value))
 const bookConfig = computed(() => resolveBookConfig(props.book.bookConfig, presentation.value))
+const frameStyle = computed(() => normalizeFrameStyle(bookConfig.value.frame_style))
 
 const bookStyle = computed(() =>
   getThemeCssVars(theme.value, bookConfig.value.colors.accent || props.book.colorPrimary, {

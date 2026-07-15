@@ -92,18 +92,22 @@ export const ALL_BOOK_PRESENTATIONS: BookPresentationDefinition[] = [
   },
 ]
 
-/** Catálogo visível — Memory Book + murais de foto. */
-export const BOOK_PRESENTATIONS: BookPresentationDefinition[] = ALL_BOOK_PRESENTATIONS.filter(
-  (item) =>
-    item.id === 'classic-photobook' ||
-    item.id === 'polaroid-board' ||
-    item.id === 'portrait-album' ||
-    item.id === 'instant-photo',
-)
+/** Catálogo visível — um formato: galeria Polaroid. */
+export const BOOK_PRESENTATIONS: BookPresentationDefinition[] = [
+  {
+    id: 'classic-photobook',
+    name: 'Álbum Polaroid',
+    description:
+      'Galeria de fotos com moldura Polaroid. Cada imagem mostra título e descrição; você escolhe o estilo da moldura.',
+    emoji: '📷',
+    tagline: 'Memórias em moldura',
+  },
+]
 
 export function getBookPresentation(id: string): BookPresentationDefinition | undefined {
   const normalized = normalizePresentationId(id)
   return (
+    BOOK_PRESENTATIONS.find((item) => item.id === normalized) ??
     ALL_BOOK_PRESENTATIONS.find((item) => item.id === normalized) ??
     LEGACY_PRESENTATION_FALLBACKS[id]
   )

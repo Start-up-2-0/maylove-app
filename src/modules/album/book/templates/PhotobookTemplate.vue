@@ -11,7 +11,7 @@
       <BookCover :book="book" :theme="theme" :opened="opened" />
     </template>
     <template #page="{ page }">
-      <PageComposition :page="page" :theme="theme" />
+      <PageComposition :page="page" :theme="theme" :frame-style="bookConfig.frame_style" />
     </template>
     <template #back>
       <BookBackCover :book="book" :mode="mode" :share-url="shareUrl" />
