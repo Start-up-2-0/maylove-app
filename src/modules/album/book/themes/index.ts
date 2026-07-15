@@ -81,20 +81,20 @@ const CANONICAL_THEMES: Record<CanonicalPresentationId, BookTheme> = {
     name: 'Memory Book',
     strategy: 'classic',
     fonts: {
-      display: "'Archivo Black', 'Arial Black', sans-serif",
+      display: "'Cormorant Garamond', Georgia, serif",
       body: "'Libre Baskerville', Georgia, serif",
-      accent: "'Libre Baskerville', Georgia, serif",
+      accent: "'Cormorant Garamond', Georgia, serif",
     },
     tokens: {
-      paper: '#ffffff',
-      paperAlt: '#f4f4f4',
-      ink: '#111111',
-      muted: '#666666',
-      border: 'rgba(17, 17, 17, 0.12)',
-      shadow: '0 24px 48px -28px rgba(0, 0, 0, 0.35)',
+      paper: '#fbfaf7',
+      paperAlt: '#f5f3ee',
+      ink: '#1c1814',
+      muted: '#6e655c',
+      border: 'rgba(28, 24, 20, 0.1)',
+      shadow: '0 28px 56px -32px rgba(28, 24, 20, 0.32)',
     },
-    cover: { variant: 'minimal', eyebrow: 'MEMORY' },
-    features: { ...BASE_FEATURES, showBinder: false },
+    cover: { variant: 'minimal', eyebrow: 'ÁLBUM' },
+    features: { ...BASE_FEATURES, showBinder: false, pageNumbers: true },
   },
   'wedding-book': {
     id: 'wedding-book',
@@ -372,7 +372,7 @@ export function getThemeCssVars(
 
 const FONT_PRESETS: Record<string, { display: string; body: string }> = {
   editorial: {
-    display: "'Archivo Black', 'Arial Black', sans-serif",
+    display: "'Cormorant Garamond', Georgia, serif",
     body: "'Libre Baskerville', Georgia, serif",
   },
   classic: {

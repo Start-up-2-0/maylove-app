@@ -1,8 +1,8 @@
 <template>
   <div class="basics-step">
     <WizardStepHeader
-      title="Identidade do álbum"
-      description="Título, texto de abertura, cores e estilo da moldura Polaroid das fotos."
+      title="Identidade do livro"
+      description="Capa, tipografia e cores — a base editorial do seu photobook."
     />
 
     <form class="basics-form" @submit.prevent>
@@ -17,41 +17,40 @@
           class="ml-input"
           rows="2"
           maxlength="280"
-          placeholder="Uma frase que aparece acima da galeria de fotos."
+          placeholder="Uma frase discreta sob o título na capa."
         />
       </label>
       <label class="ml-field">
-        <span>Eyebrow (rótulo pequeno)</span>
-        <input v-model="form.book_config.cover.eyebrow" class="ml-input" maxlength="40" />
+        <span>Eyebrow (rótulo da capa)</span>
+        <input
+          v-model="form.book_config.cover.eyebrow"
+          class="ml-input"
+          maxlength="40"
+          placeholder="ÁLBUM · CASAMENTO · FAMÍLIA"
+        />
       </label>
 
       <fieldset class="basics-fieldset">
-        <legend>Moldura Polaroid</legend>
-        <p class="text-muted basics-hint">
-          Cada foto da fototeca aparece nesta moldura, com título e descrição.
-        </p>
-        <div class="frame-styles">
+        <legend>Tipografia</legend>
+        <div class="font-presets">
           <label
-            v-for="style in frameStyles"
-            :key="style.id"
-            class="frame-style"
-            :class="{ 'frame-style--active': form.book_config.frame_style === style.id }"
+            v-for="preset in fontPresets"
+            :key="preset.id"
+            class="font-preset"
+            :class="{ 'font-preset--active': form.book_config.fonts.preset === preset.id }"
           >
-            <input v-model="form.book_config.frame_style" type="radio" :value="style.id" />
-            <span class="frame-style__swatch" :data-style="style.id" aria-hidden="true" />
-            <span class="frame-style__copy">
-              <strong>{{ style.label }}</strong>
-              <small>{{ style.hint }}</small>
-            </span>
+            <input v-model="form.book_config.fonts.preset" type="radio" :value="preset.id" />
+            <strong :style="{ fontFamily: preset.sample }">{{ preset.label }}</strong>
+            <small>{{ preset.hint }}</small>
           </label>
         </div>
       </fieldset>
 
       <fieldset class="basics-fieldset">
-        <legend>Cores</legend>
+        <legend>Cores do papel</legend>
         <div class="color-row">
           <label class="ml-field">
-            <span>Fundo</span>
+            <span>Papel</span>
             <input v-model="form.book_config.colors.paper" type="color" class="basics-color" />
           </label>
           <label class="ml-field">
@@ -71,7 +70,7 @@
           v-model="form.closing_message"
           class="ml-input"
           rows="3"
-          placeholder="Aparece abaixo da galeria."
+          placeholder="Aparece na contracapa, como um fechamento íntimo."
         />
       </label>
       <label class="ml-field">
@@ -85,7 +84,7 @@
     </form>
 
     <section v-if="previewBook" class="basics-preview">
-      <h3 class="basics-preview__title">Prévia da galeria</h3>
+      <h3 class="basics-preview__title">Prévia da capa</h3>
       <BookRenderer :book="previewBook" mode="preview" />
     </section>
   </div>
@@ -98,7 +97,6 @@ import type { useAlbumWizard } from '@/composables/useAlbumWizard'
 import WizardStepHeader from '@/components/wizard/WizardStepHeader.vue'
 import { buildMemoryBookModelFromDetail } from '../book/buildModel'
 import BookRenderer from '../book/BookRenderer.vue'
-import { BOOK_FRAME_STYLES } from '../book/frameStyles'
 
 const props = defineProps<{
   form: ReturnType<typeof useAlbumWizard>['form']
@@ -106,7 +104,26 @@ const props = defineProps<{
   photos: AlbumMedia[]
 }>()
 
-const frameStyles = BOOK_FRAME_STYLES
+const fontPresets = [
+  {
+    id: 'editorial' as const,
+    label: 'Editorial',
+    hint: 'Serif elegante, tom de revista',
+    sample: "'Cormorant Garamond', Georgia, serif",
+  },
+  {
+    id: 'classic' as const,
+    label: 'Clássica',
+    hint: 'Display forte + Baskerville',
+    sample: "'Playfair Display', Georgia, serif",
+  },
+  {
+    id: 'modern' as const,
+    label: 'Moderna',
+    hint: 'Sans limpa, contemporânea',
+    sample: "'Space Grotesk', system-ui, sans-serif",
+  },
+]
 
 const previewBook = computed(() => {
   if (!props.album) return null
@@ -145,105 +162,58 @@ const previewBook = computed(() => {
   color: var(--muted);
 }
 
-.color-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
-}
-
-.basics-color {
-  width: 56px;
-  height: 40px;
-  border: none;
-  background: transparent;
-  cursor: pointer;
-}
-
-.basics-hint {
-  font-size: 0.86rem;
-  margin: 0 0 8px;
-}
-
-.frame-styles {
+.font-presets {
   display: grid;
   gap: 8px;
 }
 
-.frame-style {
+.font-preset {
   display: grid;
-  grid-template-columns: 42px 1fr;
-  gap: 12px;
-  align-items: center;
-  padding: 8px 10px;
-  border-radius: 10px;
+  gap: 2px;
+  padding: 10px 12px;
   border: 1px solid var(--border);
+  border-radius: var(--radius-md);
   cursor: pointer;
-  position: relative;
+  transition:
+    border-color 160ms ease,
+    background 160ms ease;
 }
 
-.frame-style input {
+.font-preset input {
   position: absolute;
   opacity: 0;
   pointer-events: none;
 }
 
-.frame-style--active {
-  border-color: color-mix(in srgb, var(--primary) 55%, var(--border));
-  background: color-mix(in srgb, var(--primary-soft, #fce7f0) 70%, #fff);
+.font-preset strong {
+  font-size: 1.05rem;
+  font-weight: 600;
 }
 
-.frame-style__swatch {
-  width: 42px;
-  height: 52px;
-  border-radius: 3px;
-  box-shadow: 0 8px 16px -10px rgba(0, 0, 0, 0.35);
-  position: relative;
-}
-
-.frame-style__swatch::after {
-  content: '';
-  position: absolute;
-  inset: 6px 6px 14px;
-  background: #bbb;
-}
-
-.frame-style__swatch[data-style='classic'] {
-  background: #fbfaf7;
-}
-.frame-style__swatch[data-style='cream'] {
-  background: #f3e8d4;
-}
-.frame-style__swatch[data-style='charcoal'] {
-  background: #2a2e35;
-}
-.frame-style__swatch[data-style='kraft'] {
-  background: #d2b48c;
-}
-.frame-style__swatch[data-style='blush'] {
-  background: #f7e4ea;
-}
-.frame-style__swatch[data-style='ink'] {
-  background: #f8fafc;
-  outline: 2px solid #1d4f73;
-  outline-offset: -4px;
-}
-
-.frame-style__copy {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  font-size: 0.9rem;
-}
-
-.frame-style__copy small {
+.font-preset small {
   color: var(--muted);
+  font-size: 0.78rem;
 }
 
-.ml-check {
+.font-preset--active {
+  border-color: color-mix(in srgb, var(--accent, #c45d7a) 55%, var(--border));
+  background: color-mix(in srgb, var(--accent, #c45d7a) 8%, transparent);
+}
+
+.color-row {
   display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.92rem;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.basics-color {
+  width: 48px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
 }
 
 .basics-preview {

@@ -109,13 +109,13 @@ function buildTimelinePages(album: AlbumInput): MemoryBookContentPage[] {
   })
 }
 
-function mapLayout(layout: BookPageLayout, hasText: boolean): PageLayoutId {
+function mapLayout(layout: BookPageLayout, _hasText: boolean): PageLayoutId {
   if (layout === 'bleed') return 'full-bleed'
   if (layout === 'text') return 'text-focus'
   if (layout === 'two') return 'asymmetric-duo'
   if (layout === 'three') return 'editorial-trio'
-  if (layout === 'text_photo') return 'hero-caption'
-  return hasText ? 'hero-caption' : 'full-bleed'
+  if (layout === 'text_photo' || layout === 'one') return 'hero-caption'
+  return 'hero-caption'
 }
 
 function buildPagesFromBookPages(
@@ -150,12 +150,11 @@ function buildPagesFromBookPages(
           ? lead?.caption
           : undefined
     const memoryDate = photos.length === 1 ? lead?.memoryDate : undefined
-    const hasText = Boolean(pageTitle || message || memoryDate || page.place_name)
 
     return {
       kind: 'content' as const,
       pageNo: index + 1,
-      layout: mapLayout(page.layout, hasText),
+      layout: mapLayout(page.layout, Boolean(pageTitle || message || memoryDate)),
       photos,
       title: pageTitle,
       message,

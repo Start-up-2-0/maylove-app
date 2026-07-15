@@ -7,7 +7,7 @@
 
     <section class="layout-panel ml-card">
       <p class="layout-panel__hint text-muted">
-        {{ photos.length }} foto(s) na galeria. Preencha título e descrição — eles aparecem sob cada moldura Polaroid.
+        {{ photos.length }} foto(s) na fototeca. Título, descrição e data alimentam as legendas das páginas.
       </p>
     </section>
     <div v-if="photos.length" :class="isTimeline ? 'timeline-photos' : 'photo-grid'">
@@ -132,7 +132,7 @@ const isTimeline = computed(() => isTimelinePresentation(props.form.presentation
 
 const stepDescription = computed(
   () =>
-    `Envie as fotos da galeria Polaroid. Título e descrição aparecem sob cada moldura. Até ${maxPhotos} fotos. ${photoUploadHint()}`,
+    `Envie as fotos da fototeca. Título, descrição e data aparecem nas páginas. Até ${maxPhotos} fotos. ${photoUploadHint()}`,
 )
 
 watch(

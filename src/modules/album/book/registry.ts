@@ -1,10 +1,10 @@
 import { defineAsyncComponent, type Component } from 'vue'
 
-const GalleryAlbumTemplate = defineAsyncComponent(
-  () => import('./templates/GalleryAlbumTemplate.vue'),
+const PhotobookTemplate = defineAsyncComponent(
+  () => import('./templates/PhotobookTemplate.vue'),
 )
 
-/** Todos os álbuns públicos usam a galeria Polaroid. */
+/** Álbum público: livro editorial página a página. */
 export function getBookTemplate(_presentation?: string): Component {
-  return GalleryAlbumTemplate
+  return PhotobookTemplate
 }

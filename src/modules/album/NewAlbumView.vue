@@ -11,16 +11,16 @@
       <p class="eyebrow">Começar</p>
       <h1 class="section-title">Novo álbum</h1>
       <p class="text-muted">
-        Galeria Polaroid com título e descrição em cada foto. Você escolhe o estilo da moldura na identidade.
+        Photobook editorial página a página — diagramação profissional com fotos, legendas e texto narrativo.
       </p>
     </header>
 
     <article class="style-card style-card--active">
-      <span class="style-card__emoji" aria-hidden="true">📷</span>
+      <span class="style-card__emoji" aria-hidden="true">📖</span>
       <div>
-        <h2 class="style-card__title">Álbum Polaroid</h2>
+        <h2 class="style-card__title">Memory Book</h2>
         <p class="style-card__desc">
-          Grade de fotos em moldura Polaroid — clássica, creme, carvão, kraft e mais.
+          Como um álbum de estúdio: capa, páginas com layouts editoriais e contracapa.
         </p>
       </div>
     </article>

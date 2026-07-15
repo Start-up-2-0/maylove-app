@@ -6,16 +6,17 @@ export type AlbumWizardStep =
   | 'preview'
   | 'publish'
 
-/** Fluxo único do álbum galeria Polaroid. */
+/** Photobook editorial: identidade → fototeca → diagramação → música → preview → publicar. */
 export const ALBUM_WIZARD_STEPS: AlbumWizardStep[] = [
   'basics',
   'photos',
+  'pages',
   'music',
   'preview',
   'publish',
 ]
 
-/** @deprecated alias — todos os estilos usam o mesmo fluxo */
+/** @deprecated alias */
 export const MURAL_WIZARD_STEPS = ALBUM_WIZARD_STEPS
 export const POLAROID_BOARD_WIZARD_STEPS = ALBUM_WIZARD_STEPS
 

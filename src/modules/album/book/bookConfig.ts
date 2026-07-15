@@ -107,13 +107,13 @@ export const DEFAULT_BOOK_CONFIG: BookConfig = {
   cover: {
     mode: 'text',
     media_id: null,
-    eyebrow: 'MEMORY',
+    eyebrow: 'ÁLBUM',
   },
   colors: {
-    paper: '#ffffff',
-    ink: '#111111',
+    paper: '#fbfaf7',
+    ink: '#1c1814',
     accent: '#c45d7a',
-    page: '#ffffff',
+    page: '#f5f3ee',
   },
   fonts: {
     preset: 'editorial',
@@ -224,7 +224,7 @@ export function normalizeBookConfig(raw?: Partial<BookConfig> | null): BookConfi
   }
 }
 
-/** Defaults visuais por apresentação (galeria Polaroid). */
+/** Defaults visuais por apresentação (photobook editorial). */
 export function defaultBookConfigFor(presentation?: string | null): BookConfig {
   switch (presentation) {
     case 'instant-photo':
@@ -234,7 +234,7 @@ export function defaultBookConfigFor(presentation?: string | null): BookConfig {
     default:
       return normalizeBookConfig({
         cover: { mode: 'text', media_id: null, eyebrow: 'ÁLBUM' },
-        colors: { paper: '#f3f5f8', ink: '#1c2a38', accent: '#c45d7a', page: '#f3f5f8' },
+        colors: { paper: '#fbfaf7', ink: '#1c1814', accent: '#c45d7a', page: '#f5f3ee' },
         fonts: { preset: 'editorial' },
         frame_style: DEFAULT_BOOK_FRAME_STYLE,
         board: { items: [] },
@@ -314,13 +314,50 @@ export const BOOK_PAGE_LAYOUTS: Array<{
   label: string
   slots: number
   pageLayout: PageLayoutId
+  hint: string
 }> = [
-  { id: 'one', label: '1 foto', slots: 1, pageLayout: 'hero-caption' },
-  { id: 'two', label: '2 fotos', slots: 2, pageLayout: 'asymmetric-duo' },
-  { id: 'three', label: '3 fotos', slots: 3, pageLayout: 'editorial-trio' },
-  { id: 'bleed', label: 'Full bleed', slots: 1, pageLayout: 'full-bleed' },
-  { id: 'text_photo', label: 'Texto + foto', slots: 1, pageLayout: 'hero-caption' },
-  { id: 'text', label: 'Só texto', slots: 0, pageLayout: 'text-focus' },
+  {
+    id: 'bleed',
+    label: 'Foto página inteira',
+    slots: 1,
+    pageLayout: 'full-bleed',
+    hint: 'Momento marcante, quase sem texto',
+  },
+  {
+    id: 'one',
+    label: 'Foto + legenda',
+    slots: 1,
+    pageLayout: 'hero-caption',
+    hint: 'Foto em destaque com título e descrição',
+  },
+  {
+    id: 'text_photo',
+    label: 'Texto + foto',
+    slots: 1,
+    pageLayout: 'hero-caption',
+    hint: 'Narrativa com foto de apoio',
+  },
+  {
+    id: 'two',
+    label: 'Duas fotos',
+    slots: 2,
+    pageLayout: 'asymmetric-duo',
+    hint: 'Composição assimétrica editorial',
+  },
+  {
+    id: 'three',
+    label: 'Três fotos',
+    slots: 3,
+    pageLayout: 'editorial-trio',
+    hint: 'Tríptico com ritmo visual',
+  },
+  {
+    id: 'text',
+    label: 'Só texto',
+    slots: 0,
+    pageLayout: 'text-focus',
+    hint: 'Pausa narrativa entre capítulos',
+  },
 ]
 
 export function emptySlots(count: number): BookPageSlot[] {

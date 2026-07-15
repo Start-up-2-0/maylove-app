@@ -1,8 +1,8 @@
 <template>
   <div class="pages-step">
     <WizardStepHeader
-      title="Páginas do livro"
-      description="Escolha o layout de cada página, as fotos nos slots e o que mostrar (data, título, descrição)."
+      title="Diagramação das páginas"
+      description="Monte a narrativa: escolha o layout, as fotos e o ritmo entre imagens e texto — como em um photobook de estúdio."
     />
 
     <div class="pages-toolbar">
@@ -26,13 +26,16 @@
     </div>
 
     <p v-if="!form.book_pages.length" class="text-muted pages-empty">
-      Nenhuma página ainda. Adicione layouts ou gere automaticamente a partir das fotos enviadas.
+      Nenhuma página ainda. Gere a partir da fototeca ou adicione layouts (foto inteira, legenda, texto…).
     </p>
 
     <div class="pages-list">
       <article v-for="(page, index) in form.book_pages" :key="page.id" class="page-card">
         <header class="page-card__head">
-          <strong>Página {{ index + 1 }}</strong>
+          <div>
+            <strong>Página {{ index + 1 }}</strong>
+            <p class="page-card__hint">{{ layoutHint(page.layout) }}</p>
+          </div>
           <div class="page-card__actions">
             <button type="button" class="ml-icon-btn" :disabled="index === 0" @click="movePage(index, -1)">
               ↑
@@ -45,8 +48,15 @@
             >
               ↓
             </button>
-            <button type="button" class="ml-icon-btn" @click="duplicatePage(index)">⧉</button>
-            <button type="button" class="ml-icon-btn ml-icon-btn--danger" @click="removePage(index)">
+            <button type="button" class="ml-icon-btn" title="Duplicar" @click="duplicatePage(index)">
+              ⧉
+            </button>
+            <button
+              type="button"
+              class="ml-icon-btn ml-icon-btn--danger"
+              title="Remover"
+              @click="removePage(index)"
+            >
               ×
             </button>
           </div>
@@ -65,16 +75,18 @@
           </select>
         </label>
 
-        <div v-if="page.layout === 'text' || page.layout === 'text_photo'" class="page-meta">
+        <div class="page-meta">
           <input
             v-model="page.title"
             class="ml-input ml-input--sm"
-            placeholder="Título da página (Memory Title)"
+            placeholder="Título da página (opcional)"
           />
-          <input
+          <textarea
+            v-if="page.layout === 'text' || page.layout === 'text_photo'"
             v-model="page.place_name"
             class="ml-input ml-input--sm"
-            placeholder="Local / texto de apoio (opcional)"
+            rows="3"
+            placeholder="Texto narrativo desta página…"
           />
         </div>
 
@@ -99,7 +111,7 @@
 
     <p class="text-muted pages-estimate">
       {{ form.book_pages.length || '0' }} página(s) de conteúdo
-      (capa + páginas + contracapa quando houver mensagem).
+      (+ capa{{ form.closing_message || form.signature ? ' e contracapa' : '' }}).
     </p>
     <section v-if="previewBook" class="pages-preview">
       <h3 class="pages-preview__title">Prévia do livro</h3>
@@ -147,6 +159,10 @@ const previewBook = computed(() => {
     book_pages: props.form.book_pages,
   })
 })
+
+function layoutHint(layout: BookPageLayout) {
+  return BOOK_PAGE_LAYOUTS.find((item) => item.id === layout)?.hint ?? ''
+}
 
 function reindex() {
   props.form.book_pages.forEach((page, index) => {
@@ -196,23 +212,71 @@ function onLayoutChange(page: BookPage, layoutId: string) {
   }))
 }
 
+/** Ritmo editorial: 1ª foto em bleed, depois foto+legenda; pares viram duo. */
 function autoFillFromPhotos() {
-  const perPage = Math.min(4, Math.max(1, props.form.photos_per_page || 1))
   const sorted = [...props.photos].sort((a, b) => a.sort_order - b.sort_order)
   const pages: BookPage[] = []
-  for (let i = 0; i < sorted.length; i += perPage) {
-    const chunk = sorted.slice(i, i + perPage)
-    const layout: BookPageLayout =
-      chunk.length >= 3 ? 'three' : chunk.length === 2 ? 'two' : 'one'
-    const page = createBookPage(layout, pages.length)
-    page.slots = chunk.map((photo) => ({
-      media_id: photo.id,
-      show_title: true,
-      show_caption: true,
-      show_date: true,
-    }))
+  let i = 0
+
+  while (i < sorted.length) {
+    const remaining = sorted.length - i
+
+    if (i === 0) {
+      const page = createBookPage('bleed', pages.length)
+      page.slots = [
+        {
+          media_id: sorted[i].id,
+          show_title: false,
+          show_caption: false,
+          show_date: false,
+        },
+      ]
+      pages.push(page)
+      i += 1
+      continue
+    }
+
+    if (remaining >= 3 && i % 5 === 0) {
+      const chunk = sorted.slice(i, i + 3)
+      const page = createBookPage('three', pages.length)
+      page.slots = chunk.map((photo) => ({
+        media_id: photo.id,
+        show_title: true,
+        show_caption: false,
+        show_date: true,
+      }))
+      pages.push(page)
+      i += 3
+      continue
+    }
+
+    if (remaining >= 2 && i % 4 === 0) {
+      const chunk = sorted.slice(i, i + 2)
+      const page = createBookPage('two', pages.length)
+      page.slots = chunk.map((photo) => ({
+        media_id: photo.id,
+        show_title: true,
+        show_caption: false,
+        show_date: true,
+      }))
+      pages.push(page)
+      i += 2
+      continue
+    }
+
+    const page = createBookPage('one', pages.length)
+    page.slots = [
+      {
+        media_id: sorted[i].id,
+        show_title: true,
+        show_caption: true,
+        show_date: true,
+      },
+    ]
     pages.push(page)
+    i += 1
   }
+
   props.form.book_pages = pages
 }
 </script>
@@ -227,7 +291,7 @@ function autoFillFromPhotos() {
 }
 
 .pages-toolbar__add {
-  min-width: 180px;
+  min-width: 200px;
 }
 
 .pages-empty {
@@ -251,8 +315,14 @@ function autoFillFromPhotos() {
 .page-card__head {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   gap: 10px;
+}
+
+.page-card__hint {
+  margin: 4px 0 0;
+  font-size: 0.78rem;
+  color: var(--muted);
 }
 
 .page-card__actions {

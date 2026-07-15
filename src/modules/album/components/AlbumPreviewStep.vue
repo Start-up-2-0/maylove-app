@@ -2,7 +2,7 @@
   <div class="preview-step">
     <WizardStepHeader
       title="Revisar e concluir"
-      description="Confira como a galeria Polaroid ficará para quem receber o link."
+      description="Confira o livro página a página, como quem receberá o link verá."
     />
 
     <div class="review-summary">
@@ -58,7 +58,7 @@ defineEmits<{ 'go-publish': [] }>()
 
 const presentationLabel = computed(() => {
   const item = getBookPresentation(props.form.presentation)
-  return item?.name ?? 'Álbum Polaroid'
+  return item?.name ?? 'Memory Book'
 })
 
 const photoCount = computed(

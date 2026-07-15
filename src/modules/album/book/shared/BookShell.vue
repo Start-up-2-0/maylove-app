@@ -62,7 +62,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, ref } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import type { BookRenderMode, MemoryBookModel } from '../types'
 
 const props = withDefaults(
@@ -77,7 +77,7 @@ const props = withDefaults(
   { showBinder: false },
 )
 
-const opened = ref(false)
+const opened = ref(props.mode === 'preview')
 const pagesRef = ref<HTMLElement | null>(null)
 const albumRef = ref<HTMLElement | null>(null)
 
@@ -93,6 +93,17 @@ const showBackCover = computed(() => {
   const hasShare = props.mode === 'full' && Boolean(props.shareUrl?.trim())
   return hasClosing || hasSignature || hasShare
 })
+
+onMounted(() => {
+  if (props.mode === 'preview') opened.value = true
+})
+
+watch(
+  () => props.mode,
+  (mode) => {
+    if (mode === 'preview') opened.value = true
+  },
+)
 
 async function openAlbum() {
   opened.value = true

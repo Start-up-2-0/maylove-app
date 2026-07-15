@@ -92,15 +92,15 @@ export const ALL_BOOK_PRESENTATIONS: BookPresentationDefinition[] = [
   },
 ]
 
-/** Catálogo visível — um formato: galeria Polaroid. */
+/** Catálogo visível — photobook editorial. */
 export const BOOK_PRESENTATIONS: BookPresentationDefinition[] = [
   {
     id: 'classic-photobook',
-    name: 'Álbum Polaroid',
+    name: 'Memory Book',
     description:
-      'Galeria de fotos com moldura Polaroid. Cada imagem mostra título e descrição; você escolhe o estilo da moldura.',
-    emoji: '📷',
-    tagline: 'Memórias em moldura',
+      'Livro de memórias página a página: foto inteira, legendas, texto narrativo e composições editoriais.',
+    emoji: '📖',
+    tagline: 'Como um álbum de estúdio',
   },
 ]
 
