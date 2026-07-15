@@ -8,11 +8,11 @@ export type AlbumWizardStep =
   | 'preview'
   | 'publish'
 
-/** Steps padrão do Memory Book (com editor de páginas). */
+/** Steps padrão do Memory Book (fototeca antes das páginas, que usam as fotos). */
 export const ALBUM_WIZARD_STEPS: AlbumWizardStep[] = [
   'basics',
-  'pages',
   'photos',
+  'pages',
   'music',
   'preview',
   'publish',

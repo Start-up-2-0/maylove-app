@@ -39,10 +39,10 @@
       <p class="layout-panel__hint text-muted">
         {{ photos.length }} foto(s) na fototeca.
         <template v-if="form.book_pages.length">
-          {{ form.book_pages.length }} página(s) montadas no editor de Páginas.
+          {{ form.book_pages.length }} página(s) já montadas — você pode ajustar na etapa Páginas.
         </template>
         <template v-else>
-          Sem páginas salvas ainda — o livro usa o packing automático até você montar em Páginas.
+          Na próxima etapa você monta as páginas com essas fotos.
         </template>
       </p>
     </section>
