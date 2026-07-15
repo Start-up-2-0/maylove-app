@@ -48,7 +48,12 @@ export function useAlbumWizard(albumId: string) {
     book_pages: form.book_pages,
   }))
 
-  const { saving, savedAt, error: saveError } = useAutosave(autosavePayload, async (payload) => {
+  const {
+    saving,
+    savedAt,
+    error: saveError,
+    flush: flushAutosave,
+  } = useAutosave(autosavePayload, async (payload) => {
     if (!album.value || !isEditable.value) return
     album.value = await updateAlbum(albumId, payload)
   })
@@ -115,6 +120,7 @@ export function useAlbumWizard(albumId: string) {
     saving,
     savedAt,
     saveError,
+    flushAutosave,
     isEditable,
     photos,
     audio,

@@ -69,12 +69,13 @@
             :album="album"
             :form="form"
             :refresh-token="previewRefreshToken"
-            @go-publish="goToStep('publish')"
+            @go-publish="goToPublish"
           />
           <AlbumPublishStep
             v-else-if="currentStep === 'publish'"
             :album-id="albumId"
             :album="album"
+            :flush-autosave="flushAutosave"
             @published="onPublished"
           />
         </div>
@@ -122,6 +123,7 @@ const {
   saving,
   savedAt,
   saveError,
+  flushAutosave,
   isEditable,
   photos,
   audio,
@@ -171,6 +173,14 @@ function goToStep(step: AlbumWizardStep) {
   if (wizardSteps.value.includes(step)) currentStep.value = step
 }
 
+async function goToPublish() {
+  const ok = await flushAutosave()
+  if (!ok) {
+    // Ainda assim avança: o publish step tenta flushar de novo antes de publicar.
+  }
+  goToStep('publish')
+}
+
 function previousStep() {
   const index = stepIndex(currentStep.value)
   if (index > 0) currentStep.value = wizardSteps.value[index - 1]
@@ -187,6 +197,10 @@ function nextStep() {
     })()
     return
   }
+  if (currentStep.value === 'preview') {
+    void goToPublish()
+    return
+  }
   advanceStep()
 }
 
@@ -196,6 +210,9 @@ function advanceStep() {
 }
 
 async function refreshPreview() {
+  // Garante que posições do quadro (Polaroid) e outros ajustes do form
+  // não sejam sobrescritos por um reload antes do autosave debounce.
+  await flushAutosave()
   await reload()
   previewRefreshToken.value += 1
 }

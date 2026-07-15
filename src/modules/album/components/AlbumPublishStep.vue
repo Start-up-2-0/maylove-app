@@ -61,6 +61,7 @@ import WizardStepHeader from '@/components/wizard/WizardStepHeader.vue'
 const props = defineProps<{
   albumId: string
   album: AlbumDetail | null
+  flushAutosave?: () => Promise<boolean>
 }>()
 
 const emit = defineEmits<{ published: [] }>()
@@ -81,6 +82,9 @@ const publicUrl = computed(() => {
 
 onMounted(async () => {
   try {
+    if (props.flushAutosave) {
+      await props.flushAutosave()
+    }
     validation.value = await validateAlbum(props.albumId)
   } catch {
     actionError.value = 'Não foi possível validar o álbum.'
@@ -93,6 +97,14 @@ async function publish() {
   publishing.value = true
   actionError.value = ''
   try {
+    if (props.flushAutosave) {
+      const saved = await props.flushAutosave()
+      if (!saved) {
+        actionError.value =
+          'Não foi possível salvar o layout do quadro. Aguarde e tente publicar de novo.'
+        return
+      }
+    }
     const result = await validateAlbum(props.albumId)
     validation.value = result
     if (!result.valid) {
