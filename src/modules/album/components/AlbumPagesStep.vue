@@ -137,6 +137,7 @@
     <p class="text-muted pages-estimate">
       {{ form.book_pages.length || '0' }} página(s) de conteúdo
       (+ capa{{ form.closing_message || form.signature ? ' e contracapa' : '' }}).
+      A prévia do livro só é gerada no passo Preview.
     </p>
   </div>
 </template>
