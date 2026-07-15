@@ -35,11 +35,28 @@ export interface BookConfigBoard {
   items: BookBoardItem[]
 }
 
+export interface BookConfigMusicImport {
+  status: 'processing' | 'ready' | 'failed' | null
+  error: string | null
+  media_id: string | null
+}
+
+export interface BookConfigMusic {
+  source: 'none' | 'upload'
+  autoplay: boolean
+  loop: boolean
+  duration_seconds: number
+  start_seconds: number
+  end_seconds: number
+  import?: BookConfigMusicImport | null
+}
+
 export interface BookConfig {
   cover: BookConfigCover
   colors: BookConfigColors
   fonts: BookConfigFonts
   board?: BookConfigBoard
+  music?: BookConfigMusic
 }
 
 export type BookPageLayout =
@@ -66,6 +83,16 @@ export interface BookPage {
   slots: BookPageSlot[]
 }
 
+export const DEFAULT_BOOK_MUSIC: BookConfigMusic = {
+  source: 'none',
+  autoplay: true,
+  loop: true,
+  duration_seconds: 0,
+  start_seconds: 0,
+  end_seconds: 0,
+  import: null,
+}
+
 export const DEFAULT_BOOK_CONFIG: BookConfig = {
   cover: {
     mode: 'text',
@@ -84,6 +111,19 @@ export const DEFAULT_BOOK_CONFIG: BookConfig = {
   board: {
     items: [],
   },
+  music: { ...DEFAULT_BOOK_MUSIC },
+}
+
+export function normalizeBookMusic(raw?: Partial<BookConfigMusic> | null): BookConfigMusic {
+  return {
+    source: raw?.source === 'upload' ? 'upload' : 'none',
+    autoplay: raw?.autoplay !== false,
+    loop: raw?.loop !== false,
+    duration_seconds: Number(raw?.duration_seconds) || 0,
+    start_seconds: Number(raw?.start_seconds) || 0,
+    end_seconds: Number(raw?.end_seconds) || 0,
+    import: raw?.import ?? null,
+  }
 }
 
 const BOARD_ROTATIONS = [-8, 5, -3, 7, -6, 4, -9, 6, -2, 8, -5, 3]
@@ -168,6 +208,7 @@ export function normalizeBookConfig(raw?: Partial<BookConfig> | null): BookConfi
     board: {
       items: normalizeBoardItems(raw?.board?.items),
     },
+    music: normalizeBookMusic(raw?.music ?? DEFAULT_BOOK_MUSIC),
   }
 }
 
@@ -175,26 +216,26 @@ export function normalizeBookConfig(raw?: Partial<BookConfig> | null): BookConfi
 export function defaultBookConfigFor(presentation?: string | null): BookConfig {
   switch (presentation) {
     case 'instant-photo':
-      return {
+      return normalizeBookConfig({
         cover: { mode: 'text', media_id: null, eyebrow: 'INSTANT PHOTO' },
         colors: { paper: '#141414', ink: '#f5f5f5', accent: '#c45d7a', page: '#141414' },
         fonts: { preset: 'editorial' },
         board: { items: [] },
-      }
+      })
     case 'polaroid-board':
-      return {
+      return normalizeBookConfig({
         cover: { mode: 'text', media_id: null, eyebrow: 'COLADAS' },
         colors: { paper: '#c4a574', ink: '#2c241c', accent: '#c45d7a', page: '#c4a574' },
         fonts: { preset: 'editorial' },
         board: { items: [] },
-      }
+      })
     case 'portrait-album':
-      return {
+      return normalizeBookConfig({
         cover: { mode: 'text', media_id: null, eyebrow: 'ÁLBUM DE RETRATOS' },
         colors: { paper: '#e8dcc8', ink: '#2c241c', accent: '#c45d7a', page: '#e8dcc8' },
         fonts: { preset: 'editorial' },
         board: { items: [] },
-      }
+      })
     default:
       return normalizeBookConfig(null)
   }

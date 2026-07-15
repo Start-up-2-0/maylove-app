@@ -61,6 +61,7 @@
             v-else-if="currentStep === 'music'"
             :album-id="albumId"
             :audio="audio"
+            :form="form"
             @changed="onMediaChanged"
           />
           <AlbumPreviewStep

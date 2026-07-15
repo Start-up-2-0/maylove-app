@@ -5,6 +5,7 @@ import type {
   AlbumUploadPolicy,
   AlbumValidation,
   ApiEnvelope,
+  MusicMediaStatus,
   PresignResponse,
   PublicAlbum,
   AlbumMedia,
@@ -83,6 +84,24 @@ export async function deleteAlbumMedia(albumId: string, mediaId: string): Promis
 
 export async function reorderAlbumMedia(albumId: string, order: string[]): Promise<void> {
   await apiClient.patch(`/albums/${albumId}/media/reorder`, { order })
+}
+
+export async function fetchAlbumMusicStatus(albumId: string): Promise<MusicMediaStatus> {
+  const response = await apiClient.get<ApiEnvelope<MusicMediaStatus>>(
+    `/albums/${albumId}/music/status`,
+  )
+  return unwrap(response)
+}
+
+export async function importAlbumMusicFromYoutube(
+  albumId: string,
+  url: string,
+): Promise<MusicMediaStatus> {
+  const response = await apiClient.post<ApiEnvelope<MusicMediaStatus>>(
+    `/albums/${albumId}/music/import`,
+    { source: 'youtube', url },
+  )
+  return unwrap(response)
 }
 
 export async function fetchPublicAlbum(slug: string): Promise<PublicAlbum> {

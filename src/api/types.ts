@@ -311,7 +311,15 @@ export interface PublicAlbum {
   published_at: string | null
   views_count: number
   photos: PublicAlbumPhoto[]
-  music: { id: string; url: string | null } | null
+  music: {
+    id: string
+    url: string | null
+    autoplay?: boolean
+    loop?: boolean
+    duration_seconds?: number | null
+    start_seconds?: number | null
+    end_seconds?: number | null
+  } | null
 }
 
 export interface AlbumUploadPolicy {

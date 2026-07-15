@@ -28,7 +28,14 @@
         <ShareBar :url="shareUrl" :text="bookModel.title" />
       </section>
 
-      <audio v-if="album.music?.url" :src="album.music.url" autoplay loop class="public-audio" />
+      <MusicPlayerFloat
+        v-if="album.music?.url"
+        :url="album.music.url"
+        :loop="album.music.loop !== false"
+        :autoplay="album.music.autoplay !== false"
+        :start-at="album.music.start_seconds ?? 0"
+        :end-at="album.music.end_seconds ?? null"
+      />
 
       <footer class="public-foot">
         <RouterLink to="/register" class="public-foot__brand">
@@ -47,6 +54,7 @@ import { useRoute, RouterLink } from 'vue-router'
 import { fetchPublicAlbum, recordPublicAlbumView } from '@/api/albums'
 import type { PublicAlbum } from '@/api/types'
 import ShareBar from '@/components/experience/shared/ShareBar.vue'
+import MusicPlayerFloat from '@/components/experience/shared/MusicPlayerFloat.vue'
 import LogoMark from '@/components/brand/LogoMark.vue'
 import { buildMemoryBookModel } from '@/modules/album/book/buildModel'
 import BookRenderer from '@/modules/album/book/BookRenderer.vue'
@@ -159,14 +167,6 @@ function getSessionId(): string {
   to {
     transform: rotate(360deg);
   }
-}
-
-.public-audio {
-  position: fixed;
-  width: 1px;
-  height: 1px;
-  opacity: 0;
-  pointer-events: none;
 }
 
 .public-share {
