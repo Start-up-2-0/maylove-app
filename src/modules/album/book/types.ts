@@ -26,6 +26,7 @@ export interface MemoryBookPhoto {
   title?: string
   caption?: string
   memoryDate?: string
+  placeName?: string
   /** Posicionamento livre (páginas Polaroid scrap). */
   x?: number
   y?: number

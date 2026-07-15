@@ -41,6 +41,20 @@
       </div>
     </template>
 
+    <!-- Página dupla (spread) -->
+    <template v-else-if="page.layout === 'double-spread'">
+      <div class="page-comp__media page-comp__media--double-spread">
+        <figure v-if="leadPhoto" class="page-comp__photo">
+          <img :src="leadPhoto.url" :alt="leadPhoto.title || 'Memória'" loading="lazy" />
+        </figure>
+      </div>
+      <aside v-if="showCaptionBlock" class="page-comp__caption-block page-comp__caption-block--spread">
+        <p v-if="captionMetaLine" class="page-comp__meta">{{ captionMetaLine }}</p>
+        <h2 v-if="captionTitle" class="page-comp__title">{{ captionTitle }}</h2>
+        <RichText v-if="captionBody" :text="captionBody" class="page-comp__body" />
+      </aside>
+    </template>
+
     <!-- Hero + legenda -->
     <template v-else-if="page.layout === 'hero-caption'">
       <div class="page-comp__media page-comp__media--hero-caption">
@@ -49,7 +63,7 @@
         </figure>
       </div>
       <aside v-if="showCaptionBlock" class="page-comp__caption-block">
-        <p v-if="captionDate" class="page-comp__meta">{{ captionDate }}</p>
+        <p v-if="captionMetaLine" class="page-comp__meta">{{ captionMetaLine }}</p>
         <h2 v-if="captionTitle" class="page-comp__title">{{ captionTitle }}</h2>
         <RichText v-if="captionBody" :text="captionBody" class="page-comp__body" />
       </aside>
@@ -66,11 +80,13 @@
         >
           <img :src="photo.url" :alt="photo.title || 'Memória'" loading="lazy" />
           <figcaption
-            v-if="photo.title || photo.caption || photo.memoryDate"
+            v-if="photo.title || photo.caption || photo.memoryDate || photo.placeName"
             class="page-comp__mini-cap"
             :class="{ 'page-comp__mini-cap--rich': Boolean(photo.caption) }"
           >
-            <span v-if="photo.memoryDate" class="page-comp__mini-date">{{ photo.memoryDate }}</span>
+            <span v-if="photo.memoryDate || photo.placeName" class="page-comp__mini-date">
+              {{ [photo.memoryDate, photo.placeName].filter(Boolean).join(' · ') }}
+            </span>
             <span v-if="photo.title" class="page-comp__mini-title">{{ photo.title }}</span>
             <RichText v-if="photo.caption" :text="photo.caption" class="page-comp__mini-body" />
           </figcaption>
@@ -115,8 +131,16 @@ const captionDate = computed(
   () => props.page.memoryDate?.trim() || leadPhoto.value?.memoryDate?.trim() || '',
 )
 
+const captionPlace = computed(
+  () => leadPhoto.value?.placeName?.trim() || '',
+)
+
+const captionMetaLine = computed(() =>
+  [captionDate.value, captionPlace.value].filter(Boolean).join(' · '),
+)
+
 const showCaptionBlock = computed(() =>
-  Boolean(captionTitle.value || captionBody.value || captionDate.value),
+  Boolean(captionTitle.value || captionBody.value || captionMetaLine.value),
 )
 </script>
 
@@ -230,6 +254,40 @@ const showCaptionBlock = computed(() =>
   padding: 0;
 }
 
+.page-comp--double-spread {
+  padding: 0;
+}
+
+.page-comp__media--double-spread {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  min-height: clamp(360px, 62vh, 820px);
+  background: color-mix(in srgb, var(--book-ink) 3%, var(--book-paper));
+}
+
+.page-comp--double-spread .page-comp__photo {
+  margin: 0;
+  width: 100%;
+  box-shadow: none;
+  border-radius: 0;
+  background: transparent;
+}
+
+.page-comp--double-spread .page-comp__photo img {
+  width: 100%;
+  height: auto;
+  max-height: min(82vh, 960px);
+  object-fit: contain;
+}
+
+.page-comp__caption-block--spread {
+  text-align: center;
+  max-width: 46rem;
+  margin-inline: auto;
+  padding: clamp(18px, 3vw, 28px) clamp(20px, 4vw, 40px) clamp(24px, 4vw, 36px);
+}
+
 .page-comp__media--full-bleed {
   flex: 1;
   display: grid;
@@ -336,6 +394,10 @@ const showCaptionBlock = computed(() =>
   gap: clamp(10px, 2vw, 16px);
   align-items: start;
   flex: 1;
+}
+
+.page-comp--collage-grid .page-comp__photo img {
+  max-height: min(42vh, 420px);
 }
 
 .page-comp__mini-cap {

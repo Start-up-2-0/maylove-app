@@ -2,7 +2,7 @@
   <div class="pages-step">
     <WizardStepHeader
       title="Diagramação das páginas"
-      description="Monte a narrativa com layouts editoriais e páginas Polaroid scrapbook — arraste, gire e redimensione."
+      description="Arraste as páginas para reordenar · troque o layout · nas Polaroids mova, gire e redimensione."
     />
 
     <div class="pages-toolbar">
@@ -26,15 +26,29 @@
     </div>
 
     <p v-if="!form.book_pages.length" class="text-muted pages-empty">
-      Nenhuma página ainda. Gere a partir da fototeca ou adicione layouts (incluindo Polaroid 1–4).
+      Nenhuma página ainda. Gere a partir da fototeca ou adicione layouts (spread, mosaico, Polaroid…).
     </p>
 
     <div class="pages-list">
-      <article v-for="(page, index) in form.book_pages" :key="page.id" class="page-card">
+      <article
+        v-for="(page, index) in form.book_pages"
+        :key="page.id"
+        class="page-card"
+        :class="{ 'page-card--dragging': dragIndex === index, 'page-card--over': dropIndex === index }"
+        draggable="true"
+        @dragstart="onPageDragStart(index, $event)"
+        @dragover.prevent="onPageDragOver(index)"
+        @dragleave="onPageDragLeave(index)"
+        @drop.prevent="onPageDrop(index)"
+        @dragend="onPageDragEnd"
+      >
         <header class="page-card__head">
-          <div>
-            <strong>Página {{ index + 1 }}</strong>
-            <p class="page-card__hint">{{ layoutHint(page.layout) }}</p>
+          <div class="page-card__identity">
+            <span class="page-card__handle" title="Arraste para reordenar" aria-hidden="true">⠿</span>
+            <div>
+              <strong>Página {{ index + 1 }}</strong>
+              <p class="page-card__hint">{{ layoutHint(page.layout) }}</p>
+            </div>
           </div>
           <div class="page-card__actions">
             <button type="button" class="ml-icon-btn" :disabled="index === 0" @click="movePage(index, -1)">
@@ -62,18 +76,19 @@
           </div>
         </header>
 
-        <label class="ml-field">
-          <span>Layout</span>
-          <select
-            class="ml-input ml-input--sm"
-            :value="page.layout"
-            @change="onLayoutChange(page, ($event.target as HTMLSelectElement).value)"
+        <div class="layout-chips" role="listbox" aria-label="Layout da página">
+          <button
+            v-for="layout in BOOK_PAGE_LAYOUTS"
+            :key="layout.id"
+            type="button"
+            class="layout-chip"
+            :class="{ 'layout-chip--active': page.layout === layout.id }"
+            :title="layout.hint"
+            @click="onLayoutChange(page, layout.id)"
           >
-            <option v-for="layout in BOOK_PAGE_LAYOUTS" :key="layout.id" :value="layout.id">
-              {{ layout.label }}
-            </option>
-          </select>
-        </label>
+            {{ layout.label }}
+          </button>
+        </div>
 
         <div class="page-meta">
           <input
@@ -159,6 +174,8 @@ const props = defineProps<{
 }>()
 
 const newLayout = ref<BookPageLayout>('one')
+const dragIndex = ref<number | null>(null)
+const dropIndex = ref<number | null>(null)
 
 const previewBook = computed(() => {
   if (!props.album) return null
@@ -193,6 +210,7 @@ function scrapPhotosFor(page: BookPage): MemoryBookPhoto[] {
       title: slot.show_title ? media.title ?? undefined : undefined,
       caption: slot.show_caption ? media.caption ?? undefined : undefined,
       memoryDate: slot.show_date ? media.memory_date ?? undefined : undefined,
+      placeName: media.place_name ?? undefined,
       x: slot.x ?? undefined,
       y: slot.y ?? undefined,
       rotation: slot.rotation ?? undefined,
@@ -252,6 +270,37 @@ function movePage(index: number, delta: number) {
   reindex()
 }
 
+function onPageDragStart(index: number, event: DragEvent) {
+  dragIndex.value = index
+  event.dataTransfer?.setData('text/plain', String(index))
+  if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move'
+}
+
+function onPageDragOver(index: number) {
+  if (dragIndex.value === null || dragIndex.value === index) return
+  dropIndex.value = index
+}
+
+function onPageDragLeave(index: number) {
+  if (dropIndex.value === index) dropIndex.value = null
+}
+
+function onPageDrop(index: number) {
+  if (dragIndex.value === null || dragIndex.value === index) {
+    onPageDragEnd()
+    return
+  }
+  const [item] = props.form.book_pages.splice(dragIndex.value, 1)
+  props.form.book_pages.splice(index, 0, item)
+  reindex()
+  onPageDragEnd()
+}
+
+function onPageDragEnd() {
+  dragIndex.value = null
+  dropIndex.value = null
+}
+
 function onLayoutChange(page: BookPage, layoutId: string) {
   const layout = layoutId as BookPageLayout
   const count = slotCountForLayout(layout)
@@ -283,17 +332,31 @@ function autoFillFromPhotos() {
     const remaining = sorted.length - i
 
     if (i === 0) {
-      const page = createBookPage('bleed', pages.length)
+      const page = createBookPage('spread', pages.length)
       page.slots = [
         {
           media_id: sorted[i].id,
-          show_title: false,
+          show_title: true,
           show_caption: false,
-          show_date: false,
+          show_date: true,
         },
       ]
       pages.push(page)
       i += 1
+      continue
+    }
+
+    if (remaining >= 4 && i % 8 === 0) {
+      const chunk = sorted.slice(i, i + 4)
+      const page = createBookPage('four', pages.length)
+      page.slots = chunk.map((photo) => ({
+        media_id: photo.id,
+        show_title: false,
+        show_caption: false,
+        show_date: false,
+      }))
+      pages.push(page)
+      i += 4
       continue
     }
 
@@ -381,6 +444,20 @@ function autoFillFromPhotos() {
   background: var(--surface);
   display: grid;
   gap: 12px;
+  cursor: grab;
+  transition:
+    border-color 140ms ease,
+    box-shadow 140ms ease,
+    opacity 140ms ease;
+}
+
+.page-card--dragging {
+  opacity: 0.55;
+}
+
+.page-card--over {
+  border-color: color-mix(in srgb, var(--accent, #c45d7a) 55%, var(--border));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent, #c45d7a) 18%, transparent);
 }
 
 .page-card__head {
@@ -388,6 +465,42 @@ function autoFillFromPhotos() {
   justify-content: space-between;
   align-items: flex-start;
   gap: 10px;
+}
+
+.page-card__identity {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.page-card__handle {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 1.1rem;
+  letter-spacing: 0.04em;
+  user-select: none;
+}
+
+.layout-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.layout-chip {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 5px 10px;
+  background: var(--surface-2, var(--surface));
+  color: var(--ink, inherit);
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.layout-chip--active {
+  border-color: color-mix(in srgb, var(--accent, #c45d7a) 60%, var(--border));
+  background: color-mix(in srgb, var(--accent, #c45d7a) 12%, transparent);
+  font-weight: 600;
 }
 
 .page-card__hint {

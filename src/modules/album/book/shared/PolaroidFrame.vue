@@ -16,8 +16,9 @@
     <figcaption v-if="showCaption" class="pf__cap">
       <p v-if="title" class="pf__title">{{ title }}</p>
       <RichText v-if="caption" :text="caption" class="pf__desc" />
+      <p v-if="placeLabel" class="pf__place">{{ placeLabel }}</p>
       <p v-else-if="dateLabel && !title" class="pf__date">{{ dateLabel }}</p>
-      <p v-if="dateLabel && title" class="pf__date">{{ dateLabel }}</p>
+      <p v-if="dateLabel && (title || placeLabel)" class="pf__date">{{ dateLabel }}</p>
     </figcaption>
     <slot />
   </figure>
@@ -34,6 +35,7 @@ const props = withDefaults(
     title?: string | null
     caption?: string | null
     memoryDate?: string | null
+    placeName?: string | null
     frameStyle?: BookFrameStyle | string | null
     /** Rotação visual da moldura (graus). Preferir transformar no container scrap. */
     rotation?: number | string | null
@@ -45,6 +47,7 @@ const props = withDefaults(
     title: null,
     caption: null,
     memoryDate: null,
+    placeName: null,
     frameStyle: 'classic',
     rotation: null,
     compact: false,
@@ -55,9 +58,16 @@ const props = withDefaults(
 const frameStyle = computed(() => normalizeFrameStyle(props.frameStyle))
 
 const dateLabel = computed(() => props.memoryDate?.trim() || '')
+const placeLabel = computed(() => props.placeName?.trim() || '')
 
 const showCaption = computed(
-  () => Boolean(props.title?.trim() || props.caption?.trim() || dateLabel.value),
+  () =>
+    Boolean(
+      props.title?.trim() ||
+        props.caption?.trim() ||
+        dateLabel.value ||
+        placeLabel.value,
+    ),
 )
 
 const rotationStyle = computed(() => {
@@ -218,6 +228,17 @@ const rotationStyle = computed(() => {
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--pf-muted);
+}
+
+.pf__place {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--pf-muted);
+}
+
+.pf--hand .pf__place {
+  font-size: 1.05rem;
+  color: var(--pf-ink);
 }
 
 @media (prefers-reduced-motion: reduce) {

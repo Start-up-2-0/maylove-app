@@ -7,21 +7,37 @@
 
     <section class="layout-panel ml-card">
       <p class="layout-panel__hint text-muted">
-        {{ photos.length }} foto(s) na fototeca. Título, descrição e data alimentam as legendas das páginas.
+        {{ photos.length }} foto(s) na fototeca. Título, descrição, data e local alimentam as legendas das páginas.
       </p>
     </section>
     <div v-if="photos.length" :class="isTimeline ? 'timeline-photos' : 'photo-grid'">
-      <figure v-for="(photo, index) in photos" :key="photo.id" class="photo-tile" :class="{ 'photo-tile--timeline': isTimeline }">
+      <figure
+        v-for="(photo, index) in photos"
+        :key="photo.id"
+        class="photo-tile"
+        :class="{
+          'photo-tile--timeline': isTimeline,
+          'photo-tile--dragging': photoDragIndex === index,
+          'photo-tile--over': photoDropIndex === index,
+        }"
+        draggable="true"
+        @dragstart="onPhotoDragStart(index, $event)"
+        @dragover.prevent="onPhotoDragOver(index)"
+        @dragleave="onPhotoDragLeave(index)"
+        @drop.prevent="onPhotoDrop(index)"
+        @dragend="onPhotoDragEnd"
+      >
         <img
           v-if="mediaPreviewUrl(photo)"
           class="photo-tile__img"
           :src="mediaPreviewUrl(photo)!"
           alt=""
           loading="lazy"
+          draggable="false"
         />
         <div v-else class="photo-tile__placeholder">Prévia indisponível</div>
         <figcaption class="photo-tile__bar">
-          <span class="photo-tile__index">#{{ index + 1 }}</span>
+          <span class="photo-tile__index">#{{ index + 1 }} · ⠿</span>
           <div class="photo-tile__actions">
             <button class="ml-icon-btn" :disabled="index === 0" title="Mover para cima" @click="move(index, -1)">
               ↑
@@ -58,6 +74,13 @@
             :class="{ 'ml-input--invalid': isTimeline && showValidation && !captions[photo.id]?.title?.trim() }"
             :placeholder="isTimeline ? 'Título' : 'Título (opcional)'"
             :required="isTimeline"
+            @input="queueCaptionSave(photo.id)"
+          />
+          <input
+            v-model="captions[photo.id].place_name"
+            class="ml-input ml-input--sm"
+            placeholder="Local (opcional)"
+            maxlength="160"
             @input="queueCaptionSave(photo.id)"
           />
           <textarea
@@ -124,15 +147,19 @@ const emit = defineEmits<{ changed: [] }>()
 const maxPhotos = MEDIA_LIMITS.photo.maxCountPerAlbum
 const uploading = ref(false)
 const error = ref('')
-const captions = reactive<Record<string, { title: string; caption: string; memory_date: string }>>({})
+const captions = reactive<
+  Record<string, { title: string; caption: string; memory_date: string; place_name: string }>
+>({})
 const saveTimers = new Map<string, ReturnType<typeof setTimeout>>()
 const showValidation = ref(false)
+const photoDragIndex = ref<number | null>(null)
+const photoDropIndex = ref<number | null>(null)
 
 const isTimeline = computed(() => isTimelinePresentation(props.form.presentation))
 
 const stepDescription = computed(
   () =>
-    `Envie as fotos da fototeca. Título, descrição e data aparecem nas páginas. Até ${maxPhotos} fotos. ${photoUploadHint()}`,
+    `Envie as fotos da fototeca. Título, descrição, data e local aparecem nas páginas. Arraste para reordenar. Até ${maxPhotos} fotos. ${photoUploadHint()}`,
 )
 
 watch(
@@ -153,6 +180,7 @@ watch(
         title: photo.title ?? '',
         caption: photo.caption ?? '',
         memory_date: photo.memory_date ?? '',
+        place_name: photo.place_name ?? '',
       }
     }
   },
@@ -275,6 +303,43 @@ async function move(index: number, direction: -1 | 1) {
   }
 }
 
+function onPhotoDragStart(index: number, event: DragEvent) {
+  photoDragIndex.value = index
+  event.dataTransfer?.setData('text/plain', String(index))
+  if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move'
+}
+
+function onPhotoDragOver(index: number) {
+  if (photoDragIndex.value === null || photoDragIndex.value === index) return
+  photoDropIndex.value = index
+}
+
+function onPhotoDragLeave(index: number) {
+  if (photoDropIndex.value === index) photoDropIndex.value = null
+}
+
+async function onPhotoDrop(index: number) {
+  if (photoDragIndex.value === null || photoDragIndex.value === index) {
+    onPhotoDragEnd()
+    return
+  }
+  const order = props.photos.map((photo) => photo.id)
+  const [id] = order.splice(photoDragIndex.value, 1)
+  order.splice(index, 0, id)
+  onPhotoDragEnd()
+  try {
+    await reorderAlbumMedia(props.albumId, order)
+    emit('changed')
+  } catch {
+    error.value = 'Não foi possível reordenar as fotos.'
+  }
+}
+
+function onPhotoDragEnd() {
+  photoDragIndex.value = null
+  photoDropIndex.value = null
+}
+
 async function saveCaption(mediaId: string, showError = true) {
   const meta = captions[mediaId]
   if (!meta) return
@@ -285,6 +350,7 @@ async function saveCaption(mediaId: string, showError = true) {
         title: meta.title.trim(),
         caption: meta.caption.trim(),
         memory_date: meta.memory_date || null,
+        place_name: meta.place_name.trim() || null,
       }],
     })
   } catch {
@@ -331,6 +397,15 @@ async function saveCaption(mediaId: string, showError = true) {
   grid-template-columns: minmax(96px, 140px) 1fr;
   gap: 12px;
   align-items: start;
+}
+
+.photo-tile--dragging {
+  opacity: 0.55;
+}
+
+.photo-tile--over {
+  outline: 2px solid color-mix(in srgb, var(--accent, #c45d7a) 55%, transparent);
+  outline-offset: 2px;
 }
 
 .photo-tile--timeline .photo-tile__img {

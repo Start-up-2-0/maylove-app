@@ -252,6 +252,7 @@ export interface AlbumMedia {
   title: string | null
   caption: string | null
   memory_date: string | null
+  place_name?: string | null
   url_thumbnail: string | null
   url?: string | null
   created_at: string
@@ -294,6 +295,7 @@ export interface PublicAlbumPhoto {
   title: string | null
   caption: string | null
   memory_date: string | null
+  place_name?: string | null
   sort_order: number
 }
 

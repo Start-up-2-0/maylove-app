@@ -27,6 +27,7 @@ interface PhotoInput {
   title?: string | null
   caption?: string | null
   memory_date?: string | null
+  place_name?: string | null
 }
 
 interface AlbumInput {
@@ -79,6 +80,7 @@ function toBookPhoto(photo: PhotoInput): MemoryBookPhoto {
     title: photo.title?.trim() || undefined,
     caption: photo.caption?.trim() || undefined,
     memoryDate: formatMemoryDate(photo.memory_date),
+    placeName: photo.place_name?.trim() || undefined,
   }
 }
 
@@ -114,9 +116,11 @@ function buildTimelinePages(album: AlbumInput): MemoryBookContentPage[] {
 
 function mapLayout(layout: BookPageLayout, _hasText: boolean): PageLayoutId {
   if (layout === 'bleed') return 'full-bleed'
+  if (layout === 'spread') return 'double-spread'
   if (layout === 'text') return 'text-focus'
   if (layout === 'two') return 'asymmetric-duo'
   if (layout === 'three') return 'editorial-trio'
+  if (layout === 'four') return 'collage-grid'
   if (isPolaroidPageLayout(layout)) return 'polaroid-memory'
   if (layout === 'text_photo' || layout === 'one') return 'hero-caption'
   return 'hero-caption'
@@ -276,6 +280,7 @@ export function buildMemoryBookModelFromDetail(album: {
     title?: string | null
     caption?: string | null
     memory_date?: string | null
+    place_name?: string | null
   }>
   photos?: Array<{
     id: string
@@ -283,6 +288,7 @@ export function buildMemoryBookModelFromDetail(album: {
     title?: string | null
     caption?: string | null
     memory_date?: string | null
+    place_name?: string | null
     sort_order: number
   }>
 }): MemoryBookModel {
@@ -296,6 +302,7 @@ export function buildMemoryBookModelFromDetail(album: {
         title: m.title,
         caption: m.caption,
         memory_date: m.memory_date,
+        place_name: m.place_name,
       })) ??
     album.photos?.map((p) => ({
       id: p.id,
@@ -304,6 +311,7 @@ export function buildMemoryBookModelFromDetail(album: {
       title: p.title,
       caption: p.caption,
       memory_date: p.memory_date,
+      place_name: p.place_name,
     })) ??
     []
 

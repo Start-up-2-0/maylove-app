@@ -29,6 +29,7 @@
         :title="shot.title"
         :caption="shot.caption"
         :memory-date="shot.memoryDate"
+        :place-name="shot.placeName"
         :frame-style="frameStyle"
         :rotation="0"
         handwritten

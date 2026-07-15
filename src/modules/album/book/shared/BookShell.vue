@@ -43,6 +43,7 @@
           v-for="page in book.contentPages"
           :key="page.pageNo"
           class="book__sheet book__sheet--content"
+          :class="{ 'book__sheet--spread': page.layout === 'double-spread' }"
           :aria-label="`Página ${page.pageNo}`"
         >
           <span v-if="showBinder" class="book__gutter" aria-hidden="true" />
@@ -260,6 +261,21 @@ function closeAlbum() {
 .book__sheet--content {
   min-height: auto;
   background: var(--book-paper-alt);
+}
+
+.book__sheet--spread {
+  width: min(1080px, 100%);
+  max-width: none;
+}
+
+@media (min-width: 960px) {
+  .book__sheet--spread {
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.65) inset,
+      12px 0 28px -24px rgba(30, 24, 20, 0.28),
+      -12px 0 28px -24px rgba(30, 24, 20, 0.28),
+      0 20px 48px -28px rgba(30, 24, 20, 0.35);
+  }
 }
 
 .book__sheet--back {

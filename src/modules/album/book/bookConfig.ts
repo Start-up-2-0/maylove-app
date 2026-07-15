@@ -73,7 +73,9 @@ export type BookPageLayout =
   | 'one'
   | 'two'
   | 'three'
+  | 'four'
   | 'bleed'
+  | 'spread'
   | 'text_photo'
   | 'text'
   | 'polaroid_1'
@@ -334,6 +336,13 @@ export const BOOK_PAGE_LAYOUTS: Array<{
     hint: 'Momento marcante, quase sem texto',
   },
   {
+    id: 'spread',
+    label: 'Página dupla',
+    slots: 1,
+    pageLayout: 'double-spread',
+    hint: 'Foto ampla como spread de photobook',
+  },
+  {
     id: 'one',
     label: 'Foto + legenda',
     slots: 1,
@@ -360,6 +369,13 @@ export const BOOK_PAGE_LAYOUTS: Array<{
     slots: 3,
     pageLayout: 'editorial-trio',
     hint: 'Tríptico com ritmo visual',
+  },
+  {
+    id: 'four',
+    label: 'Mosaico 4',
+    slots: 4,
+    pageLayout: 'collage-grid',
+    hint: 'Grade editorial 2×2 sem texto de página',
   },
   {
     id: 'text',

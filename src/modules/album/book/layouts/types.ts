@@ -2,6 +2,7 @@ import type { MemoryBookPhoto } from '../types'
 
 export type PageLayoutId =
   | 'full-bleed'
+  | 'double-spread'
   | 'hero-caption'
   | 'asymmetric-duo'
   | 'editorial-trio'
