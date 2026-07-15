@@ -2,7 +2,6 @@
   <figure
     class="pf"
     :class="[`pf--${frameStyle}`, { 'pf--compact': compact }]"
-    :style="rootStyle"
   >
     <div class="pf__photo">
       <img :src="url" :alt="title || 'Memória'" loading="lazy" draggable="false" />
@@ -29,6 +28,7 @@ const props = withDefaults(
     caption?: string | null
     memoryDate?: string | null
     frameStyle?: BookFrameStyle | string | null
+    /** Mantido por compatibilidade; molduras ficam sempre retas. */
     rotation?: number | string | null
     compact?: boolean
   }>(),
@@ -49,12 +49,6 @@ const dateLabel = computed(() => props.memoryDate?.trim() || '')
 const showCaption = computed(
   () => Boolean(props.title?.trim() || props.caption?.trim() || dateLabel.value),
 )
-
-const rootStyle = computed(() => {
-  const rot = props.rotation
-  if (rot === null || rot === undefined || rot === '') return undefined
-  return { '--pf-rot': typeof rot === 'number' ? `${rot}deg` : String(rot) }
-})
 </script>
 
 <style scoped>
@@ -66,18 +60,17 @@ const rootStyle = computed(() => {
   --pf-pad: 10px 10px 0;
   --pf-cap-pad: 12px 10px 16px;
   --pf-radius: 2px;
-  --pf-rot: 0deg;
 
   margin: 0;
   display: flex;
   flex-direction: column;
+  width: 100%;
   background: var(--pf-frame);
   color: var(--pf-ink);
   padding: var(--pf-pad);
   border-radius: var(--pf-radius);
   box-shadow: var(--pf-shadow);
-  transform: rotate(var(--pf-rot));
-  transition: transform 180ms ease, box-shadow 180ms ease;
+  transition: box-shadow 180ms ease;
 }
 
 .pf--compact {
@@ -128,16 +121,20 @@ const rootStyle = computed(() => {
 }
 
 .pf__photo {
-  overflow: hidden;
-  background: color-mix(in srgb, var(--pf-ink) 8%, #111);
-  aspect-ratio: 1 / 1.05;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--pf-ink) 6%, transparent);
+  /* Sem aspect-ratio fixo: a moldura acompanha a proporção da foto. */
+  line-height: 0;
 }
 
 .pf__photo img {
   display: block;
   width: 100%;
-  height: 100%;
-  object-fit: cover;
+  height: auto;
+  max-width: 100%;
+  object-fit: contain;
   object-position: center;
 }
 

@@ -20,7 +20,6 @@
           :caption="shot.caption"
           :memory-date="shot.memoryDate"
           :frame-style="frameStyle"
-          :rotation="shot.rotation"
         />
       </article>
     </div>
@@ -47,8 +46,6 @@ import { normalizePresentationId } from '../presentations'
 import { normalizeFrameStyle, resolveBookConfig } from '../bookConfig'
 import PolaroidFrame from '../shared/PolaroidFrame.vue'
 import type { BookRenderMode, MemoryBookModel } from '../types'
-
-const ROTATIONS = [-2.2, 1.6, -1.1, 2.0, -1.7, 1.2, -0.8, 1.9]
 
 const props = defineProps<{
   book: MemoryBookModel
@@ -78,13 +75,12 @@ const eyebrow = computed(
 
 const shots = computed(() => {
   const photos = props.book.contentPages.flatMap((page) => page.photos)
-  return photos.map((photo, index) => ({
+  return photos.map((photo) => ({
     id: photo.id,
     url: photo.url,
     title: photo.title,
     caption: photo.caption,
     memoryDate: photo.memoryDate,
-    rotation: ROTATIONS[index % ROTATIONS.length],
   }))
 })
 
