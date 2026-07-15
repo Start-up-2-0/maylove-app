@@ -17,7 +17,16 @@
     </section>
 
     <template v-else-if="album && bookModel">
-      <BookRenderer :book="bookModel" mode="full" :share-url="shareUrl" />
+      <BookRenderer
+        :book="bookModel"
+        mode="full"
+        :share-url="shareInsideBook ? shareUrl : undefined"
+      />
+
+      <!-- Murais / Instant Photo: compartilhar no fim da página, fora da composição -->
+      <section v-if="shareAtPageEnd" class="public-share" aria-label="Compartilhar álbum">
+        <ShareBar :url="shareUrl" :text="bookModel.title" />
+      </section>
 
       <audio v-if="album.music?.url" :src="album.music.url" autoplay loop class="public-audio" />
 
@@ -37,9 +46,11 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute, RouterLink } from 'vue-router'
 import { fetchPublicAlbum, recordPublicAlbumView } from '@/api/albums'
 import type { PublicAlbum } from '@/api/types'
+import ShareBar from '@/components/experience/shared/ShareBar.vue'
+import LogoMark from '@/components/brand/LogoMark.vue'
 import { buildMemoryBookModel } from '@/modules/album/book/buildModel'
 import BookRenderer from '@/modules/album/book/BookRenderer.vue'
-import LogoMark from '@/components/brand/LogoMark.vue'
+import { isPhotoFirstPresentation } from '@/modules/album/book/presentations'
 
 const route = useRoute()
 const album = ref<PublicAlbum | null>(null)
@@ -71,6 +82,13 @@ const bookModel = computed(() => {
 
 const shareUrl = computed(() =>
   typeof window !== 'undefined' ? window.location.href : '',
+)
+
+const isPhotoFirst = computed(() => isPhotoFirstPresentation(album.value?.presentation))
+/** Memory Book mantém compartilhar na contracapa. */
+const shareInsideBook = computed(() => !isPhotoFirst.value)
+const shareAtPageEnd = computed(
+  () => isPhotoFirst.value && Boolean(shareUrl.value.trim()),
 )
 
 onMounted(async () => {
@@ -149,6 +167,14 @@ function getSessionId(): string {
   height: 1px;
   opacity: 0;
   pointer-events: none;
+}
+
+.public-share {
+  display: flex;
+  justify-content: center;
+  padding: clamp(28px, 5vw, 40px) clamp(16px, 4vw, 32px);
+  background: color-mix(in srgb, var(--bg, #fff8fb) 92%, #fff);
+  border-top: 1px solid color-mix(in srgb, var(--border, #eadfe6) 80%, transparent);
 }
 
 .public-foot {

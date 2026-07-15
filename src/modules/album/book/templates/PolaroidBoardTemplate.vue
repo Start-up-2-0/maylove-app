@@ -4,80 +4,81 @@
     :class="[`pb-board--${mode}`, { 'pb-board--editable': editable }]"
     :style="boardRootStyle"
   >
-    <!-- Canvas = quadro inteiro (sem caixa interna limitada) -->
-    <div
-      v-if="shots.length"
-      ref="stageRef"
-      class="pb-board__canvas"
-      role="list"
-      aria-label="Quadro de polaroids"
-      @pointerdown.self="selectedId = null"
-    >
-      <figure
-        v-for="shot in shots"
-        :key="shot.id"
-        :ref="(el) => setShotEl(shot.id, el)"
-        class="pb-polaroid"
-        :class="[
-          `pb-polaroid--decor-${shot.decor}`,
-          `pb-polaroid--size-${shot.size}`,
-          {
-            'pb-polaroid--draggable': editable,
-            'pb-polaroid--dragging': dragMode === 'move' && draggingId === shot.id,
-            'pb-polaroid--selected': editable && selectedId === shot.id,
-          },
-        ]"
-        :style="shot.style"
-        role="listitem"
-        :tabindex="editable ? 0 : undefined"
-        @pointerdown="editable ? onMovePointerDown(shot.id, $event) : undefined"
+    <div class="pb-board__stage" :style="stageStyle">
+      <!-- Canvas = quadro inteiro (sem caixa interna limitada) -->
+      <div
+        v-if="shots.length"
+        ref="stageRef"
+        class="pb-board__canvas"
+        role="list"
+        aria-label="Quadro de polaroids"
+        @pointerdown.self="selectedId = null"
       >
-        <span class="pb-polaroid__attach" aria-hidden="true" />
-        <div class="pb-polaroid__frame">
-          <img :src="shot.url" :alt="shot.title || 'Memória'" loading="lazy" draggable="false" />
-        </div>
-        <figcaption v-if="shot.caption" class="pb-polaroid__caption">{{ shot.caption }}</figcaption>
-
-        <template v-if="editable && selectedId === shot.id">
-          <div class="pb-polaroid__toolbar" @pointerdown.stop>
-            <button type="button" class="pb-polaroid__rot-btn" title="Girar -15°" @click="nudgeRotation(shot.id, -15)">
-              ↺
-            </button>
-            <span class="pb-polaroid__rot-label">{{ Math.round(shot.rotation) }}°</span>
-            <button type="button" class="pb-polaroid__rot-btn" title="Girar +15°" @click="nudgeRotation(shot.id, 15)">
-              ↻
-            </button>
-            <button type="button" class="pb-polaroid__rot-btn" title="Zerar rotação" @click="setRotation(shot.id, 0)">
-              0°
-            </button>
+        <figure
+          v-for="shot in shots"
+          :key="shot.id"
+          :ref="(el) => setShotEl(shot.id, el)"
+          class="pb-polaroid"
+          :class="[
+            `pb-polaroid--decor-${shot.decor}`,
+            `pb-polaroid--size-${shot.size}`,
+            {
+              'pb-polaroid--draggable': editable,
+              'pb-polaroid--dragging': dragMode === 'move' && draggingId === shot.id,
+              'pb-polaroid--selected': editable && selectedId === shot.id,
+            },
+          ]"
+          :style="shot.style"
+          role="listitem"
+          :tabindex="editable ? 0 : undefined"
+          @pointerdown="editable ? onMovePointerDown(shot.id, $event) : undefined"
+        >
+          <span class="pb-polaroid__attach" aria-hidden="true" />
+          <div class="pb-polaroid__frame">
+            <img :src="shot.url" :alt="shot.title || 'Memória'" loading="lazy" draggable="false" />
           </div>
-          <button
-            type="button"
-            class="pb-polaroid__rotate-handle"
-            title="Arraste para girar"
-            aria-label="Girar polaroid"
-            @pointerdown.stop="onRotatePointerDown(shot.id, $event)"
-          />
-        </template>
-      </figure>
+          <figcaption v-if="shot.caption" class="pb-polaroid__caption">{{ shot.caption }}</figcaption>
+
+          <template v-if="editable && selectedId === shot.id">
+            <div class="pb-polaroid__toolbar" @pointerdown.stop>
+              <button type="button" class="pb-polaroid__rot-btn" title="Girar -15°" @click="nudgeRotation(shot.id, -15)">
+                ↺
+              </button>
+              <span class="pb-polaroid__rot-label">{{ Math.round(shot.rotation) }}°</span>
+              <button type="button" class="pb-polaroid__rot-btn" title="Girar +15°" @click="nudgeRotation(shot.id, 15)">
+                ↻
+              </button>
+              <button type="button" class="pb-polaroid__rot-btn" title="Zerar rotação" @click="setRotation(shot.id, 0)">
+                0°
+              </button>
+            </div>
+            <button
+              type="button"
+              class="pb-polaroid__rotate-handle"
+              title="Arraste para girar"
+              aria-label="Girar polaroid"
+              @pointerdown.stop="onRotatePointerDown(shot.id, $event)"
+            />
+          </template>
+        </figure>
+      </div>
+
+      <header class="pb-board__header">
+        <p v-if="eyebrow" class="pb-board__eyebrow">{{ eyebrow }}</p>
+        <h1 class="pb-board__title">{{ book.title }}</h1>
+        <p v-if="book.subtitle" class="pb-board__subtitle">{{ book.subtitle }}</p>
+        <p v-if="editable && shots.length" class="pb-board__hint">
+          Arraste por todo o quadro · clique e gire com a alça ou ↺ ↻.
+          <button type="button" class="pb-board__reset" @click="resetLayout">Resetar posições</button>
+        </p>
+      </header>
+
+      <p v-if="!shots.length" class="pb-board__empty">Adicione fotos na fototeca para colar no quadro.</p>
     </div>
 
-    <header class="pb-board__header">
-      <p v-if="eyebrow" class="pb-board__eyebrow">{{ eyebrow }}</p>
-      <h1 class="pb-board__title">{{ book.title }}</h1>
-      <p v-if="book.subtitle" class="pb-board__subtitle">{{ book.subtitle }}</p>
-      <p v-if="editable && shots.length" class="pb-board__hint">
-        Arraste por todo o quadro · clique e gire com a alça ou ↺ ↻.
-        <button type="button" class="pb-board__reset" @click="resetLayout">Resetar posições</button>
-      </p>
-    </header>
-
-    <p v-if="!shots.length" class="pb-board__empty">Adicione fotos na fototeca para colar no quadro.</p>
-
-    <footer v-if="showFooter" class="pb-board__footer">
+    <footer v-if="showClosing" class="pb-board__footer">
       <RichText v-if="book.closingMessage" :text="book.closingMessage" class="pb-board__msg" />
       <p v-if="book.signature" class="pb-board__sign">{{ book.signature }}</p>
-      <ShareBar v-if="mode === 'full' && shareUrl" :url="shareUrl" :text="book.title" />
     </footer>
   </div>
 </template>
@@ -86,7 +87,6 @@
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import type { ComponentPublicInstance } from 'vue'
 import RichText from '@/components/experience/shared/RichText.vue'
-import ShareBar from '@/components/experience/shared/ShareBar.vue'
 import { getBookTheme, getThemeCssVars } from '../themes'
 import { normalizePresentationId } from '../presentations'
 import {
@@ -128,8 +128,9 @@ const boardStyle = computed(() =>
   }),
 )
 
-const boardRootStyle = computed(() => ({
-  ...boardStyle.value,
+const boardRootStyle = computed(() => boardStyle.value)
+
+const stageStyle = computed(() => ({
   minHeight: stageMinHeight.value,
 }))
 
@@ -243,11 +244,9 @@ const stageMinHeight = computed(() => {
   return `${Math.max(base, fromPositions)}px`
 })
 
-const showFooter = computed(
+const showClosing = computed(
   () =>
-    Boolean(props.book.closingMessage?.trim()) ||
-    Boolean(props.book.signature?.trim()) ||
-    (props.mode === 'full' && Boolean(props.shareUrl?.trim())),
+    Boolean(props.book.closingMessage?.trim()) || Boolean(props.book.signature?.trim()),
 )
 
 function setShotEl(id: string, el: Element | ComponentPublicInstance | null) {
@@ -442,11 +441,15 @@ onBeforeUnmount(() => {
 .pb-board {
   --pb-cork: var(--book-paper);
   --pb-cork-dark: var(--book-paper-alt);
+  width: 100%;
+  color: var(--book-ink);
+}
+
+.pb-board__stage {
   position: relative;
   width: 100%;
   min-height: var(--exp-stage, 70svh);
   padding: clamp(20px, 4vw, 36px) clamp(14px, 3vw, 28px) clamp(36px, 6vw, 56px);
-  color: var(--book-ink);
   overflow: visible;
   background:
     radial-gradient(circle at 18% 22%, rgba(255, 255, 255, 0.18), transparent 42%),
@@ -469,7 +472,7 @@ onBeforeUnmount(() => {
   box-shadow: inset 0 0 0 10px rgba(62, 44, 28, 0.18), inset 0 0 0 14px rgba(255, 245, 220, 0.12);
 }
 
-.pb-board--preview {
+.pb-board--preview .pb-board__stage {
   min-height: auto;
 }
 
@@ -776,15 +779,10 @@ onBeforeUnmount(() => {
 }
 
 .pb-board__footer {
-  position: relative;
-  z-index: 2;
   max-width: 520px;
-  margin: clamp(28px, 5vw, 44px) auto 0;
+  margin: 0 auto;
+  padding: clamp(24px, 4vw, 36px) clamp(16px, 4vw, 28px);
   text-align: center;
-  padding: 18px;
-  background: color-mix(in srgb, #fff8ec 75%, transparent);
-  border-radius: 4px;
-  box-shadow: 0 8px 20px -12px rgba(0, 0, 0, 0.35);
 }
 
 .pb-board__msg {

@@ -29,10 +29,9 @@
 
     <p v-else class="ar-page__empty">Adicione fotos na fototeca para montar o álbum retrato.</p>
 
-    <footer v-if="showFooter" class="ar-page__footer">
+    <footer v-if="showClosing" class="ar-page__footer">
       <RichText v-if="book.closingMessage" :text="book.closingMessage" class="ar-page__msg" />
       <p v-if="book.signature" class="ar-page__sign">{{ book.signature }}</p>
-      <ShareBar v-if="mode === 'full' && shareUrl" :url="shareUrl" :text="book.title" />
     </footer>
   </div>
 </template>
@@ -40,7 +39,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import RichText from '@/components/experience/shared/RichText.vue'
-import ShareBar from '@/components/experience/shared/ShareBar.vue'
 import { getBookTheme, getThemeCssVars } from '../themes'
 import { normalizePresentationId } from '../presentations'
 import { resolveBookConfig } from '../bookConfig'
@@ -97,11 +95,9 @@ const prints = computed(() => {
   })
 })
 
-const showFooter = computed(
+const showClosing = computed(
   () =>
-    Boolean(props.book.closingMessage?.trim()) ||
-    Boolean(props.book.signature?.trim()) ||
-    (props.mode === 'full' && Boolean(props.shareUrl?.trim())),
+    Boolean(props.book.closingMessage?.trim()) || Boolean(props.book.signature?.trim()),
 )
 </script>
 

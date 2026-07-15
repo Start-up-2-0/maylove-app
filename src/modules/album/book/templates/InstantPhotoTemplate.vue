@@ -80,10 +80,9 @@
           Adicione fotos na fototeca para montar o Instant Photo.
         </p>
 
-        <footer v-if="showFooter" class="ip-footer">
+        <footer v-if="showClosing" class="ip-footer">
           <RichText v-if="book.closingMessage" :text="book.closingMessage" class="ip-footer__msg" />
           <p v-if="book.signature" class="ip-footer__sign">{{ book.signature }}</p>
-          <ShareBar v-if="mode === 'full' && shareUrl" :url="shareUrl" :text="book.title" />
         </footer>
       </div>
     </div>
@@ -93,7 +92,6 @@
 <script setup lang="ts">
 import { computed, nextTick, ref } from 'vue'
 import RichText from '@/components/experience/shared/RichText.vue'
-import ShareBar from '@/components/experience/shared/ShareBar.vue'
 import { getBookTheme, getThemeCssVars } from '../themes'
 import { normalizePresentationId } from '../presentations'
 import { resolveBookConfig } from '../bookConfig'
@@ -150,11 +148,9 @@ const spreads = computed(() =>
   })),
 )
 
-const showFooter = computed(
+const showClosing = computed(
   () =>
-    Boolean(props.book.closingMessage?.trim()) ||
-    Boolean(props.book.signature?.trim()) ||
-    (props.mode === 'full' && Boolean(props.shareUrl?.trim())),
+    Boolean(props.book.closingMessage?.trim()) || Boolean(props.book.signature?.trim()),
 )
 
 /** Preview do wizard já começa aberto para ver as colagens. */
