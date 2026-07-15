@@ -128,7 +128,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useTheme } from '@/composables/useTheme'
@@ -140,6 +140,13 @@ const route = useRoute()
 const { isDark, toggle } = useTheme()
 
 const drawerOpen = ref(false)
+const DESKTOP_BREAKPOINT = 1024
+
+function closeDrawerIfDesktop() {
+  if (window.innerWidth >= DESKTOP_BREAKPOINT) {
+    drawerOpen.value = false
+  }
+}
 
 watch(
   () => route.fullPath,
@@ -147,6 +154,15 @@ watch(
     drawerOpen.value = false
   },
 )
+
+onMounted(() => {
+  closeDrawerIfDesktop()
+  window.addEventListener('resize', closeDrawerIfDesktop)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', closeDrawerIfDesktop)
+})
 
 const initials = computed(() => {
   const name = auth.user?.name?.trim()
@@ -452,6 +468,9 @@ async function logout() {
     opacity var(--dur) var(--ease),
     transform var(--dur) var(--ease);
 }
+.page-leave-active {
+  pointer-events: none;
+}
 .page-enter-from {
   opacity: 0;
   transform: translateY(6px);
@@ -461,6 +480,13 @@ async function logout() {
 }
 
 /* ---------- Responsivo ---------- */
+@media (min-width: 1024px) {
+  .app-overlay {
+    display: none;
+    pointer-events: none;
+  }
+}
+
 @media (max-width: 1023px) {
   .sidebar {
     transform: translateX(-100%);

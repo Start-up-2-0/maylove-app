@@ -6,7 +6,6 @@
       role="dialog"
       aria-modal="true"
       :aria-label="current?.title || 'Visualizar foto'"
-      @keydown.esc.prevent="close"
       @keydown.left.prevent="prev"
       @keydown.right.prevent="next"
     >
@@ -56,7 +55,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, nextTick, ref, toRef, watch } from 'vue'
+import { useModalLifecycle } from '@/composables/useModalLifecycle'
 
 export interface LightboxPhoto {
   id: string
@@ -108,6 +108,8 @@ watch(
 function close() {
   emit('close')
 }
+
+useModalLifecycle(toRef(props, 'open'), close, { lockScroll: true })
 
 function prev() {
   if (props.photos.length < 2) return

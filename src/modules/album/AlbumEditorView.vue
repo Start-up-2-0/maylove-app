@@ -158,9 +158,13 @@ watch(
 watch(currentStep, (step, previous) => {
   void router.replace({ query: { ...route.query, step } })
   if ((previous === 'photos' || previous === 'pages') && step !== previous) {
-    void reload()
+    void (async () => {
+      await flushAutosave()
+      await reload()
+    })()
+    return
   }
-  if (step === 'preview') {
+  if (step === 'preview' && previous !== 'preview') {
     void refreshPreview()
   }
 })
@@ -172,8 +176,13 @@ function stepIndex(step: AlbumWizardStep): number {
   return wizardSteps.value.indexOf(step)
 }
 
-function goToStep(step: AlbumWizardStep) {
-  if (wizardSteps.value.includes(step)) currentStep.value = step
+async function goToStep(step: AlbumWizardStep) {
+  if (!wizardSteps.value.includes(step)) return
+  if (currentStep.value === 'photos' && step !== 'photos') {
+    await photosStepRef.value?.flushPendingCaptionSaves()
+    await flushAutosave()
+  }
+  currentStep.value = step
 }
 
 async function goToPublish() {

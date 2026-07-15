@@ -146,6 +146,7 @@ import { computed, onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import { deleteAlbum, listAlbums } from '@/api/albums'
 import type { AlbumSummary } from '@/api/types'
+import { useModalLifecycle } from '@/composables/useModalLifecycle'
 
 const rawAlbums = ref<AlbumSummary[]>([])
 const loading = ref(true)
@@ -244,6 +245,8 @@ function cancelDelete() {
   deleteTarget.value = null
   deleteError.value = ''
 }
+
+useModalLifecycle(deleteTarget, cancelDelete)
 
 async function executeDelete() {
   if (!deleteTarget.value) return

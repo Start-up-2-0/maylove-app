@@ -152,6 +152,7 @@ function onMoveDown(id: string, event: PointerEvent) {
   target.setPointerCapture?.(event.pointerId)
   window.addEventListener('pointermove', onMoveMove)
   window.addEventListener('pointerup', onMoveUp)
+  window.addEventListener('pointercancel', onMoveUp)
 }
 
 function onMoveMove(event: PointerEvent) {
@@ -170,6 +171,7 @@ function onMoveUp() {
   draggingId.value = null
   window.removeEventListener('pointermove', onMoveMove)
   window.removeEventListener('pointerup', onMoveUp)
+  window.removeEventListener('pointercancel', onMoveUp)
 }
 
 function nudgeRotation(id: string, delta: number) {

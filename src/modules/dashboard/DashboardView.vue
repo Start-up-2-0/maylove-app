@@ -182,6 +182,7 @@ import { deleteTribute, listTributes } from '@/api/tributes'
 import type { TributeSummary } from '@/api/types'
 import { useAuthStore } from '@/stores/auth'
 import { formatTributeMeta } from '@/utils/tributeMeta'
+import { useModalLifecycle } from '@/composables/useModalLifecycle'
 
 const auth = useAuthStore()
 
@@ -324,6 +325,8 @@ function cancelDelete() {
   deleteTarget.value = null
   deleteError.value = ''
 }
+
+useModalLifecycle(deleteTarget, cancelDelete)
 
 async function executeDelete() {
   if (!deleteTarget.value) return

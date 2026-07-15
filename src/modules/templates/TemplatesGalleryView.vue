@@ -102,6 +102,7 @@ import {
   categoryLabel,
 } from '@/templates/categories'
 import { resolveContent, resolveTheme } from '@/composables/useExperienceContent'
+import { useModalLifecycle } from '@/composables/useModalLifecycle'
 import ExperienceRenderer from '@/components/experience/ExperienceRenderer.vue'
 
 const router = useRouter()
@@ -160,13 +161,13 @@ function bannerStyle(def: TemplateDefinition) {
 
 function openPreview(def: TemplateDefinition) {
   previewDef.value = def
-  document.body.style.overflow = 'hidden'
 }
 
 function closePreview() {
   previewDef.value = null
-  document.body.style.overflow = ''
 }
+
+useModalLifecycle(previewDef, closePreview, { lockScroll: true })
 
 async function use(def: TemplateDefinition) {
   const catalog = catalogTemplates.value.find((item) => item.slug === def.slug)
