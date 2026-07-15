@@ -76,12 +76,22 @@ export type BookPageLayout =
   | 'bleed'
   | 'text_photo'
   | 'text'
+  | 'polaroid_1'
+  | 'polaroid_2'
+  | 'polaroid_3'
+  | 'polaroid_4'
 
 export interface BookPageSlot {
   media_id: string | null
   show_title: boolean
   show_caption: boolean
   show_date: boolean
+  /** Posição livre no stage Polaroid (% do palco). */
+  x?: number | null
+  y?: number | null
+  rotation?: number | null
+  /** Escala relativa (0.55–1.35). */
+  scale?: number | null
 }
 
 export interface BookPage {
@@ -358,15 +368,90 @@ export const BOOK_PAGE_LAYOUTS: Array<{
     pageLayout: 'text-focus',
     hint: 'Pausa narrativa entre capítulos',
   },
+  {
+    id: 'polaroid_1',
+    label: 'Polaroid 1',
+    slots: 1,
+    pageLayout: 'polaroid-memory',
+    hint: 'Uma Polaroid com legenda à mão',
+  },
+  {
+    id: 'polaroid_2',
+    label: 'Polaroid 2',
+    slots: 2,
+    pageLayout: 'polaroid-memory',
+    hint: 'Duas Polaroids espalhadas na página',
+  },
+  {
+    id: 'polaroid_3',
+    label: 'Polaroid 3',
+    slots: 3,
+    pageLayout: 'polaroid-memory',
+    hint: 'Três Polaroids tipo scrapbook',
+  },
+  {
+    id: 'polaroid_4',
+    label: 'Polaroid 4',
+    slots: 4,
+    pageLayout: 'polaroid-memory',
+    hint: 'Quatro Polaroids sobre a mesa',
+  },
 ]
 
-export function emptySlots(count: number): BookPageSlot[] {
-  return Array.from({ length: count }, () => ({
-    media_id: null,
-    show_title: true,
-    show_caption: true,
-    show_date: true,
-  }))
+const POLAROID_PLACEMENTS: Array<Array<{ x: number; y: number; rotation: number; scale: number }>> = [
+  [{ x: 50, y: 48, rotation: -2.5, scale: 1 }],
+  [
+    { x: 34, y: 44, rotation: -5, scale: 0.92 },
+    { x: 66, y: 54, rotation: 4.5, scale: 0.9 },
+  ],
+  [
+    { x: 28, y: 38, rotation: -6, scale: 0.82 },
+    { x: 58, y: 34, rotation: 3, scale: 0.88 },
+    { x: 48, y: 66, rotation: -2, scale: 0.86 },
+  ],
+  [
+    { x: 26, y: 34, rotation: -7, scale: 0.72 },
+    { x: 58, y: 30, rotation: 4, scale: 0.76 },
+    { x: 34, y: 64, rotation: 5, scale: 0.74 },
+    { x: 68, y: 62, rotation: -3.5, scale: 0.78 },
+  ],
+]
+
+export function isPolaroidPageLayout(layout: BookPageLayout | string): boolean {
+  return String(layout).startsWith('polaroid')
+}
+
+export function defaultPolaroidPlacement(index: number, total: number) {
+  const pack = POLAROID_PLACEMENTS[Math.min(Math.max(total, 1), 4) - 1]
+  return pack[Math.min(index, pack.length - 1)]
+}
+
+export function clampPolaroidScale(value?: number | null): number {
+  const n = Number(value)
+  if (!Number.isFinite(n)) return 1
+  return Math.min(1.35, Math.max(0.55, n))
+}
+
+export function emptySlots(count: number, layout?: BookPageLayout): BookPageSlot[] {
+  const polaroid = layout ? isPolaroidPageLayout(layout) : false
+  return Array.from({ length: count }, (_, index) => {
+    const base: BookPageSlot = {
+      media_id: null,
+      show_title: true,
+      show_caption: true,
+      show_date: false,
+    }
+    if (!polaroid) return base
+    const place = defaultPolaroidPlacement(index, count)
+    return {
+      ...base,
+      show_date: true,
+      x: place.x,
+      y: place.y,
+      rotation: place.rotation,
+      scale: place.scale,
+    }
+  })
 }
 
 export function createBookPage(layout: BookPageLayout, sortOrder: number): BookPage {
@@ -377,10 +462,29 @@ export function createBookPage(layout: BookPageLayout, sortOrder: number): BookP
     layout: def.id,
     title: null,
     place_name: null,
-    slots: emptySlots(def.slots),
+    slots: emptySlots(def.slots, def.id),
   }
 }
 
 export function slotCountForLayout(layout: BookPageLayout): number {
   return BOOK_PAGE_LAYOUTS.find((item) => item.id === layout)?.slots ?? 1
+}
+
+/** Preenche x/y/rotação/escala ausentes em slots Polaroid. */
+export function ensurePolaroidPlacements(page: BookPage): BookPage {
+  if (!isPolaroidPageLayout(page.layout)) return page
+  const total = Math.max(page.slots.length, 1)
+  return {
+    ...page,
+    slots: page.slots.map((slot, index) => {
+      const place = defaultPolaroidPlacement(index, total)
+      return {
+        ...slot,
+        x: typeof slot.x === 'number' ? slot.x : place.x,
+        y: typeof slot.y === 'number' ? slot.y : place.y,
+        rotation: typeof slot.rotation === 'number' ? slot.rotation : place.rotation,
+        scale: clampPolaroidScale(slot.scale ?? place.scale),
+      }
+    }),
+  }
 }

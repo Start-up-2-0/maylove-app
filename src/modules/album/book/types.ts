@@ -26,6 +26,11 @@ export interface MemoryBookPhoto {
   title?: string
   caption?: string
   memoryDate?: string
+  /** Posicionamento livre (páginas Polaroid scrap). */
+  x?: number
+  y?: number
+  rotation?: number
+  scale?: number
 }
 
 export interface MemoryBookContentPage {

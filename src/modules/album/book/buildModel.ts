@@ -10,6 +10,9 @@ import { getBookTheme } from './themes'
 import { resolveMediaUrl } from './mediaUrl'
 import {
   resolveBookConfig,
+  clampPolaroidScale,
+  defaultPolaroidPlacement,
+  isPolaroidPageLayout,
   type BookConfig,
   type BookPage,
   type BookPageLayout,
@@ -114,6 +117,7 @@ function mapLayout(layout: BookPageLayout, _hasText: boolean): PageLayoutId {
   if (layout === 'text') return 'text-focus'
   if (layout === 'two') return 'asymmetric-duo'
   if (layout === 'three') return 'editorial-trio'
+  if (isPolaroidPageLayout(layout)) return 'polaroid-memory'
   if (layout === 'text_photo' || layout === 'one') return 'hero-caption'
   return 'hero-caption'
 }
@@ -127,29 +131,47 @@ function buildPagesFromBookPages(
   const sorted = [...bookPages].sort((a, b) => a.sort_order - b.sort_order)
 
   return sorted.map((page, index) => {
+    const polaroid = isPolaroidPageLayout(page.layout)
+    const filledSlots = page.slots ?? []
     const photos: MemoryBookPhoto[] = []
-    for (const slot of page.slots ?? []) {
-      if (!slot.media_id) continue
+
+    filledSlots.forEach((slot, slotIndex) => {
+      if (!slot.media_id) return
       const raw = byId.get(slot.media_id)
-      if (!raw) continue
+      if (!raw) return
       const photo = toBookPhoto(raw)
+      const place = polaroid
+        ? {
+            x: typeof slot.x === 'number' ? slot.x : defaultPolaroidPlacement(slotIndex, filledSlots.length).x,
+            y: typeof slot.y === 'number' ? slot.y : defaultPolaroidPlacement(slotIndex, filledSlots.length).y,
+            rotation:
+              typeof slot.rotation === 'number'
+                ? slot.rotation
+                : defaultPolaroidPlacement(slotIndex, filledSlots.length).rotation,
+            scale: clampPolaroidScale(
+              slot.scale ?? defaultPolaroidPlacement(slotIndex, filledSlots.length).scale,
+            ),
+          }
+        : {}
+
       photos.push({
         ...photo,
         title: slot.show_title ? photo.title : undefined,
         caption: slot.show_caption ? photo.caption : undefined,
         memoryDate: slot.show_date ? photo.memoryDate : undefined,
+        ...place,
       })
-    }
+    })
 
     const lead = photos[0]
-    const pageTitle = page.title?.trim() || lead?.title
+    const pageTitle = page.title?.trim() || (polaroid ? undefined : lead?.title)
     const message =
       page.layout === 'text' || page.layout === 'text_photo'
         ? page.place_name?.trim() || lead?.caption
-        : photos.length === 1
+        : !polaroid && photos.length === 1
           ? lead?.caption
-          : undefined
-    const memoryDate = photos.length === 1 ? lead?.memoryDate : undefined
+          : page.place_name?.trim() || undefined
+    const memoryDate = !polaroid && photos.length === 1 ? lead?.memoryDate : undefined
 
     return {
       kind: 'content' as const,

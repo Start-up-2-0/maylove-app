@@ -26,26 +26,10 @@
       </div>
     </template>
 
-    <!-- Polaroid (fase 2; mantido no modelo) -->
+    <!-- Polaroid scrapbook -->
     <template v-else-if="page.layout === 'polaroid-memory'">
-      <div
-        class="page-comp__polaroid-grid"
-        :class="`page-comp__polaroid-grid--${Math.min(page.photos.length || 1, 3)}`"
-      >
-        <PolaroidFrame
-          v-for="(photo, index) in page.photos"
-          :key="photo.id"
-          :url="photo.url"
-          :title="photo.title"
-          :caption="photo.caption"
-          :memory-date="photo.memoryDate"
-          :frame-style="frameStyle"
-          :rotation="index % 2 === 0 ? -2 : 2"
-        />
-      </div>
-      <div v-if="page.message && page.photos.length <= 1" class="page-comp__aside">
-        <RichText :text="page.message" />
-      </div>
+      <PolaroidScrapStage :photos="page.photos" :frame-style="frameStyle" />
+      <p v-if="page.title" class="page-comp__scrap-title">{{ page.title }}</p>
     </template>
 
     <!-- Full bleed -->
@@ -103,7 +87,7 @@ import { computed } from 'vue'
 import RichText from '@/components/experience/shared/RichText.vue'
 import type { BookTheme } from '../themes'
 import type { BookFrameStyle } from '../frameStyles'
-import PolaroidFrame from './PolaroidFrame.vue'
+import PolaroidScrapStage from './PolaroidScrapStage.vue'
 import type { MemoryBookContentPage } from '../types'
 
 const props = withDefaults(
@@ -381,31 +365,23 @@ const showCaptionBlock = computed(() =>
   color: var(--book-muted);
 }
 
-.page-comp__polaroid-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: clamp(18px, 3vw, 28px);
-  place-content: center;
-  flex: 1;
-  width: 100%;
-  padding: 8px;
-}
-
-.page-comp__polaroid-grid--1 {
-  grid-template-columns: minmax(180px, 300px);
-}
-
-.page-comp__polaroid-grid--2 {
-  grid-template-columns: repeat(2, minmax(140px, 260px));
-}
-
-.page-comp__aside {
-  margin-top: 16px;
-  padding: 0 12px;
-  font-family: var(--book-font-accent);
-  font-size: 1.1rem;
+.page-comp__scrap-title {
+  margin: 0;
+  padding: 14px 18px 4px;
   text-align: center;
+  font-family: 'Caveat', 'Segoe Print', cursive;
+  font-size: 1.45rem;
   color: var(--book-muted);
+}
+
+.page-comp--polaroid-memory {
+  padding: 10px;
+  overflow: hidden;
+}
+
+.page-comp--polaroid-memory :deep(.scrap) {
+  min-height: clamp(340px, 52vh, 600px);
+  background: transparent;
 }
 
 .page-comp--luxury {

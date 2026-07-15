@@ -2,7 +2,7 @@
   <div class="pages-step">
     <WizardStepHeader
       title="Diagramação das páginas"
-      description="Monte a narrativa: escolha o layout, as fotos e o ritmo entre imagens e texto — como em um photobook de estúdio."
+      description="Monte a narrativa com layouts editoriais e páginas Polaroid scrapbook — arraste, gire e redimensione."
     />
 
     <div class="pages-toolbar">
@@ -26,7 +26,7 @@
     </div>
 
     <p v-if="!form.book_pages.length" class="text-muted pages-empty">
-      Nenhuma página ainda. Gere a partir da fototeca ou adicione layouts (foto inteira, legenda, texto…).
+      Nenhuma página ainda. Gere a partir da fototeca ou adicione layouts (incluindo Polaroid 1–4).
     </p>
 
     <div class="pages-list">
@@ -106,6 +106,16 @@
             </div>
           </div>
         </div>
+
+        <div v-if="isPolaroidPageLayout(page.layout)" class="scrap-editor">
+          <p class="scrap-editor__label">Composição Polaroid</p>
+          <PolaroidScrapStage
+            :photos="scrapPhotosFor(page)"
+            :frame-style="form.book_config.frame_style"
+            editable
+            @change="(shots) => onScrapChange(page, shots)"
+          />
+        </div>
       </article>
     </div>
 
@@ -126,15 +136,21 @@ import type { AlbumMedia } from '@/api/types'
 import type { useAlbumWizard } from '@/composables/useAlbumWizard'
 import WizardStepHeader from '@/components/wizard/WizardStepHeader.vue'
 import BookRenderer from '../book/BookRenderer.vue'
+import PolaroidScrapStage, { type ScrapShot } from '../book/shared/PolaroidScrapStage.vue'
 import { buildMemoryBookModelFromDetail } from '../book/buildModel'
+import { resolveMediaUrl } from '../book/mediaUrl'
 import {
   BOOK_PAGE_LAYOUTS,
+  clampPolaroidScale,
   createBookPage,
   emptySlots,
+  ensurePolaroidPlacements,
+  isPolaroidPageLayout,
   slotCountForLayout,
   type BookPage,
   type BookPageLayout,
 } from '../book/bookConfig'
+import type { MemoryBookPhoto } from '../book/types'
 
 const props = defineProps<{
   form: ReturnType<typeof useAlbumWizard>['form']
@@ -162,6 +178,44 @@ const previewBook = computed(() => {
 
 function layoutHint(layout: BookPageLayout) {
   return BOOK_PAGE_LAYOUTS.find((item) => item.id === layout)?.hint ?? ''
+}
+
+function scrapPhotosFor(page: BookPage): MemoryBookPhoto[] {
+  const ensured = ensurePolaroidPlacements(page)
+  const result: MemoryBookPhoto[] = []
+  for (const slot of ensured.slots) {
+    if (!slot.media_id) continue
+    const media = props.photos.find((photo) => photo.id === slot.media_id)
+    if (!media) continue
+    result.push({
+      id: media.id,
+      url: resolveMediaUrl(media.url, media.url_thumbnail) ?? '',
+      title: slot.show_title ? media.title ?? undefined : undefined,
+      caption: slot.show_caption ? media.caption ?? undefined : undefined,
+      memoryDate: slot.show_date ? media.memory_date ?? undefined : undefined,
+      x: slot.x ?? undefined,
+      y: slot.y ?? undefined,
+      rotation: slot.rotation ?? undefined,
+      scale: slot.scale ?? undefined,
+    })
+  }
+  return result
+}
+
+function onScrapChange(page: BookPage, shots: ScrapShot[]) {
+  const byId = new Map(shots.map((shot) => [shot.id, shot]))
+  page.slots = page.slots.map((slot) => {
+    if (!slot.media_id) return slot
+    const shot = byId.get(slot.media_id)
+    if (!shot) return slot
+    return {
+      ...slot,
+      x: shot.x,
+      y: shot.y,
+      rotation: shot.rotation,
+      scale: clampPolaroidScale(shot.scale),
+    }
+  })
 }
 
 function reindex() {
@@ -203,16 +257,23 @@ function onLayoutChange(page: BookPage, layoutId: string) {
   const count = slotCountForLayout(layout)
   page.layout = layout
   const previous = page.slots
-  page.slots = emptySlots(count).map((slot, index) => ({
+  page.slots = emptySlots(count, layout).map((slot, index) => ({
     ...slot,
     media_id: previous[index]?.media_id ?? null,
-    show_title: previous[index]?.show_title ?? true,
-    show_caption: previous[index]?.show_caption ?? true,
-    show_date: previous[index]?.show_date ?? true,
+    show_title: previous[index]?.show_title ?? slot.show_title,
+    show_caption: previous[index]?.show_caption ?? slot.show_caption,
+    show_date: previous[index]?.show_date ?? slot.show_date,
+    x: previous[index]?.x ?? slot.x,
+    y: previous[index]?.y ?? slot.y,
+    rotation: previous[index]?.rotation ?? slot.rotation,
+    scale: previous[index]?.scale ?? slot.scale,
   }))
+  if (isPolaroidPageLayout(layout)) {
+    page.slots = ensurePolaroidPlacements(page).slots
+  }
 }
 
-/** Ritmo editorial: 1ª foto em bleed, depois foto+legenda; pares viram duo. */
+/** Ritmo editorial + ocasional Polaroid scrap. */
 function autoFillFromPhotos() {
   const sorted = [...props.photos].sort((a, b) => a.sort_order - b.sort_order)
   const pages: BookPage[] = []
@@ -236,7 +297,31 @@ function autoFillFromPhotos() {
       continue
     }
 
-    if (remaining >= 3 && i % 5 === 0) {
+    if (remaining >= 3 && i % 7 === 0) {
+      const chunk = sorted.slice(i, i + 3)
+      const page = createBookPage('polaroid_3', pages.length)
+      page.slots = page.slots.map((slot, idx) => ({
+        ...slot,
+        media_id: chunk[idx]?.id ?? null,
+      }))
+      pages.push(ensurePolaroidPlacements(page))
+      i += 3
+      continue
+    }
+
+    if (remaining >= 2 && i % 5 === 0) {
+      const chunk = sorted.slice(i, i + 2)
+      const page = createBookPage('polaroid_2', pages.length)
+      page.slots = page.slots.map((slot, idx) => ({
+        ...slot,
+        media_id: chunk[idx]?.id ?? null,
+      }))
+      pages.push(ensurePolaroidPlacements(page))
+      i += 2
+      continue
+    }
+
+    if (remaining >= 3 && i % 4 === 0) {
       const chunk = sorted.slice(i, i + 3)
       const page = createBookPage('three', pages.length)
       page.slots = chunk.map((photo) => ({
@@ -247,20 +332,6 @@ function autoFillFromPhotos() {
       }))
       pages.push(page)
       i += 3
-      continue
-    }
-
-    if (remaining >= 2 && i % 4 === 0) {
-      const chunk = sorted.slice(i, i + 2)
-      const page = createBookPage('two', pages.length)
-      page.slots = chunk.map((photo) => ({
-        media_id: photo.id,
-        show_title: true,
-        show_caption: false,
-        show_date: true,
-      }))
-      pages.push(page)
-      i += 2
       continue
     }
 
@@ -358,6 +429,20 @@ function autoFillFromPhotos() {
   flex-wrap: wrap;
   gap: 12px;
   font-size: 0.86rem;
+}
+
+.scrap-editor {
+  display: grid;
+  gap: 8px;
+}
+
+.scrap-editor__label {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
 }
 
 .pages-estimate {

@@ -47,6 +47,26 @@
       </fieldset>
 
       <fieldset class="basics-fieldset">
+        <legend>Moldura Polaroid</legend>
+        <p class="basics-hint">Usada nas páginas Polaroid scrapbook.</p>
+        <div class="frame-styles">
+          <label
+            v-for="style in frameStyles"
+            :key="style.id"
+            class="frame-style"
+            :class="{ 'frame-style--active': form.book_config.frame_style === style.id }"
+          >
+            <input v-model="form.book_config.frame_style" type="radio" :value="style.id" />
+            <span class="frame-style__swatch" :data-style="style.id" aria-hidden="true" />
+            <span class="frame-style__copy">
+              <strong>{{ style.label }}</strong>
+              <small>{{ style.hint }}</small>
+            </span>
+          </label>
+        </div>
+      </fieldset>
+
+      <fieldset class="basics-fieldset">
         <legend>Cores do papel</legend>
         <div class="color-row">
           <label class="ml-field">
@@ -97,12 +117,15 @@ import type { useAlbumWizard } from '@/composables/useAlbumWizard'
 import WizardStepHeader from '@/components/wizard/WizardStepHeader.vue'
 import { buildMemoryBookModelFromDetail } from '../book/buildModel'
 import BookRenderer from '../book/BookRenderer.vue'
+import { BOOK_FRAME_STYLES } from '../book/frameStyles'
 
 const props = defineProps<{
   form: ReturnType<typeof useAlbumWizard>['form']
   album: ReturnType<typeof useAlbumWizard>['album']['value']
   photos: AlbumMedia[]
 }>()
+
+const frameStyles = BOOK_FRAME_STYLES
 
 const fontPresets = [
   {
@@ -198,6 +221,86 @@ const previewBook = computed(() => {
 .font-preset--active {
   border-color: color-mix(in srgb, var(--accent, #c45d7a) 55%, var(--border));
   background: color-mix(in srgb, var(--accent, #c45d7a) 8%, transparent);
+}
+
+.basics-hint {
+  margin: 0 0 10px;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.frame-styles {
+  display: grid;
+  gap: 8px;
+}
+
+.frame-style {
+  display: grid;
+  grid-template-columns: 36px 1fr;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+
+.frame-style input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.frame-style--active {
+  border-color: color-mix(in srgb, var(--accent, #c45d7a) 55%, var(--border));
+  background: color-mix(in srgb, var(--accent, #c45d7a) 8%, transparent);
+}
+
+.frame-style__swatch {
+  width: 36px;
+  height: 36px;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: inset 0 0 0 5px #fbfaf7;
+}
+
+.frame-style__swatch[data-style='classic'] {
+  background: #ddd;
+  box-shadow: inset 0 0 0 5px #fbfaf7;
+}
+.frame-style__swatch[data-style='cream'] {
+  background: #c4a574;
+  box-shadow: inset 0 0 0 5px #f3e8d4;
+}
+.frame-style__swatch[data-style='charcoal'] {
+  background: #111;
+  box-shadow: inset 0 0 0 5px #2a2e35;
+}
+.frame-style__swatch[data-style='kraft'] {
+  background: #8b6914;
+  box-shadow: inset 0 0 0 5px #d2b48c;
+}
+.frame-style__swatch[data-style='blush'] {
+  background: #d48aa0;
+  box-shadow: inset 0 0 0 5px #f7e4ea;
+}
+.frame-style__swatch[data-style='ink'] {
+  background: #1d4f73;
+  box-shadow: inset 0 0 0 5px #f8fafc;
+}
+
+.frame-style__copy {
+  display: grid;
+  gap: 2px;
+}
+
+.frame-style__copy strong {
+  font-size: 0.9rem;
+}
+
+.frame-style__copy small {
+  color: var(--muted);
+  font-size: 0.75rem;
 }
 
 .color-row {

@@ -1,7 +1,14 @@
 <template>
   <figure
     class="pf"
-    :class="[`pf--${frameStyle}`, { 'pf--compact': compact }]"
+    :class="[
+      `pf--${frameStyle}`,
+      {
+        'pf--compact': compact,
+        'pf--hand': handwritten,
+      },
+    ]"
+    :style="rotationStyle"
   >
     <div class="pf__photo">
       <img :src="url" :alt="title || 'Memória'" loading="lazy" draggable="false" />
@@ -28,9 +35,11 @@ const props = withDefaults(
     caption?: string | null
     memoryDate?: string | null
     frameStyle?: BookFrameStyle | string | null
-    /** Mantido por compatibilidade; molduras ficam sempre retas. */
+    /** Rotação visual da moldura (graus). Preferir transformar no container scrap. */
     rotation?: number | string | null
     compact?: boolean
+    /** Legenda com tipografia manuscrita. */
+    handwritten?: boolean
   }>(),
   {
     title: null,
@@ -39,6 +48,7 @@ const props = withDefaults(
     frameStyle: 'classic',
     rotation: null,
     compact: false,
+    handwritten: false,
   },
 )
 
@@ -49,6 +59,14 @@ const dateLabel = computed(() => props.memoryDate?.trim() || '')
 const showCaption = computed(
   () => Boolean(props.title?.trim() || props.caption?.trim() || dateLabel.value),
 )
+
+const rotationStyle = computed(() => {
+  const raw = props.rotation
+  if (raw == null || raw === '') return undefined
+  const deg = typeof raw === 'number' ? raw : Number.parseFloat(String(raw))
+  if (!Number.isFinite(deg) || deg === 0) return undefined
+  return { transform: `rotate(${deg}deg)` }
+})
 </script>
 
 <style scoped>
@@ -58,7 +76,7 @@ const showCaption = computed(
   --pf-muted: color-mix(in srgb, var(--pf-ink) 55%, transparent);
   --pf-shadow: 0 14px 28px -16px rgba(28, 36, 48, 0.45);
   --pf-pad: 10px 10px 0;
-  --pf-cap-pad: 12px 10px 16px;
+  --pf-cap-pad: 14px 12px 22px;
   --pf-radius: 2px;
 
   margin: 0;
@@ -75,7 +93,36 @@ const showCaption = computed(
 
 .pf--compact {
   --pf-pad: 8px 8px 0;
-  --pf-cap-pad: 8px 8px 12px;
+  --pf-cap-pad: 10px 8px 18px;
+}
+
+.pf--hand {
+  --pf-cap-pad: 12px 14px 26px;
+}
+
+.pf--hand .pf__title,
+.pf--hand .pf__desc,
+.pf--hand .pf__date {
+  font-family: 'Caveat', 'Segoe Print', cursive;
+  letter-spacing: 0.01em;
+  text-transform: none;
+}
+
+.pf--hand .pf__title {
+  font-size: 1.35rem;
+  font-weight: 600;
+  line-height: 1.15;
+}
+
+.pf--hand .pf__desc {
+  font-size: 1.12rem;
+  line-height: 1.25;
+  color: var(--pf-ink);
+}
+
+.pf--hand .pf__date {
+  font-size: 1rem;
+  letter-spacing: 0.02em;
 }
 
 .pf--classic {
@@ -125,7 +172,6 @@ const showCaption = computed(
   align-items: center;
   justify-content: center;
   background: color-mix(in srgb, var(--pf-ink) 6%, transparent);
-  /* Sem aspect-ratio fixo: a moldura acompanha a proporção da foto. */
   line-height: 0;
 }
 
@@ -140,7 +186,7 @@ const showCaption = computed(
 
 .pf__cap {
   padding: var(--pf-cap-pad);
-  min-height: 3.2rem;
+  min-height: 3.4rem;
   display: flex;
   flex-direction: column;
   gap: 4px;
