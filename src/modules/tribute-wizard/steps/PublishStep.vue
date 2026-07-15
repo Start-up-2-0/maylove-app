@@ -3,7 +3,7 @@
     <WizardStepHeader
       title="Publicar"
       :description="billingEnabled
-        ? 'Valide os requisitos e publique ou inicie o pagamento avulso.'
+        ? 'Valide os requisitos e pague com PIX para publicar a homenagem.'
         : 'Valide os requisitos e publique a homenagem.'"
     />
 
@@ -37,7 +37,7 @@
     </section>
 
     <div v-if="tribute?.status === 'published'" class="ml-card published-card">
-      <h3 class="published-card__title">Homenagem publicada! 🎉</h3>
+      <h3 class="published-card__title">Homenagem publicada!</h3>
       <p class="text-muted published-card__sub">Compartilhe o link com quem você ama.</p>
       <div class="published-card__row">
         <input :value="publicUrl" readonly class="ml-input" />
@@ -50,6 +50,7 @@
 
     <div v-else class="publish-actions">
       <button
+        v-if="canPublishDirectly"
         class="ml-btn ml-btn--primary ml-btn--lg"
         :disabled="publishBlocked || publishing"
         @click="publish"
@@ -59,14 +60,16 @@
       </button>
       <button
         v-if="billingEnabled && !hasSubscription"
-        class="ml-btn ml-btn--secondary ml-btn--lg"
+        class="ml-btn ml-btn--primary ml-btn--lg"
         :disabled="publishBlocked || checkingOut"
         @click="startCheckout"
       >
         <span v-if="checkingOut" class="ml-spinner ml-spinner--sm" />
-        Pagar R$ {{ priceLabel }} e publicar
+        Pagar R$ {{ priceLabel }} com PIX
       </button>
     </div>
+
+    <PixCheckoutPanel :checkout="checkout" @paid="onPixPaid" />
 
     <p v-if="actionError" class="ml-alert ml-alert--danger mt-3">{{ actionError }}</p>
   </div>
@@ -81,10 +84,12 @@ import {
   publishTribute,
   validateTribute,
 } from '@/api/tributes'
-import type { TributeDetail, TributeValidation } from '@/api/types'
+import { fetchBillingProduct } from '@/api/billing'
+import type { CheckoutResponse, TributeDetail, TributeValidation } from '@/api/types'
 import { getTemplateDefinition } from '@/templates/registry'
 import { resolvePresentationSchema } from '@/templates/presentationSchema'
 import WizardStepHeader from '@/components/wizard/WizardStepHeader.vue'
+import PixCheckoutPanel from '@/components/billing/PixCheckoutPanel.vue'
 
 const props = defineProps<{
   tributeId: string
@@ -93,8 +98,6 @@ const props = defineProps<{
 
 const MOMENT_LAYOUTS = ['envelope', 'timeline', 'album', 'storytelling', 'cinematic', 'proposal']
 
-// Validações derivadas do schema da apresentação (obrigatórios e mínimos), além
-// da validação do backend. Bloqueiam a publicação no cliente com mensagens claras.
 const schemaIssues = computed<{ field: string; code: string; message: string }[]>(() => {
   const tribute = props.tribute
   if (!tribute) return []
@@ -158,8 +161,8 @@ const publishing = ref(false)
 const checkingOut = ref(false)
 const actionError = ref('')
 const copied = ref(false)
-
-const priceLabel = '5,99'
+const checkout = ref<CheckoutResponse | null>(null)
+const priceLabel = ref('4,99')
 
 const publicUrl = computed(() => {
   const slug = props.tribute?.slug
@@ -185,13 +188,18 @@ const paymentAlertClass = computed(() => {
 
 onMounted(async () => {
   try {
-    const [validationResult, subscription] = await Promise.all([
+    const [validationResult, subscription, product] = await Promise.all([
       validateTribute(props.tributeId),
       fetchSubscription(),
+      fetchBillingProduct().catch(() => null),
     ])
     validation.value = validationResult
     billingEnabled.value = subscription.billing_enabled !== false
     hasSubscription.value = subscription.has_subscription
+    const tributePrice = product?.prices.find((p) => p.billing_mode === 'per_tribute')
+    if (tributePrice) {
+      priceLabel.value = (tributePrice.price_cents / 100).toFixed(2).replace('.', ',')
+    }
     if (paymentStatus.value === 'success') {
       emit('published')
     }
@@ -211,7 +219,7 @@ async function publish() {
   } catch {
     actionError.value = canPublishDirectly.value
       ? 'Não foi possível publicar a homenagem.'
-      : 'Publicação indisponível. Verifique assinatura ou use o pagamento avulso.'
+      : 'Publicação indisponível. Verifique assinatura ou use o pagamento PIX.'
   } finally {
     publishing.value = false
   }
@@ -221,17 +229,19 @@ async function startCheckout() {
   checkingOut.value = true
   actionError.value = ''
   try {
-    const checkout = await checkoutTribute(props.tributeId)
-    if (checkout.checkout_url) {
-      window.location.href = checkout.checkout_url
-      return
+    checkout.value = await checkoutTribute(props.tributeId)
+    if (!checkout.value.pix?.qr_code && !checkout.value.checkout_url) {
+      actionError.value = 'Checkout PIX indisponível no momento.'
     }
-    actionError.value = 'Checkout indisponível no momento.'
   } catch {
-    actionError.value = 'Não foi possível iniciar o checkout.'
+    actionError.value = 'Não foi possível gerar o PIX.'
   } finally {
     checkingOut.value = false
   }
+}
+
+function onPixPaid() {
+  emit('published')
 }
 
 async function copyLink() {

@@ -260,7 +260,7 @@ export interface AlbumMedia {
 export interface AlbumSummary {
   id: string
   slug: string
-  status: 'draft' | 'published' | 'archived'
+  status: 'draft' | 'awaiting_payment' | 'published' | 'archived'
   title: string | null
   subtitle: string | null
   color_primary: string | null
@@ -340,12 +340,48 @@ export interface AlbumUploadPolicy {
   }
 }
 
+export interface PixPaymentData {
+  qr_code: string | null
+  qr_code_base64: string | null
+  ticket_url: string | null
+}
+
 export interface CheckoutResponse {
   order_id: string
-  tribute_id: string
+  kind?: 'tribute' | 'album'
+  tribute_id?: string | null
+  album_id?: string | null
   status: string
   price_cents: number
+  payment_method?: 'pix'
   checkout_url: string | null
+  pix?: PixPaymentData | null
+}
+
+export interface BillingProductPrice {
+  billing_mode: string
+  price_cents: number
+  formatted: string
+}
+
+export interface BillingProduct {
+  slug: string
+  name: string
+  features: Record<string, unknown>
+  prices: BillingProductPrice[]
+}
+
+export interface OrderStatusResponse {
+  id: string
+  status: string
+  amount_cents: number
+  payment_method?: string
+  tribute_id: string | null
+  album_id: string | null
+  checkout_url: string | null
+  pix?: PixPaymentData | null
+  paid_at: string | null
+  created_at: string
 }
 
 export interface SubscriptionInfo {

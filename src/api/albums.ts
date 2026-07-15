@@ -5,6 +5,7 @@ import type {
   AlbumUploadPolicy,
   AlbumValidation,
   ApiEnvelope,
+  CheckoutResponse,
   MusicMediaStatus,
   PresignResponse,
   PublicAlbum,
@@ -52,6 +53,11 @@ export async function validateAlbum(id: string): Promise<AlbumValidation> {
 
 export async function publishAlbum(id: string): Promise<AlbumDetail> {
   const response = await apiClient.post<ApiEnvelope<AlbumDetail>>(`/albums/${id}/publish`)
+  return unwrap(response)
+}
+
+export async function checkoutAlbum(id: string): Promise<CheckoutResponse> {
+  const response = await apiClient.post<ApiEnvelope<CheckoutResponse>>(`/albums/${id}/checkout`)
   return unwrap(response)
 }
 

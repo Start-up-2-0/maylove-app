@@ -58,7 +58,9 @@ export function useAlbumWizard(albumId: string) {
     album.value = await updateAlbum(albumId, payload)
   })
 
-  const isEditable = computed(() => album.value?.status === 'draft')
+  const isEditable = computed(
+    () => album.value?.status === 'draft' || album.value?.status === 'awaiting_payment',
+  )
 
   const photos = computed(() =>
     (album.value?.media ?? []).filter((item) => item.media_type === 'photo'),
