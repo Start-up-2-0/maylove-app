@@ -138,21 +138,15 @@
       {{ form.book_pages.length || '0' }} página(s) de conteúdo
       (+ capa{{ form.closing_message || form.signature ? ' e contracapa' : '' }}).
     </p>
-    <section v-if="previewBook" class="pages-preview">
-      <h3 class="pages-preview__title">Prévia do livro</h3>
-      <BookRenderer :book="previewBook" mode="preview" />
-    </section>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { ref } from 'vue'
 import type { AlbumMedia } from '@/api/types'
 import type { useAlbumWizard } from '@/composables/useAlbumWizard'
 import WizardStepHeader from '@/components/wizard/WizardStepHeader.vue'
-import BookRenderer from '../book/BookRenderer.vue'
 import PolaroidScrapStage, { type ScrapShot } from '../book/shared/PolaroidScrapStage.vue'
-import { buildMemoryBookModelFromDetail } from '../book/buildModel'
 import { resolveMediaUrl } from '../book/mediaUrl'
 import {
   BOOK_PAGE_LAYOUTS,
@@ -176,22 +170,6 @@ const props = defineProps<{
 const newLayout = ref<BookPageLayout>('one')
 const dragIndex = ref<number | null>(null)
 const dropIndex = ref<number | null>(null)
-
-const previewBook = computed(() => {
-  if (!props.album) return null
-  return buildMemoryBookModelFromDetail({
-    ...props.album,
-    title: props.form.title,
-    subtitle: props.form.subtitle,
-    closing_message: props.form.closing_message,
-    signature: props.form.signature,
-    color_primary: props.form.book_config.colors.accent,
-    presentation: props.form.presentation,
-    photos_per_page: props.form.photos_per_page,
-    book_config: props.form.book_config,
-    book_pages: props.form.book_pages,
-  })
-})
 
 function layoutHint(layout: BookPageLayout) {
   return BOOK_PAGE_LAYOUTS.find((item) => item.id === layout)?.hint ?? ''
@@ -561,20 +539,5 @@ function autoFillFromPhotos() {
 .pages-estimate {
   margin-top: 16px;
   font-size: 0.86rem;
-}
-
-.pages-preview {
-  margin-top: 28px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-  background: var(--surface-3);
-}
-
-.pages-preview__title {
-  margin: 0;
-  padding: 12px 16px;
-  font-size: 0.95rem;
-  border-bottom: 1px solid var(--border);
 }
 </style>

@@ -102,24 +102,16 @@
         <span>Álbum público (visível pelo link após publicar)</span>
       </label>
     </form>
-
-    <section v-if="previewBook" class="basics-preview">
-      <h3 class="basics-preview__title">Prévia da capa</h3>
-      <BookRenderer :book="previewBook" mode="preview" />
-    </section>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
 import type { AlbumMedia } from '@/api/types'
 import type { useAlbumWizard } from '@/composables/useAlbumWizard'
 import WizardStepHeader from '@/components/wizard/WizardStepHeader.vue'
-import { buildMemoryBookModelFromDetail } from '../book/buildModel'
-import BookRenderer from '../book/BookRenderer.vue'
 import { BOOK_FRAME_STYLES } from '../book/frameStyles'
 
-const props = defineProps<{
+defineProps<{
   form: ReturnType<typeof useAlbumWizard>['form']
   album: ReturnType<typeof useAlbumWizard>['album']['value']
   photos: AlbumMedia[]
@@ -147,22 +139,6 @@ const fontPresets = [
     sample: "'Space Grotesk', system-ui, sans-serif",
   },
 ]
-
-const previewBook = computed(() => {
-  if (!props.album) return null
-  return buildMemoryBookModelFromDetail({
-    ...props.album,
-    title: props.form.title,
-    subtitle: props.form.subtitle,
-    closing_message: props.form.closing_message,
-    signature: props.form.signature,
-    color_primary: props.form.book_config.colors.accent,
-    presentation: props.form.presentation,
-    photos_per_page: props.form.photos_per_page,
-    book_config: props.form.book_config,
-    book_pages: props.form.book_pages,
-  })
-})
 </script>
 
 <style scoped>
@@ -317,20 +293,5 @@ const previewBook = computed(() => {
   border-radius: 8px;
   background: transparent;
   cursor: pointer;
-}
-
-.basics-preview {
-  margin-top: 28px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-  background: var(--surface-3);
-}
-
-.basics-preview__title {
-  margin: 0;
-  padding: 12px 16px;
-  font-size: 0.95rem;
-  border-bottom: 1px solid var(--border);
 }
 </style>

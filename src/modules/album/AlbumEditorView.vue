@@ -69,7 +69,9 @@
             :album="album"
             :form="form"
             :refresh-token="previewRefreshToken"
+            :generating="previewGenerating"
             @go-publish="goToPublish"
+            @regenerate="refreshPreview"
           />
           <AlbumPublishStep
             v-else-if="currentStep === 'publish'"
@@ -113,6 +115,7 @@ const albumId = route.params.id as string
 
 const currentStep = ref<AlbumWizardStep>('basics')
 const previewRefreshToken = ref(0)
+const previewGenerating = ref(false)
 const photosStepRef = ref<InstanceType<typeof AlbumPhotosStep> | null>(null)
 
 const {
@@ -210,11 +213,16 @@ function advanceStep() {
 }
 
 async function refreshPreview() {
-  // Garante que posições do quadro (Polaroid) e outros ajustes do form
-  // não sejam sobrescritos por um reload antes do autosave debounce.
-  await flushAutosave()
-  await reload()
-  previewRefreshToken.value += 1
+  previewGenerating.value = true
+  try {
+    // Garante que posições Polaroid e ajustes do form
+    // não sejam sobrescritos por um reload antes do autosave.
+    await flushAutosave()
+    await reload()
+    previewRefreshToken.value += 1
+  } finally {
+    previewGenerating.value = false
+  }
 }
 
 async function onMediaChanged() {
