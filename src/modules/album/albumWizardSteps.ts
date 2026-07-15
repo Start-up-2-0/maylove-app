@@ -6,11 +6,10 @@ export type AlbumWizardStep =
   | 'preview'
   | 'publish'
 
-/** Photobook editorial: identidade → fototeca → diagramação → música → preview → publicar. */
+/** Galeria fotográfica: identidade → fototeca → música → preview → publicar. */
 export const ALBUM_WIZARD_STEPS: AlbumWizardStep[] = [
   'basics',
   'photos',
-  'pages',
   'music',
   'preview',
   'publish',

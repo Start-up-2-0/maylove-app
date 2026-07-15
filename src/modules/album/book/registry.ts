@@ -1,10 +1,10 @@
 import { defineAsyncComponent, type Component } from 'vue'
 
-const PhotobookTemplate = defineAsyncComponent(
-  () => import('./templates/PhotobookTemplate.vue'),
+const ProfessionalGalleryTemplate = defineAsyncComponent(
+  () => import('./templates/ProfessionalGalleryTemplate.vue'),
 )
 
-/** Álbum público: livro editorial página a página. */
+/** Álbum público: galeria fotográfica masonry + lightbox. */
 export function getBookTemplate(_presentation?: string): Component {
-  return PhotobookTemplate
+  return ProfessionalGalleryTemplate
 }

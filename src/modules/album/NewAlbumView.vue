@@ -11,16 +11,16 @@
       <p class="eyebrow">Começar</p>
       <h1 class="section-title">Novo álbum</h1>
       <p class="text-muted">
-        Photobook editorial página a página — diagramação profissional com fotos, legendas e texto narrativo.
+        Galeria fotográfica profissional — capa, masonry, legendas e lightbox elegante.
       </p>
     </header>
 
     <article class="style-card style-card--active">
-      <span class="style-card__emoji" aria-hidden="true">📖</span>
+      <span class="style-card__emoji" aria-hidden="true">🖼️</span>
       <div>
-        <h2 class="style-card__title">Memory Book</h2>
+        <h2 class="style-card__title">Galeria de Memórias</h2>
         <p class="style-card__desc">
-          Como um álbum de estúdio: capa, páginas com layouts editoriais e contracapa.
+          Como um portfólio de estúdio: capas, fotos sem corte forçado e visualização em lightbox.
         </p>
       </div>
     </article>

@@ -270,6 +270,8 @@ export interface AlbumSummary {
   is_public: boolean
   photo_count: number
   views_count: number
+  cover_url?: string | null
+  preview_thumbs?: string[]
   published_at: string | null
   created_at: string
   updated_at: string

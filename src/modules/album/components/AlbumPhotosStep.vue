@@ -7,7 +7,7 @@
 
     <section class="layout-panel ml-card">
       <p class="layout-panel__hint text-muted">
-        {{ photos.length }} foto(s) na fototeca. Título, descrição, data e local alimentam as legendas das páginas.
+        {{ photos.length }} foto(s) na galeria. Defina a capa, reordene e complete título, descrição, data e local.
       </p>
     </section>
     <div v-if="photos.length" :class="isTimeline ? 'timeline-photos' : 'photo-grid'">
@@ -37,8 +37,19 @@
         />
         <div v-else class="photo-tile__placeholder">Prévia indisponível</div>
         <figcaption class="photo-tile__bar">
-          <span class="photo-tile__index">#{{ index + 1 }} · ⠿</span>
+          <span class="photo-tile__index">
+            #{{ index + 1 }} · ⠿
+            <em v-if="isCover(photo.id)" class="photo-tile__cover-tag">Capa</em>
+          </span>
           <div class="photo-tile__actions">
+            <button
+              class="ml-icon-btn"
+              :class="{ 'ml-icon-btn--active': isCover(photo.id) }"
+              title="Definir como capa"
+              @click="setAsCover(photo.id)"
+            >
+              ★
+            </button>
             <button class="ml-icon-btn" :disabled="index === 0" title="Mover para cima" @click="move(index, -1)">
               ↑
             </button>
@@ -193,6 +204,15 @@ onBeforeUnmount(() => {
 
 function mediaPreviewUrl(photo: AlbumMedia): string | null {
   return resolveMediaUrl(photo.url, photo.url_thumbnail)
+}
+
+function isCover(mediaId: string) {
+  return props.form.book_config.cover.media_id === mediaId
+}
+
+function setAsCover(mediaId: string) {
+  props.form.book_config.cover.media_id = mediaId
+  props.form.book_config.cover.mode = 'photo'
 }
 
 function queueCaptionSave(mediaId: string) {
@@ -397,6 +417,19 @@ async function saveCaption(mediaId: string, showError = true) {
   grid-template-columns: minmax(96px, 140px) 1fr;
   gap: 12px;
   align-items: start;
+}
+
+.photo-tile__cover-tag {
+  margin-left: 6px;
+  font-style: normal;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent, #c45d7a);
+}
+
+.ml-icon-btn--active {
+  color: var(--accent, #c45d7a);
 }
 
 .photo-tile--dragging {

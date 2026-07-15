@@ -92,15 +92,15 @@ export const ALL_BOOK_PRESENTATIONS: BookPresentationDefinition[] = [
   },
 ]
 
-/** Catálogo visível — photobook editorial. */
+/** Catálogo visível — galeria fotográfica profissional. */
 export const BOOK_PRESENTATIONS: BookPresentationDefinition[] = [
   {
     id: 'classic-photobook',
-    name: 'Memory Book',
+    name: 'Galeria de Memórias',
     description:
-      'Livro de memórias página a página: foto inteira, legendas, texto narrativo e composições editoriais.',
-    emoji: '📖',
-    tagline: 'Como um álbum de estúdio',
+      'Galeria fotográfica premium: capa, masonry responsivo, legendas e lightbox elegante.',
+    emoji: '🖼️',
+    tagline: 'Como um portfólio de estúdio',
   },
 ]
 

@@ -2,7 +2,7 @@
   <div class="preview-step">
     <WizardStepHeader
       title="Prévia do álbum"
-      description="A prévia é gerada aqui, com o estado salvo do livro — capa, páginas e música."
+      description="A prévia é gerada aqui com o estado salvo — capa, galeria masonry e música."
     />
 
     <div class="review-summary">
@@ -13,10 +13,6 @@
       <div class="review-summary__item">
         <span class="review-summary__label">Fotos</span>
         <span class="review-summary__value">{{ photoCount }}</span>
-      </div>
-      <div class="review-summary__item">
-        <span class="review-summary__label">Páginas</span>
-        <span class="review-summary__value">{{ pageCount }}</span>
       </div>
       <div class="review-summary__item">
         <span class="review-summary__label">Música</span>
@@ -113,8 +109,6 @@ const presentationLabel = computed(() => {
 const photoCount = computed(
   () => (props.album?.media ?? []).filter((m) => m.media_type === 'photo').length,
 )
-
-const pageCount = computed(() => props.form.book_pages?.length || 0)
 
 const musicLabel = computed(() => {
   const hasAudio = (props.album?.media ?? []).some((m) => m.media_type === 'audio')

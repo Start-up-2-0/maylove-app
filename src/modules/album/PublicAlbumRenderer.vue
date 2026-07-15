@@ -77,6 +77,7 @@ const bookModel = computed(() => {
       title: photo.title,
       caption: photo.caption,
       memory_date: photo.memory_date,
+      place_name: photo.place_name,
     })),
   })
 })

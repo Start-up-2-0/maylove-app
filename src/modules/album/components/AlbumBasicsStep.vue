@@ -1,8 +1,8 @@
 <template>
   <div class="basics-step">
     <WizardStepHeader
-      title="Identidade do livro"
-      description="Capa, tipografia e cores — a base editorial do seu photobook."
+      title="Identidade da galeria"
+      description="Título, tipografia e cores — a assinatura visual do seu álbum."
     />
 
     <form class="basics-form" @submit.prevent>
@@ -47,27 +47,7 @@
       </fieldset>
 
       <fieldset class="basics-fieldset">
-        <legend>Moldura Polaroid</legend>
-        <p class="basics-hint">Usada nas páginas Polaroid scrapbook.</p>
-        <div class="frame-styles">
-          <label
-            v-for="style in frameStyles"
-            :key="style.id"
-            class="frame-style"
-            :class="{ 'frame-style--active': form.book_config.frame_style === style.id }"
-          >
-            <input v-model="form.book_config.frame_style" type="radio" :value="style.id" />
-            <span class="frame-style__swatch" :data-style="style.id" aria-hidden="true" />
-            <span class="frame-style__copy">
-              <strong>{{ style.label }}</strong>
-              <small>{{ style.hint }}</small>
-            </span>
-          </label>
-        </div>
-      </fieldset>
-
-      <fieldset class="basics-fieldset">
-        <legend>Cores do papel</legend>
+        <legend>Cores</legend>
         <div class="color-row">
           <label class="ml-field">
             <span>Papel</span>
@@ -109,15 +89,12 @@
 import type { AlbumMedia } from '@/api/types'
 import type { useAlbumWizard } from '@/composables/useAlbumWizard'
 import WizardStepHeader from '@/components/wizard/WizardStepHeader.vue'
-import { BOOK_FRAME_STYLES } from '../book/frameStyles'
 
 defineProps<{
   form: ReturnType<typeof useAlbumWizard>['form']
   album: ReturnType<typeof useAlbumWizard>['album']['value']
   photos: AlbumMedia[]
 }>()
-
-const frameStyles = BOOK_FRAME_STYLES
 
 const fontPresets = [
   {
