@@ -5,12 +5,12 @@ import {
   DEFAULT_BOOK_PRESENTATION,
   isInstantPhotoPresentation,
   isMuralPresentation,
-  isPortraitAlbumPresentation,
   isTimelinePresentation,
 } from '@/modules/album/book/presentations'
 import {
   DEFAULT_BOOK_CONFIG,
   normalizeBookConfig,
+  resolveBookConfig,
   type BookConfig,
   type BookPage,
 } from '@/modules/album/book/bookConfig'
@@ -85,7 +85,6 @@ export function useAlbumWizard(albumId: string) {
     form.is_public = data.is_public
     form.presentation = (data.presentation as BookPresentationId) || DEFAULT_BOOK_PRESENTATION
     const isMural = isMuralPresentation(form.presentation)
-    const isPortrait = isPortraitAlbumPresentation(form.presentation)
     const isInstant = isInstantPhotoPresentation(form.presentation)
     form.photos_per_page =
       isTimelinePresentation(form.presentation) || isMural || isInstant
@@ -94,44 +93,10 @@ export function useAlbumWizard(albumId: string) {
           : 1
         : (data.photos_per_page ?? 1)
 
-    const savedConfig = data.book_config as BookConfig | null
-    const defaultPaper = isInstant
-      ? '#141414'
-      : isPortrait
-        ? '#e8dcc8'
-        : isMural
-          ? '#c4a574'
-          : DEFAULT_BOOK_CONFIG.colors.paper
-    const defaultInk = isInstant
-      ? '#f5f5f5'
-      : isMural || isPortrait
-        ? '#2c241c'
-        : DEFAULT_BOOK_CONFIG.colors.ink
-    const defaultEyebrow = isInstant
-      ? 'INSTANT PHOTO'
-      : isPortrait
-        ? 'ÁLBUM DE RETRATOS'
-        : isMural
-          ? 'COLADAS'
-          : DEFAULT_BOOK_CONFIG.cover.eyebrow
-
-    form.book_config = normalizeBookConfig({
-      ...(savedConfig ?? undefined),
-      cover: {
-        mode: savedConfig?.cover?.mode ?? DEFAULT_BOOK_CONFIG.cover.mode,
-        media_id: savedConfig?.cover?.media_id ?? null,
-        eyebrow: savedConfig?.cover?.eyebrow ?? defaultEyebrow,
-      },
-      colors: {
-        paper: savedConfig?.colors?.paper ?? defaultPaper,
-        ink: savedConfig?.colors?.ink ?? defaultInk,
-        accent:
-          savedConfig?.colors?.accent ??
-          data.color_primary ??
-          DEFAULT_BOOK_CONFIG.colors.accent,
-        page: savedConfig?.colors?.page ?? savedConfig?.colors?.paper ?? defaultPaper,
-      },
-    })
+    form.book_config = resolveBookConfig(data.book_config as BookConfig | null, form.presentation)
+    if (!form.book_config.colors.accent && data.color_primary) {
+      form.book_config.colors.accent = data.color_primary
+    }
     form.book_pages = Array.isArray(data.book_pages)
       ? (data.book_pages as unknown as BookPage[])
       : []

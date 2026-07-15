@@ -171,6 +171,102 @@ export function normalizeBookConfig(raw?: Partial<BookConfig> | null): BookConfi
   }
 }
 
+/** Defaults visuais por apresentação (Instant Photo, murais, Memory Book). */
+export function defaultBookConfigFor(presentation?: string | null): BookConfig {
+  switch (presentation) {
+    case 'instant-photo':
+      return {
+        cover: { mode: 'text', media_id: null, eyebrow: 'INSTANT PHOTO' },
+        colors: { paper: '#141414', ink: '#f5f5f5', accent: '#c45d7a', page: '#141414' },
+        fonts: { preset: 'editorial' },
+        board: { items: [] },
+      }
+    case 'polaroid-board':
+      return {
+        cover: { mode: 'text', media_id: null, eyebrow: 'COLADAS' },
+        colors: { paper: '#c4a574', ink: '#2c241c', accent: '#c45d7a', page: '#c4a574' },
+        fonts: { preset: 'editorial' },
+        board: { items: [] },
+      }
+    case 'portrait-album':
+      return {
+        cover: { mode: 'text', media_id: null, eyebrow: 'ÁLBUM DE RETRATOS' },
+        colors: { paper: '#e8dcc8', ink: '#2c241c', accent: '#c45d7a', page: '#e8dcc8' },
+        fonts: { preset: 'editorial' },
+        board: { items: [] },
+      }
+    default:
+      return normalizeBookConfig(null)
+  }
+}
+
+function normalizeHex(value: string): string {
+  const trimmed = value.trim().toLowerCase()
+  if (/^#[0-9a-f]{3}$/.test(trimmed)) {
+    return `#${trimmed[1]}${trimmed[1]}${trimmed[2]}${trimmed[2]}${trimmed[3]}${trimmed[3]}`
+  }
+  return trimmed
+}
+
+function looksLikeClassicPaper(value: string | null | undefined): boolean {
+  if (value == null || String(value).trim() === '') return true
+  return normalizeHex(String(value)) === '#ffffff'
+}
+
+function looksLikeClassicInk(value: string | null | undefined): boolean {
+  if (value == null || String(value).trim() === '') return true
+  return normalizeHex(String(value)) === '#111111'
+}
+
+function looksLikeClassicEyebrow(value: string | null | undefined): boolean {
+  if (value == null || String(value).trim() === '') return true
+  return String(value).trim().toUpperCase() === 'MEMORY'
+}
+
+/**
+ * Normaliza book_config e troca defaults do Memory Book (branco/MEMORY)
+ * pelos tokens do estilo quando a apresentação for Instant Photo / mural.
+ * Corrige álbuns antigos criados sem book_config específico.
+ */
+export function resolveBookConfig(
+  raw?: Partial<BookConfig> | null,
+  presentation?: string | null,
+): BookConfig {
+  const styleDefaults = defaultBookConfigFor(presentation)
+  const base = normalizeBookConfig(raw)
+  const styled =
+    presentation === 'instant-photo' ||
+    presentation === 'polaroid-board' ||
+    presentation === 'portrait-album'
+
+  if (!styled) return base
+
+  const paper = looksLikeClassicPaper(raw?.colors?.paper)
+    ? styleDefaults.colors.paper
+    : base.colors.paper
+  const ink = looksLikeClassicInk(raw?.colors?.ink) ? styleDefaults.colors.ink : base.colors.ink
+  const page = looksLikeClassicPaper(raw?.colors?.page ?? raw?.colors?.paper)
+    ? (styleDefaults.colors.page ?? styleDefaults.colors.paper)
+    : (base.colors.page ?? paper)
+  const eyebrow = looksLikeClassicEyebrow(raw?.cover?.eyebrow)
+    ? styleDefaults.cover.eyebrow
+    : base.cover.eyebrow
+
+  return {
+    ...base,
+    cover: {
+      ...base.cover,
+      eyebrow,
+    },
+    colors: {
+      ...base.colors,
+      paper,
+      ink,
+      page,
+    },
+  }
+}
+
 export const BOOK_PAGE_LAYOUTS: Array<{
   id: BookPageLayout
   label: string

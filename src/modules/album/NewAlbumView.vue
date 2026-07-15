@@ -44,6 +44,7 @@ import { computed, ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { createAlbum, updateAlbum } from '@/api/albums'
 import { resolveApiError } from '@/api/errors'
+import { defaultBookConfigFor } from './book/bookConfig'
 import { BOOK_PRESENTATIONS, DEFAULT_BOOK_PRESENTATION } from './book/presentations'
 import type { BookPresentationId } from './book/types'
 
@@ -61,9 +62,10 @@ async function create() {
   error.value = ''
   try {
     const album = await createAlbum()
-    if (selected.value !== DEFAULT_BOOK_PRESENTATION) {
-      await updateAlbum(album.id, { presentation: selected.value })
-    }
+    await updateAlbum(album.id, {
+      presentation: selected.value,
+      book_config: defaultBookConfigFor(selected.value),
+    })
     await router.replace({
       path: `/dashboard/albums/${album.id}/edit`,
       query: { step: 'basics' },

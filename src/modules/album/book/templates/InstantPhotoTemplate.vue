@@ -96,7 +96,7 @@ import RichText from '@/components/experience/shared/RichText.vue'
 import ShareBar from '@/components/experience/shared/ShareBar.vue'
 import { getBookTheme, getThemeCssVars } from '../themes'
 import { normalizePresentationId } from '../presentations'
-import { normalizeBookConfig } from '../bookConfig'
+import { resolveBookConfig } from '../bookConfig'
 import type { BookRenderMode, MemoryBookModel, MemoryBookPhoto } from '../types'
 
 const props = defineProps<{
@@ -105,8 +105,9 @@ const props = defineProps<{
   shareUrl?: string
 }>()
 
-const theme = computed(() => getBookTheme(normalizePresentationId(props.book.presentation)))
-const bookConfig = computed(() => normalizeBookConfig(props.book.bookConfig))
+const presentation = computed(() => normalizePresentationId(props.book.presentation))
+const theme = computed(() => getBookTheme(presentation.value))
+const bookConfig = computed(() => resolveBookConfig(props.book.bookConfig, presentation.value))
 
 const bookStyle = computed(() =>
   getThemeCssVars(theme.value, bookConfig.value.colors.accent || props.book.colorPrimary, {
@@ -120,7 +121,7 @@ const bookStyle = computed(() =>
 
 const eyebrow = computed(
   () =>
-    props.book.bookConfig?.cover.eyebrow?.trim() ||
+    bookConfig.value.cover.eyebrow?.trim() ||
     theme.value.cover.eyebrow ||
     'INSTANT PHOTO',
 )

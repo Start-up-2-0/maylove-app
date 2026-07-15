@@ -91,7 +91,7 @@ import { getBookTheme, getThemeCssVars } from '../themes'
 import { normalizePresentationId } from '../presentations'
 import {
   defaultBoardItem,
-  normalizeBookConfig,
+  resolveBookConfig,
   syncBoardItems,
   type BookBoardItem,
 } from '../bookConfig'
@@ -114,8 +114,9 @@ const emit = defineEmits<{
   'update:board': [items: BookBoardItem[]]
 }>()
 
-const theme = computed(() => getBookTheme(normalizePresentationId(props.book.presentation)))
-const bookConfig = computed(() => normalizeBookConfig(props.book.bookConfig))
+const presentation = computed(() => normalizePresentationId(props.book.presentation))
+const theme = computed(() => getBookTheme(presentation.value))
+const bookConfig = computed(() => resolveBookConfig(props.book.bookConfig, presentation.value))
 
 const boardStyle = computed(() =>
   getThemeCssVars(theme.value, bookConfig.value.colors.accent || props.book.colorPrimary, {
@@ -134,7 +135,7 @@ const boardRootStyle = computed(() => ({
 
 const eyebrow = computed(
   () =>
-    props.book.bookConfig?.cover.eyebrow?.trim() ||
+    bookConfig.value.cover.eyebrow?.trim() ||
     theme.value.cover.eyebrow ||
     'Coladas com carinho',
 )

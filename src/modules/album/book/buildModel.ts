@@ -9,7 +9,7 @@ import { composePhotobookPages } from './layouts/layoutEngine'
 import { getBookTheme } from './themes'
 import { resolveMediaUrl } from './mediaUrl'
 import {
-  normalizeBookConfig,
+  resolveBookConfig,
   type BookConfig,
   type BookPage,
   type BookPageLayout,
@@ -216,7 +216,10 @@ function buildContentPages(album: AlbumInput): MemoryBookContentPage[] {
 export function buildMemoryBookModel(album: AlbumInput): MemoryBookModel {
   const presentation = resolvePresentation(album.presentation)
   const contentPages = buildContentPages(album)
-  const bookConfig = normalizeBookConfig(album.book_config as BookConfig | null | undefined)
+  const bookConfig = resolveBookConfig(
+    album.book_config as BookConfig | null | undefined,
+    presentation,
+  )
   const coverId = bookConfig.cover.media_id
   const coverPhoto = coverId ? album.photos.find((p) => p.id === coverId) : undefined
 
