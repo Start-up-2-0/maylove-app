@@ -78,8 +78,12 @@ onMounted(() => {
 
 onUnmounted(() => stopPolling())
 
+const MAX_PIX_POLLS = 200 // 200 × 3 s ≈ 10 minutos
+let pollCount = 0
+
 function startPolling(orderId: string) {
   stopPolling()
+  pollCount = 0
   pollTimer = setInterval(() => {
     void poll(orderId)
   }, 3000)
@@ -94,6 +98,11 @@ function stopPolling() {
 }
 
 async function poll(orderId: string) {
+  pollCount++
+  if (pollCount > MAX_PIX_POLLS) {
+    stopPolling()
+    return
+  }
   try {
     const order = await fetchOrder(orderId)
     if (order.status === 'paid') {

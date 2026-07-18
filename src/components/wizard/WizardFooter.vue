@@ -1,7 +1,7 @@
 <template>
   <footer class="wizard-footer-bar">
     <div class="wizard-footer-inner">
-      <button class="ml-btn ml-btn--secondary" :disabled="!hasPrevious" @click="$emit('previous')">
+      <button class="ml-btn ml-btn--secondary" :disabled="!hasPrevious || loading" @click="$emit('previous')">
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M15 6l-6 6 6 6" stroke-linecap="round" stroke-linejoin="round" />
         </svg>
@@ -16,7 +16,8 @@
           </svg>
           Preview
         </button>
-        <button v-if="hasNext" class="ml-btn ml-btn--primary" @click="$emit('next')">
+        <button v-if="hasNext" class="ml-btn ml-btn--primary" :disabled="loading" @click="$emit('next')">
+          <span v-if="loading" class="ml-spinner ml-spinner--sm" />
           Continuar
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M9 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round" />
@@ -31,6 +32,7 @@
 defineProps<{
   hasPrevious: boolean
   hasNext: boolean
+  loading?: boolean
   showPreviewButton?: boolean
 }>()
 

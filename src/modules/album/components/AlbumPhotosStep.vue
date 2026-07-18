@@ -50,18 +50,21 @@
             >
               ★
             </button>
-            <button class="ml-icon-btn" :disabled="index === 0" title="Mover para cima" @click="move(index, -1)">
+            <button class="ml-icon-btn" :disabled="index === 0 || reordering" title="Mover para cima" @click="move(index, -1)">
               ↑
             </button>
             <button
               class="ml-icon-btn"
-              :disabled="index === photos.length - 1"
+              :disabled="index === photos.length - 1 || reordering"
               title="Mover para baixo"
               @click="move(index, 1)"
             >
               ↓
             </button>
-            <button class="ml-icon-btn ml-icon-btn--danger" title="Remover" @click="remove(photo.id)">×</button>
+            <button class="ml-icon-btn ml-icon-btn--danger" :disabled="removingId === photo.id" title="Remover" @click="remove(photo.id)">
+              <span v-if="removingId === photo.id" class="ml-spinner ml-spinner--xs" />
+              <template v-else>×</template>
+            </button>
           </div>
         </figcaption>
         <div class="photo-meta">
@@ -158,6 +161,8 @@ const emit = defineEmits<{ changed: [] }>()
 const maxPhotos = MEDIA_LIMITS.photo.maxCountPerAlbum
 const uploading = ref(false)
 const error = ref('')
+const reordering = ref(false)
+const removingId = ref<string | null>(null)
 const captions = reactive<
   Record<string, { title: string; caption: string; memory_date: string; place_name: string }>
 >({})
@@ -302,24 +307,34 @@ async function onFilesSelected(event: Event) {
 }
 
 async function remove(mediaId: string) {
+  if (removingId.value) return
+  removingId.value = mediaId
+  error.value = ''
   try {
     await deleteAlbumMedia(props.albumId, mediaId)
     emit('changed')
   } catch {
     error.value = 'Não foi possível remover a foto.'
+  } finally {
+    removingId.value = null
   }
 }
 
 async function move(index: number, direction: -1 | 1) {
+  if (reordering.value) return
   const order = props.photos.map((photo) => photo.id)
   const target = index + direction
   if (target < 0 || target >= order.length) return
   ;[order[index], order[target]] = [order[target], order[index]]
+  reordering.value = true
+  error.value = ''
   try {
     await reorderAlbumMedia(props.albumId, order)
     emit('changed')
   } catch {
     error.value = 'Não foi possível reordenar as fotos.'
+  } finally {
+    reordering.value = false
   }
 }
 
@@ -343,15 +358,23 @@ async function onPhotoDrop(index: number) {
     onPhotoDragEnd()
     return
   }
+  if (reordering.value) {
+    onPhotoDragEnd()
+    return
+  }
   const order = props.photos.map((photo) => photo.id)
   const [id] = order.splice(photoDragIndex.value, 1)
   order.splice(index, 0, id)
   onPhotoDragEnd()
+  reordering.value = true
+  error.value = ''
   try {
     await reorderAlbumMedia(props.albumId, order)
     emit('changed')
   } catch {
     error.value = 'Não foi possível reordenar as fotos.'
+  } finally {
+    reordering.value = false
   }
 }
 

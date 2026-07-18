@@ -188,6 +188,9 @@ async function copyLink() {
   if (!publicUrl.value) return
   await navigator.clipboard.writeText(publicUrl.value)
   copied.value = true
+  window.setTimeout(() => {
+    copied.value = false
+  }, 2000)
 }
 </script>
 

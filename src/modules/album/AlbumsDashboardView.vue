@@ -109,7 +109,8 @@
               :disabled="deletingId === album.id"
               @click="confirmDelete(album)"
             >
-              Excluir
+              <span v-if="deletingId === album.id" class="ml-spinner ml-spinner--xs" />
+              <template v-else>Excluir</template>
             </button>
           </div>
         </div>

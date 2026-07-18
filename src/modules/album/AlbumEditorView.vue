@@ -88,6 +88,7 @@
       v-if="isEditable"
       :has-previous="hasPrevious"
       :has-next="hasNext"
+      :loading="navigating"
       @previous="previousStep"
       @next="nextStep"
     />
@@ -116,6 +117,7 @@ const albumId = route.params.id as string
 const currentStep = ref<AlbumWizardStep>('basics')
 const previewRefreshToken = ref(0)
 const previewGenerating = ref(false)
+const navigating = ref(false)
 const photosStepRef = ref<InstanceType<typeof AlbumPhotosStep> | null>(null)
 
 const {
@@ -194,26 +196,29 @@ async function goToPublish() {
 }
 
 function previousStep() {
+  if (navigating.value) return
   const index = stepIndex(currentStep.value)
   if (index > 0) currentStep.value = wizardSteps.value[index - 1]
 }
 
-function nextStep() {
-  if (currentStep.value === 'photos') {
-    void (async () => {
+async function nextStep() {
+  if (navigating.value) return
+  navigating.value = true
+  try {
+    if (currentStep.value === 'photos') {
       await photosStepRef.value?.flushPendingCaptionSaves()
-      if (photosStepRef.value?.validateTimelineFields() === false) {
-        return
-      }
+      if (photosStepRef.value?.validateTimelineFields() === false) return
       advanceStep()
-    })()
-    return
+      return
+    }
+    if (currentStep.value === 'preview') {
+      await goToPublish()
+      return
+    }
+    advanceStep()
+  } finally {
+    navigating.value = false
   }
-  if (currentStep.value === 'preview') {
-    void goToPublish()
-    return
-  }
-  advanceStep()
 }
 
 function advanceStep() {

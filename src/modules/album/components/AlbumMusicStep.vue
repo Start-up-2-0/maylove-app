@@ -30,18 +30,23 @@
           type="url"
           class="ml-input"
           placeholder="https://www.youtube.com/watch?v=..."
-          :disabled="importing"
+          :disabled="importing || processing"
         />
       </label>
       <button
         type="button"
         class="ml-btn ml-btn--primary mt-3"
-        :disabled="importing || !youtubeUrl.trim()"
+        :disabled="importing || processing || !youtubeUrl.trim()"
         @click="importYoutube"
       >
         <span v-if="importing" class="ml-spinner ml-spinner--inline" />
         {{ importing ? 'Importando áudio...' : 'Importar áudio' }}
       </button>
+
+      <div v-if="processing" class="music-processing">
+        <span class="ml-spinner ml-spinner--inline" />
+        <span>Extraindo áudio… isso pode levar alguns segundos.</span>
+      </div>
     </section>
 
     <MusicTrimEditor
@@ -335,6 +340,18 @@ async function refreshMusicState() {
 .youtube-legal {
   margin: 0 0 12px;
   font-size: 0.82rem;
+  color: var(--muted);
+}
+.music-processing {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--accent, #c45d7a) 8%, var(--surface-2));
+  border: 1px solid color-mix(in srgb, var(--accent, #c45d7a) 20%, var(--border));
+  font-size: 0.88rem;
   color: var(--muted);
 }
 .mt-3 {

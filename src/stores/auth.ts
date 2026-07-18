@@ -22,6 +22,8 @@ function applyAuthPayload(payload: AuthPayload): void {
   startSessionRefreshScheduler()
 }
 
+let bootstrapPromise: Promise<void> | null = null
+
 export const useAuthStore = defineStore('auth', {
   state: () => ({
     user: null as User | null,
@@ -64,26 +66,31 @@ export const useAuthStore = defineStore('auth', {
     },
 
     async bootstrap() {
-      this.hydrateFromStorage()
+      if (bootstrapPromise) return bootstrapPromise
 
-      this.loading = true
-      try {
-        const restored = await this.tryRestoreSession()
-        if (!restored) {
+      bootstrapPromise = (async () => {
+        this.hydrateFromStorage()
+        this.loading = true
+        try {
+          const restored = await this.tryRestoreSession()
+          if (!restored) {
+            this.user = null
+            return
+          }
+          this.user = await authApi.fetchMe()
+        } catch {
+          stopSessionRefreshScheduler()
+          clearStoredTokens()
+          this.token = null
           this.user = null
-          return
+        } finally {
+          this.loading = false
+          this.initialized = true
+          bootstrapPromise = null
         }
+      })()
 
-        this.user = await authApi.fetchMe()
-      } catch {
-        stopSessionRefreshScheduler()
-        clearStoredTokens()
-        this.token = null
-        this.user = null
-      } finally {
-        this.loading = false
-        this.initialized = true
-      }
+      return bootstrapPromise
     },
 
     async login(email: string, password: string) {
