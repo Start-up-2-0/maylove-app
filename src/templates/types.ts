@@ -146,6 +146,8 @@ export interface ExperienceTimelineItem {
   date?: string
   title: string
   description?: string
+  location?: string
+  emotion?: string
   photoUrl?: string
   photoMediaId?: string
 }

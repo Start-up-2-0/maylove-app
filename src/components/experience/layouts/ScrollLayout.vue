@@ -22,11 +22,13 @@
       root-class="scroll-timeline"
     />
 
-    <section v-if="mode === 'full' && shareUrl" class="exp-section exp-share">
+    <EventInfoBlock :event-info="content.eventInfo" />
+
+    <section v-if="showShare" class="exp-section exp-share">
       <div class="exp-container exp-share__inner">
         <p class="exp-eyebrow">Compartilhe esta homenagem</p>
-        <ShareBar :url="shareUrl" :text="content.title" />
-        <QrCode :value="shareUrl" label="Aponte a câmera" :color="theme.primaryColor" />
+        <ShareBar :url="shareUrl!" :text="content.title" />
+        <QrCode v-if="showQr" :value="shareUrl!" label="Aponte a câmera" :color="theme.primaryColor" />
       </div>
     </section>
   </div>
@@ -40,10 +42,15 @@ import ShareBar from '../shared/ShareBar.vue'
 import QrCode from '../shared/QrCode.vue'
 import SpecialDateBlock from '../shared/SpecialDateBlock.vue'
 import ExperienceTimelineList from '../shared/ExperienceTimelineList.vue'
+import EventInfoBlock from '../shared/EventInfoBlock.vue'
 import { buildScrollFlowItems, filterSectionsForSpecialDate } from '@/utils/specialDate'
 import { shouldShowTimelineModule } from '@/utils/tributeModules'
+import { shouldShowShareQr, shouldShowShareSection } from '@/utils/shareSection'
 
 const props = defineProps<LayoutComponentProps>()
+
+const showShare = computed(() => shouldShowShareSection(props.mode, props.shareUrl))
+const showQr = computed(() => shouldShowShareQr(props.content.modules, props.mode, props.shareUrl))
 
 const orderedSections = computed<SectionInstance[]>(() => {
   const base = filterSectionsForSpecialDate(props.definition.sections, props.content)

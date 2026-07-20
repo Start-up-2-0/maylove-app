@@ -14,6 +14,8 @@
       placement="after-cover"
     />
 
+    <EventInfoBlock :event-info="content.eventInfo" />
+
     <div ref="track" class="tl__track">
       <span class="tl__line" aria-hidden="true">
         <span class="tl__line-fill" :style="{ height: `${fill}%` }" />
@@ -28,7 +30,14 @@
       >
         <span class="tl__node" />
         <div class="tl__card">
-          <span v-if="item.date" class="tl__date">{{ item.date }}</span>
+          <div v-if="item.date || item.location || item.emotion" class="tl__meta">
+            <span v-if="item.date" class="tl__date">{{ item.date }}</span>
+            <span v-if="item.location" class="tl__location">{{ item.location }}</span>
+            <span v-if="item.emotion" class="tl__emotion">
+              <span aria-hidden="true">{{ item.emotion.icon }}</span>
+              {{ item.emotion.label }}
+            </span>
+          </div>
           <figure v-if="item.photo" class="tl__photo">
             <img :src="item.photo.url" :alt="item.title || 'Momento'" loading="lazy" />
           </figure>
@@ -45,7 +54,8 @@
         class="tl__closing"
       />
       <p v-if="signatureLabel" class="tl__sign">{{ signatureLabel }}</p>
-      <ShareBar v-if="mode === 'full' && shareUrl" :url="shareUrl" :text="content.title" />
+      <ShareBar v-if="showShare" :url="shareUrl!" :text="content.title" />
+      <QrCode v-if="showQr" :value="shareUrl!" label="Aponte a câmera" :color="theme.primaryColor" />
     </footer>
   </div>
 </template>
@@ -55,14 +65,20 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import type { ExperienceMediaItem, LayoutComponentProps } from '@/templates/types'
 import { vReveal } from '@/composables/useReveal'
 import ShareBar from '../shared/ShareBar.vue'
+import QrCode from '../shared/QrCode.vue'
 import RichText from '../shared/RichText.vue'
 import SpecialDateBlock from '../shared/SpecialDateBlock.vue'
+import EventInfoBlock from '../shared/EventInfoBlock.vue'
 import { shouldShowWizardSpecialDate } from '@/utils/specialDate'
+import { getEmotionDisplay } from '@/utils/timelineEmotions'
+import { shouldShowShareQr, shouldShowShareSection } from '@/utils/shareSection'
 
 interface TimelineEntry {
   date?: string
   title?: string
   text?: string
+  location?: string
+  emotion?: { icon: string; label: string } | null
   photo?: ExperienceMediaItem
 }
 
@@ -70,12 +86,15 @@ const props = defineProps<LayoutComponentProps>()
 
 const showSpecialDate = computed(() => shouldShowWizardSpecialDate(props.content))
 
+const showShare = computed(() => shouldShowShareSection(props.mode, props.shareUrl))
+const showQr = computed(() => shouldShowShareQr(props.content.modules, props.mode, props.shareUrl))
+
 const signatureLabel = computed(() => props.content.signature || props.content.senderName || '')
 const showFooter = computed(
   () =>
     (props.content.includeClosingMessage && props.content.closingMessage) ||
     Boolean(signatureLabel.value) ||
-    (props.mode === 'full' && props.shareUrl),
+    showShare.value,
 )
 
 const track = ref<HTMLElement | null>(null)
@@ -87,6 +106,8 @@ const items = computed<TimelineEntry[]>(() => {
       date: item.date,
       title: item.title,
       text: item.description,
+      location: item.location,
+      emotion: getEmotionDisplay(item.emotion),
       photo: item.photoUrl ? { id: `t${i}`, url: item.photoUrl, type: 'photo' } : props.content.photos[i],
     }))
   }
@@ -223,7 +244,28 @@ onBeforeUnmount(() => {
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--exp-primary);
+}
+.tl__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
   margin-bottom: 10px;
+}
+.tl__location {
+  font-size: 0.82rem;
+  color: var(--exp-muted);
+}
+.tl__emotion {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  background: color-mix(in srgb, var(--exp-primary) 12%, transparent);
+  color: var(--exp-primary);
 }
 .tl__photo {
   margin: 0 0 12px;

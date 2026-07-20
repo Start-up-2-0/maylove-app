@@ -130,7 +130,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import type { ExperienceMediaItem, ExperienceTimelineItem, LayoutComponentProps } from '@/templates/types'
 import { useExperienceAudio } from '@/composables/experienceAudio'
 import { containsHtml } from '@/utils/richText'
@@ -308,6 +308,12 @@ function nextBeat() {
   typedText.value = ''
   startTyping()
 }
+
+onMounted(() => {
+  if (props.mode === 'preview') {
+    window.setTimeout(() => open(), 480)
+  }
+})
 
 onBeforeUnmount(() => {
   window.clearTimeout(timer)

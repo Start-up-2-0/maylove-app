@@ -9,7 +9,14 @@
           <div class="timeline__card">
             <img v-if="item.photoUrl" :src="item.photoUrl" alt="" class="timeline__photo" loading="lazy" />
             <div class="timeline__body">
-              <span v-if="item.date" class="timeline__date">{{ item.date }}</span>
+              <div v-if="item.date || item.location || emotionFor(item)" class="timeline__meta">
+                <span v-if="item.date" class="timeline__date">{{ item.date }}</span>
+                <span v-if="item.location" class="timeline__location">{{ item.location }}</span>
+                <span v-if="emotionFor(item)" class="timeline__emotion">
+                  <span aria-hidden="true">{{ emotionFor(item)!.icon }}</span>
+                  {{ emotionFor(item)!.label }}
+                </span>
+              </div>
               <h3 class="timeline__title">{{ item.title }}</h3>
               <p v-if="item.description" class="timeline__desc">{{ item.description }}</p>
             </div>
@@ -23,6 +30,7 @@
 <script setup lang="ts">
 import type { ExperienceTimelineItem } from '@/templates/types'
 import { vReveal } from '@/composables/useReveal'
+import { getEmotionDisplay } from '@/utils/timelineEmotions'
 
 withDefaults(
   defineProps<{
@@ -35,6 +43,10 @@ withDefaults(
     rootClass: '',
   },
 )
+
+function emotionFor(item: ExperienceTimelineItem) {
+  return getEmotionDisplay(item.emotion)
+}
 </script>
 
 <style scoped>
@@ -100,6 +112,28 @@ withDefaults(
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+  color: var(--exp-primary);
+}
+.timeline__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin-bottom: 4px;
+}
+.timeline__location {
+  font-size: 0.82rem;
+  color: var(--exp-muted);
+}
+.timeline__emotion {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  background: color-mix(in srgb, var(--exp-primary) 12%, transparent);
   color: var(--exp-primary);
 }
 .timeline__title {

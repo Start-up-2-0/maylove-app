@@ -360,6 +360,8 @@ function mapTimelineItem(
     date: item.date,
     title: item.title?.trim() || fallbackTimelineTitle(item.description),
     description: item.description,
+    location: item.location?.trim() || undefined,
+    emotion: item.emotion?.trim() || undefined,
     photoMediaId: photoMediaId || undefined,
     photoUrl: rawPhotoUrl || undefined,
   }
