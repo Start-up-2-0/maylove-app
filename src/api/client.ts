@@ -1,5 +1,6 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios'
 import { startSessionRefreshScheduler } from '@/composables/useSessionRefresh'
+import { authPayloadFromRefreshResponse } from '@/api/authResponse'
 import {
   clearAuthSession,
   getAccessToken,
@@ -26,7 +27,11 @@ export function clearStoredTokens(): void {
   clearAuthSession()
 }
 
-function toStoredSession(payload: AuthPayload): StoredAuthSession {
+function toStoredSession(payload: {
+  token: string
+  expiresAt?: string
+  refreshExpiresAt?: string
+}): StoredAuthSession {
   const expiresAt =
     payload.expiresAt ?? new Date(Date.now() + 15 * 60 * 1000).toISOString()
   const refreshExpiresAt =
@@ -49,7 +54,8 @@ export async function refreshAuthSession(): Promise<StoredAuthSession> {
     },
   )
 
-  const session = toStoredSession(response.data.data)
+  const payload = authPayloadFromRefreshResponse(response)
+  const session = toStoredSession(payload)
   persistAuthSession(session)
   startSessionRefreshScheduler()
   return session
