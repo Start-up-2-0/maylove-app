@@ -181,7 +181,7 @@ async function onFilesSelected(event: Event) {
       }
 
       const presign = await presignAlbumMedia(props.albumId, {
-        media_type: 'image',
+        media_type: 'photo',
         filename: file.name,
         mime_type: mimeType,
         size_bytes: file.size,

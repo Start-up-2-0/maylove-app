@@ -351,7 +351,7 @@ export type AlbumCategory =
 
 export type AlbumStatus = 'draft' | 'awaiting_payment' | 'published' | 'archived'
 
-export type AlbumMediaType = 'image' | 'video' | 'audio' | 'document'
+export type AlbumMediaType = 'photo' | 'audio'
 
 export type Sentiment = 'feliz' | 'saudade' | 'amor' | 'gratidao' | 'orgulho' | 'paz' | 'outro'
 
