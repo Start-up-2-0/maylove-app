@@ -18,6 +18,8 @@ import {
 
 export interface WizardTypeFlowConfig {
   skipSteps: WizardStep[]
+  /** Exibe cartão de evento (local, data, mapa) na etapa Data especial. */
+  showEventInfo?: boolean
   defaultTemplateSlug?: string
   defaultPresentationId?: string
   defaultSpecialDateKind?: SpecialDateKind
@@ -35,6 +37,7 @@ const DEFAULT_FLOW: WizardTypeFlowConfig = {
 const WIZARD_TYPE_FLOW: Record<string, WizardTypeFlowConfig> = {
   'pedido-namoro': {
     skipSteps: [],
+    showEventInfo: true,
     defaultTemplateSlug: 'pedido-namoro',
     defaultPresentationId: 'pedido',
     defaultSpecialDateKind: 'dating_proposal',
@@ -46,6 +49,7 @@ const WIZARD_TYPE_FLOW: Record<string, WizardTypeFlowConfig> = {
   },
   'pedido-casamento': {
     skipSteps: [],
+    showEventInfo: true,
     defaultTemplateSlug: 'pedido-casamento',
     defaultPresentationId: 'pedido',
     defaultSpecialDateKind: 'wedding',
@@ -66,6 +70,7 @@ const WIZARD_TYPE_FLOW: Record<string, WizardTypeFlowConfig> = {
   },
   aniversario: {
     skipSteps: [],
+    showEventInfo: true,
     defaultTemplateSlug: 'aniversario',
     defaultPresentationId: 'slider-fotos',
     defaultSpecialDateKind: 'anniversary',
@@ -75,6 +80,7 @@ const WIZARD_TYPE_FLOW: Record<string, WizardTypeFlowConfig> = {
   },
   'datas-especiais': {
     skipSteps: [],
+    showEventInfo: true,
     defaultTemplateSlug: 'dia-da-mulher',
     defaultPresentationId: 'timeline',
     defaultSpecialDateKind: 'custom',
@@ -108,6 +114,10 @@ const WIZARD_TYPE_FLOW: Record<string, WizardTypeFlowConfig> = {
 export function getWizardTypeFlowConfig(wizardTypeId?: string | null): WizardTypeFlowConfig {
   if (!wizardTypeId) return DEFAULT_FLOW
   return WIZARD_TYPE_FLOW[wizardTypeId] ?? DEFAULT_FLOW
+}
+
+export function showWizardEventInfo(wizardTypeId?: string | null): boolean {
+  return getWizardTypeFlowConfig(wizardTypeId).showEventInfo === true
 }
 
 export function getWizardSteps(wizardTypeId?: string | null): WizardStep[] {
@@ -216,6 +226,7 @@ export async function applyTypeDefaults(params: ApplyTypeDefaultsParams): Promis
     color_primary: form.color_primary,
     content_json: {
       wizard_category_slug: option.categorySlug,
+      wizard_type_id: option.id,
       presentation,
       style_id: styleId,
       effects: form.effects.length ? form.effects : undefined,

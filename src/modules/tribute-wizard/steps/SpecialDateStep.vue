@@ -104,6 +104,14 @@
         </div>
       </section>
     </div>
+
+    <section v-if="showEventInfo" class="wiz-card-stack ml-fade-up">
+      <section class="wiz-card">
+        <h3 class="wiz-card__title">Informações do evento</h3>
+        <p class="wiz-card__hint">Opcional — aparecem em um cartão na homenagem publicada.</p>
+        <EventStep :form="form" embedded />
+      </section>
+    </section>
   </div>
 </template>
 
@@ -112,8 +120,9 @@ import { computed } from 'vue'
 import type { SpecialDateCounterMode, SpecialDateDisplayFormat } from '@/api/types'
 import type { useTributeWizard } from '@/composables/useTributeWizard'
 import { SPECIAL_DATE_KIND_OPTIONS } from '@/modules/tribute-wizard/tributeWizardSteps'
-import { getWizardTypeFlowConfig } from '@/modules/tribute-wizard/tributeTypeFlow'
+import { getWizardTypeFlowConfig, showWizardEventInfo } from '@/modules/tribute-wizard/tributeTypeFlow'
 import WizardStepHeader from '@/components/wizard/WizardStepHeader.vue'
+import EventStep from './EventStep.vue'
 
 const props = defineProps<{
   form: ReturnType<typeof useTributeWizard>['form']
@@ -126,6 +135,8 @@ const specialDateHint = computed(() => {
     'Essa data poderá aparecer em diferentes áreas da homenagem.'
   )
 })
+
+const showEventInfo = computed(() => showWizardEventInfo(props.form.wizard_type_id))
 
 const kindOptions = SPECIAL_DATE_KIND_OPTIONS
 

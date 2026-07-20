@@ -83,6 +83,12 @@
           @changed="$emit('media-changed')"
         />
       </section>
+
+      <section v-if="supportsVideo" class="wiz-card">
+        <h3 class="wiz-card__title">Vídeo</h3>
+        <p class="wiz-card__hint">Opcional — vídeo de abertura na homenagem.</p>
+        <VideoStep :form="form" compact />
+      </section>
     </div>
   </div>
 </template>
@@ -103,6 +109,7 @@ import { syncModulesFromPresentation } from '@/utils/tributeModules'
 import WizardStepHeader from '@/components/wizard/WizardStepHeader.vue'
 import PhotosStep from './PhotosStep.vue'
 import MusicStep from './MusicStep.vue'
+import VideoStep from './VideoStep.vue'
 
 const props = defineProps<{
   form: ReturnType<typeof useTributeWizard>['form']
@@ -165,6 +172,12 @@ const maxPhotos = computed(() => {
 const supportsMusic = computed(() => {
   const tpl = catalogTemplates.value.find((item) => item.id === props.form.template_id)
   return tpl?.supports_music ?? true
+})
+
+const supportsVideo = computed(() => {
+  if (props.definition?.capabilities?.supportsVideo === true) return true
+  const tpl = catalogTemplates.value.find((item) => item.id === props.form.template_id)
+  return tpl?.supports_video ?? false
 })
 
 async function loadCatalogTemplates() {

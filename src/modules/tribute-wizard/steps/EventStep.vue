@@ -1,6 +1,7 @@
 <template>
   <div class="event-step">
     <WizardStepHeader
+      v-if="!embedded"
       title="Informações do evento"
       description="Data, local e mapa aparecem em um cartão de evento na homenagem."
     />
@@ -48,6 +49,7 @@ import WizardStepHeader from '@/components/wizard/WizardStepHeader.vue'
 
 defineProps<{
   form: ReturnType<typeof useTributeWizard>['form']
+  embedded?: boolean
 }>()
 </script>
 

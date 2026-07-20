@@ -87,6 +87,7 @@ import {
 } from '@/modules/tribute-wizard/tributeWizardSteps'
 import { getWizardSteps } from '@/modules/tribute-wizard/tributeTypeFlow'
 import { describeDerivedModules } from '@/utils/tributeModules'
+import { summarizeEventInfo } from '@/utils/eventInfo'
 import { buildReviewPreviewHints } from '@/modules/tribute-wizard/previewHints'
 import WizardStepHeader from '@/components/wizard/WizardStepHeader.vue'
 import TributeLivePreview from '@/components/wizard/TributeLivePreview.vue'
@@ -129,6 +130,22 @@ const photoCount = computed(
   () => (props.tribute?.media ?? []).filter((m) => m.media_type === 'photo').length,
 )
 
+const specialDateSummary = computed(() => {
+  const parts: string[] = []
+  if (props.form.special_date_config.enabled) {
+    parts.push(props.form.special_date_config.title || 'Data especial configurada')
+  }
+  const eventSummary = summarizeEventInfo(props.form.event_info)
+  if (eventSummary) parts.push(eventSummary)
+  return parts.join(' · ') || 'Não incluída'
+})
+
+const basicsSummary = computed(() => {
+  const parts = [props.form.honoree_name || props.form.title || ''].filter(Boolean)
+  if (props.form.video_url?.trim()) parts.push('Com vídeo')
+  return parts.join(' · ') || '—'
+})
+
 const previewHints = computed(() =>
   buildReviewPreviewHints(props.form, props.definition?.layout),
 )
@@ -144,14 +161,12 @@ const summaryItems = computed(() => {
     {
       step: 'basics' as WizardStep,
       label: 'Informações',
-      value: props.form.honoree_name || props.form.title || '—',
+      value: basicsSummary.value,
     },
     {
       step: 'special-date' as WizardStep,
       label: 'Data especial',
-      value: props.form.special_date_config.enabled
-        ? props.form.special_date_config.title || 'Configurada'
-        : 'Não incluída',
+      value: specialDateSummary.value,
     },
     {
       step: 'story' as WizardStep,

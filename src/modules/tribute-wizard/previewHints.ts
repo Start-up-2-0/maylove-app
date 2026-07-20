@@ -3,6 +3,7 @@ import type { useTributeWizard } from '@/composables/useTributeWizard'
 import { getPresentation } from '@/templates/presentations'
 import type { ExperienceLayout } from '@/templates/types'
 import { timelineItemHasContent } from '@/utils/timeline'
+import { hasEventInfo } from '@/utils/eventInfo'
 import { shouldShowTimelineModule } from '@/utils/tributeModules'
 
 export function buildReviewPreviewHints(
@@ -35,6 +36,14 @@ export function buildReviewPreviewHints(
 
   if (layout === 'envelope' && form.message?.trim()) {
     hints.push('Na carta animada, clique em "Abrir carta" para ver o conteúdo completo.')
+  }
+
+  if (hasEventInfo(form.event_info)) {
+    hints.push('As informações do evento aparecem em um cartão dedicado na homenagem.')
+  }
+
+  if (form.video_url?.trim()) {
+    hints.push('O vídeo informado será exibido na seção de vídeo da página.')
   }
 
   return hints
