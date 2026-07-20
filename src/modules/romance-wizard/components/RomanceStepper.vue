@@ -1,5 +1,5 @@
 <template>
-  <nav class="rom-stepper" aria-label="Etapas do romance">
+  <nav class="rom-stepper" aria-label="Etapas da experiência">
     <div class="rom-stepper__head">
       <span class="rom-stepper__label">Passo {{ currentIndex + 1 }} de {{ steps.length }}</span>
       <span class="rom-stepper__pct">{{ progressPercent }}%</span>
@@ -32,7 +32,7 @@
             </svg>
             <template v-else>{{ index + 1 }}</template>
           </span>
-          <span class="rom-stepper__text">{{ ROMANCE_STEP_LABELS[step] }}</span>
+          <span class="rom-stepper__text">{{ stepLabels[step] ?? step }}</span>
         </button>
       </li>
     </ol>
@@ -42,22 +42,21 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import {
-  ROMANCE_STEP_LABELS,
-  ROMANCE_WIZARD_STEPS,
-  type RomanceStep,
-} from '@/modules/romance-wizard/romanceWizardSteps'
+  ROMANCE_EXPERIENCE_STEP_LABELS,
+  type RomanceExperienceStepId,
+} from '@/modules/romance-wizard/romanceExperiences'
 
 const props = defineProps<{
-  currentStep: RomanceStep
-  steps?: RomanceStep[]
+  currentStep: RomanceExperienceStepId
+  steps: RomanceExperienceStepId[]
 }>()
 
-defineEmits<{ go: [step: RomanceStep] }>()
+defineEmits<{ go: [step: RomanceExperienceStepId] }>()
 
-const steps = computed(() => props.steps ?? ROMANCE_WIZARD_STEPS)
-const currentIndex = computed(() => steps.value.indexOf(props.currentStep))
+const stepLabels = ROMANCE_EXPERIENCE_STEP_LABELS
+const currentIndex = computed(() => props.steps.indexOf(props.currentStep))
 const progressPercent = computed(() =>
-  Math.round(((currentIndex.value + 1) / steps.value.length) * 100),
+  props.steps.length ? Math.round(((currentIndex.value + 1) / props.steps.length) * 100) : 0,
 )
 </script>
 

@@ -46,6 +46,7 @@ export function useTributeWizard(tributeId: string) {
   const error = ref('')
 
   const form = reactive({
+    romance_experience_id: '' as string,
     wizard_type_id: '' as string,
     wizard_category_slug: '' as string,
     template_id: '' as string,
@@ -170,6 +171,7 @@ export function useTributeWizard(tributeId: string) {
       modules: cleanModules(),
       wizard_category_slug: form.wizard_category_slug || null,
       wizard_type_id: form.wizard_type_id || null,
+      romance_experience_id: form.romance_experience_id || null,
       music_autoplay: form.music_autoplay,
       music_loop: form.music_loop,
       ...(form.music_duration_seconds > 0
@@ -216,6 +218,7 @@ export function useTributeWizard(tributeId: string) {
 
   function syncFormFromTribute(data: TributeDetail) {
     form.template_id = data.template.id
+    form.romance_experience_id = (data.content_json?.romance_experience_id as string) ?? ''
     const savedTypeId = data.content_json?.wizard_type_id
     const savedCategory = data.content_json?.wizard_category_slug as string | undefined
     const optionById = savedTypeId

@@ -189,6 +189,105 @@
   pointer-events: none;
 }
 
+.romance-launcher__grid--experiences {
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+}
+.rom-experience-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 22px 18px;
+  min-height: 168px;
+  text-align: left;
+  border-radius: 20px;
+  border: 1.5px solid color-mix(in srgb, var(--rom-accent, #e11d48) 18%, var(--border));
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--rom-accent, #e11d48) 5%, var(--surface)),
+    var(--surface)
+  );
+  transition:
+    transform 0.25s ease,
+    border-color 0.25s ease,
+    box-shadow 0.25s ease;
+}
+.rom-experience-card:hover:not(:disabled) {
+  transform: translateY(-3px);
+  border-color: var(--rom-accent, #e11d48);
+  box-shadow: 0 16px 40px -28px color-mix(in srgb, var(--rom-accent, #e11d48) 45%, transparent);
+}
+.rom-experience-card:disabled,
+.rom-experience-card--soon {
+  opacity: 0.72;
+  cursor: not-allowed;
+}
+.rom-experience-card__icon {
+  font-size: 2rem;
+  line-height: 1;
+}
+.rom-experience-card__label {
+  font-size: 1rem;
+  color: var(--ink);
+}
+.rom-experience-card__tagline {
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: var(--muted);
+}
+.rom-experience-card__badge {
+  margin-top: auto;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--rom-muted, #9f1239);
+  background: color-mix(in srgb, var(--rom-accent, #e11d48) 10%, var(--surface));
+}
+.rom-experience-card__badge--map {
+  color: #0f766e;
+  background: color-mix(in srgb, #14b8a6 12%, var(--surface));
+}
+
+.rom-preview-panel {
+  position: sticky;
+  top: 24px;
+  padding: 18px;
+  border-radius: 20px;
+  border: 1px solid color-mix(in srgb, var(--rom-accent, #e11d48) 14%, var(--border));
+  background: color-mix(in srgb, var(--surface) 94%, transparent);
+  box-shadow: 0 24px 60px -40px color-mix(in srgb, var(--rom-accent) 30%, transparent);
+}
+.rom-preview-panel__eyebrow {
+  margin: 0 0 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--rom-muted, #9f1239);
+}
+.rom-preview-panel__experience {
+  margin: 0 0 8px;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+.rom-preview-panel__opening {
+  margin: 0 0 14px;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--muted);
+}
+.rom-preview-panel__loading {
+  display: grid;
+  place-items: center;
+  min-height: 280px;
+}
+
 .rom-field {
   display: flex;
   flex-direction: column;

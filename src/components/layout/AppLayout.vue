@@ -29,7 +29,7 @@
           <svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
             <path d="M12 5v14M5 12h14" stroke-linecap="round" />
           </svg>
-          <span>Novo romance</span>
+          <span>Nova experiência</span>
         </RouterLink>
 
         <p class="sidebar__label sidebar__label--spaced">Álbuns</p>

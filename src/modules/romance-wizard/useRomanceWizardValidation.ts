@@ -5,66 +5,82 @@ import {
 } from '@/modules/tribute-wizard/presentationValidation'
 import type { TemplateDefinition } from '@/templates/types'
 import { timelineItemHasContent } from '@/utils/timeline'
-import type { RomanceStep } from './romanceWizardSteps'
-import { isRomanceTypeId } from './romanceWizardSteps'
+import type { RomanceExperienceStepId } from './romanceExperiences'
+import { getRomanceExperience } from './romanceExperiences'
 
 export interface RomanceStepValidationResult {
   valid: boolean
   message?: string
 }
 
-export function validateRomanceStep(
-  step: RomanceStep,
+function hasPlainMessage(message?: string | null): boolean {
+  return Boolean(message?.replace(/<[^>]*>/g, '').trim())
+}
+
+export function validateExperienceStep(
+  step: RomanceExperienceStepId,
   form: ReturnType<typeof useTributeWizard>['form'],
   photosCount = 0,
   definition?: TemplateDefinition | null,
+  experienceId?: string | null,
 ): RomanceStepValidationResult {
-  switch (step) {
-    case 'occasion':
-      if (!isRomanceTypeId(form.wizard_type_id)) {
-        return { valid: false, message: 'Escolha a ocasião do romance para continuar.' }
-      }
-      return { valid: true }
+  const experience = getRomanceExperience(experienceId)
 
-    case 'couple':
+  switch (step) {
+    case 'recipient':
       if (!form.honoree_name?.trim()) {
         return { valid: false, message: 'Informe o nome de quem receberá este presente.' }
       }
+      return { valid: true }
+
+    case 'photos':
       if (photosCount < 1) {
-        return { valid: false, message: 'Adicione pelo menos uma foto de vocês.' }
+        return {
+          valid: false,
+          message:
+            experience?.photosMode === 'cover'
+              ? 'Adicione a foto de capa para continuar.'
+              : 'Adicione pelo menos uma foto.',
+        }
       }
       return { valid: true }
 
-    case 'story': {
-      const hasMessage = Boolean(form.message?.replace(/<[^>]*>/g, '').trim())
-      const hasMoments = form.timeline.some((item) => timelineItemHasContent(item))
-      if (!hasMessage && !hasMoments) {
-        return {
-          valid: false,
-          message: 'Escreva uma mensagem ou adicione pelo menos um momento especial.',
-        }
+    case 'message':
+      if (!hasPlainMessage(form.message)) {
+        return { valid: false, message: 'Escreva a mensagem ou carta antes de continuar.' }
       }
-      if (form.special_date_config.enabled) {
-        if (!form.special_date_config.date?.trim()) {
-          return { valid: false, message: 'Informe a data especial ou desative o contador.' }
-        }
-        if (!form.special_date_config.title?.trim()) {
-          return { valid: false, message: 'Dê um título à data especial.' }
-        }
+      return { valid: true }
+
+    case 'music':
+      if (form.music_source === 'none' || !form.music_track_id) {
+        return { valid: false, message: 'Escolha uma música para a experiência.' }
+      }
+      return { valid: true }
+
+    case 'special-date':
+      if (!form.special_date_config.enabled) {
+        form.special_date_config.enabled = true
+      }
+      if (!form.special_date_config.date?.trim()) {
+        return { valid: false, message: 'Informe a data especial.' }
+      }
+      if (!form.special_date_config.title?.trim()) {
+        return { valid: false, message: 'Dê um título à data especial.' }
+      }
+      return { valid: true }
+
+    case 'video':
+      return { valid: true }
+
+    case 'chapters': {
+      const chapters = form.timeline.filter((item) => timelineItemHasContent(item))
+      if (chapters.length < 1) {
+        return { valid: false, message: 'Adicione pelo menos um capítulo da história.' }
       }
       return { valid: true }
     }
 
-    case 'style':
-      if (!form.template_id) {
-        return { valid: false, message: 'Escolha um modelo visual.' }
-      }
-      if (!form.presentation && !definition?.layout) {
-        return { valid: false, message: 'Escolha como a página será exibida.' }
-      }
-      return { valid: true }
-
-    case 'finish': {
+    case 'preview': {
       const schemaIssues = collectPresentationSchemaIssuesFromForm(form, definition, photosCount)
       if (schemaIssues.length) {
         return { valid: false, message: firstIssueMessage(schemaIssues) }
@@ -75,4 +91,20 @@ export function validateRomanceStep(
     default:
       return { valid: true }
   }
+}
+
+/** @deprecated Use validateExperienceStep */
+export function validateRomanceStep(
+  step: string,
+  form: ReturnType<typeof useTributeWizard>['form'],
+  photosCount = 0,
+  definition?: TemplateDefinition | null,
+): RomanceStepValidationResult {
+  return validateExperienceStep(
+    step as RomanceExperienceStepId,
+    form,
+    photosCount,
+    definition,
+    form.romance_experience_id,
+  )
 }

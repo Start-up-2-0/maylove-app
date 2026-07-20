@@ -1,10 +1,10 @@
 <template>
   <div class="rom-finish">
     <header class="rom-step-intro">
-      <p class="rom-step-intro__eyebrow">Passo 5</p>
+      <p class="rom-step-intro__eyebrow">{{ experience?.icon }} {{ experience?.label ?? 'Romance' }}</p>
       <h2 class="rom-step-intro__title">Pronto para emocionar?</h2>
       <p class="rom-step-intro__desc">
-        Confira a prévia ao vivo e publique — link e QR Code na hora, como no Love Cards.
+        Confira a prévia final e publique — link e QR Code na hora.
       </p>
     </header>
 
@@ -60,6 +60,7 @@ import type { TributeDetail } from '@/api/types'
 import type { useTributeWizard } from '@/composables/useTributeWizard'
 import type { TemplateDefinition } from '@/templates/types'
 import { buildReviewPreviewHints } from '@/modules/tribute-wizard/previewHints'
+import { getRomanceExperience } from '@/modules/romance-wizard/romanceExperiences'
 import PublishStep from '@/modules/tribute-wizard/steps/PublishStep.vue'
 import TributeLivePreview from '@/components/wizard/TributeLivePreview.vue'
 
@@ -68,9 +69,11 @@ const props = defineProps<{
   form: ReturnType<typeof useTributeWizard>['form']
   tribute: TributeDetail | null
   definition?: TemplateDefinition | null
+  experienceId?: string | null
   refreshToken: number
   generating?: boolean
   flushAutosave?: () => Promise<boolean>
+  embedded?: boolean
 }>()
 
 defineEmits<{ regenerate: []; published: [] }>()
@@ -78,6 +81,7 @@ defineEmits<{ regenerate: []; published: [] }>()
 const previewHints = computed(() =>
   buildReviewPreviewHints(props.form, props.definition?.layout),
 )
+const experience = computed(() => getRomanceExperience(props.experienceId))
 </script>
 
 <style scoped>

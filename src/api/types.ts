@@ -190,6 +190,8 @@ export interface TributeContentJson {
   wizard_category_slug?: string | null
   /** ID estável do tipo escolhido no wizard (ex.: declaracao-amor). */
   wizard_type_id?: string | null
+  /** Experiência romance escolhida na galeria (ex.: carta-amor). */
+  romance_experience_id?: string | null
 }
 
 export interface TributeDetail {
