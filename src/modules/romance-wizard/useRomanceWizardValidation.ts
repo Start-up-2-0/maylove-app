@@ -52,8 +52,14 @@ export function validateExperienceStep(
       return { valid: true }
 
     case 'music':
-      if (form.music_source === 'none' || !form.music_track_id) {
-        return { valid: false, message: 'Escolha uma música para a experiência.' }
+      if (form.music_source === 'none') {
+        return { valid: false, message: 'Escolha uma música ou importe do YouTube.' }
+      }
+      if (form.music_source === 'library' && !form.music_track_id) {
+        return { valid: false, message: 'Selecione uma faixa da biblioteca.' }
+      }
+      if (form.music_source === 'upload' && !form.music_duration_seconds) {
+        return { valid: false, message: 'Importe o áudio do YouTube antes de continuar.' }
       }
       return { valid: true }
 

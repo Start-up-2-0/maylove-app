@@ -1,10 +1,9 @@
 <template>
   <div class="publish-step wiz-step-content">
     <WizardStepHeader
+      v-if="!embedded"
       title="Publicar"
-      :description="billingEnabled
-        ? 'Valide os requisitos e pague com PIX para publicar a homenagem.'
-        : 'Valide os requisitos e publique a homenagem.'"
+      :description="headerDescription"
     />
 
     <div class="wiz-card-stack">
@@ -17,32 +16,33 @@
 
         <div v-if="loadingValidation" class="validation-loading">
           <span class="ml-spinner" />
-          Validando homenagem...
+          {{ romance ? 'Validando presente...' : 'Validando homenagem...' }}
         </div>
 
         <div v-else class="validation">
-          <div v-if="!publishBlocked" class="ml-alert ml-alert--success">
+          <div v-if="showReadyState" class="ml-alert ml-alert--success">
             <svg class="ml-alert__icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M20 6 9 17l-5-5" stroke-linecap="round" stroke-linejoin="round" />
             </svg>
             <span>Tudo certo para publicar.</span>
           </div>
-          <div v-if="validation?.errors.length || schemaIssues.length" class="ml-alert ml-alert--danger">
+          <div v-if="validation?.errors.length || schemaIssues.length || romanceBlockingIssues.length" class="ml-alert ml-alert--danger">
             <ul class="issue-list">
+              <li v-for="issue in romanceBlockingIssues" :key="issue.field + issue.code">{{ issue.message }}</li>
               <li v-for="issue in schemaIssues" :key="issue.field + issue.code">{{ issue.message }}</li>
               <li v-for="issue in validation?.errors ?? []" :key="issue.field + issue.code">{{ issue.message }}</li>
             </ul>
           </div>
-          <div v-if="validation?.warnings.length" class="ml-alert ml-alert--warning">
+          <div v-if="visibleWarnings.length" class="ml-alert ml-alert--warning">
             <ul class="issue-list">
-              <li v-for="issue in validation.warnings" :key="issue.field + issue.code">{{ issue.message }}</li>
+              <li v-for="issue in visibleWarnings" :key="issue.field + issue.code">{{ issue.message }}</li>
             </ul>
           </div>
         </div>
       </section>
 
       <section v-if="tribute?.status === 'published'" class="wiz-card published-card">
-        <h3 class="published-card__title">Homenagem publicada!</h3>
+        <h3 class="published-card__title">{{ romance ? 'Presente publicado!' : 'Homenagem publicada!' }}</h3>
         <p class="text-muted published-card__sub">Compartilhe o link com quem você ama.</p>
         <div class="published-card__row">
           <input :value="publicUrl" readonly class="ml-input" />
@@ -54,14 +54,16 @@
 
         <div v-if="showQrCode" class="published-card__qr">
           <h4>QR Code</h4>
-          <img :src="qrCodeUrl" width="180" height="180" alt="QR Code da homenagem" />
-          <p class="text-muted">Escaneie para abrir a homenagem no celular.</p>
+          <img :src="qrCodeUrl" width="180" height="180" :alt="romance ? 'QR Code do presente' : 'QR Code da homenagem'" />
+          <p class="text-muted">{{ romance ? 'Escaneie para abrir o presente no celular.' : 'Escaneie para abrir a homenagem no celular.' }}</p>
         </div>
       </section>
 
       <section v-else class="wiz-card">
         <h3 class="wiz-card__title">Publicação</h3>
-        <p class="wiz-card__hint">Quando estiver pronto, publique ou pague para colocar no ar.</p>
+        <p class="wiz-card__hint">
+          {{ romance ? 'Quando estiver pronto, publique e compartilhe o link.' : 'Quando estiver pronto, publique ou pague para colocar no ar.' }}
+        </p>
 
         <div class="publish-actions">
           <button
@@ -105,6 +107,8 @@ import { fetchBillingProduct } from '@/api/billing'
 import type { CheckoutResponse, TributeDetail, TributeValidation } from '@/api/types'
 import { getTemplateDefinition } from '@/templates/registry'
 import { collectPresentationSchemaIssuesFromTribute } from '@/modules/tribute-wizard/presentationValidation'
+import { getExperienceSteps } from '@/modules/romance-wizard/romanceExperiences'
+import { tributeHasMusicConfigured } from '@/modules/romance-wizard/romanceFinishHelpers'
 import WizardStepHeader from '@/components/wizard/WizardStepHeader.vue'
 import PixCheckoutPanel from '@/components/billing/PixCheckoutPanel.vue'
 
@@ -112,6 +116,9 @@ const props = defineProps<{
   tributeId: string
   tribute: TributeDetail | null
   flushAutosave?: () => Promise<boolean>
+  embedded?: boolean
+  romance?: boolean
+  experienceId?: string | null
 }>()
 
 const schemaIssues = computed(() => {
@@ -122,8 +129,43 @@ const schemaIssues = computed(() => {
 })
 
 const publishBlocked = computed(
-  () => !validation.value?.valid || schemaIssues.value.length > 0,
+  () => !validation.value?.valid || schemaIssues.value.length > 0 || romanceBlockingIssues.value.length > 0,
 )
+
+const experienceSteps = computed(() => getExperienceSteps(props.experienceId))
+const requiresMusic = computed(
+  () => props.romance && experienceSteps.value.includes('music'),
+)
+
+const romanceBlockingIssues = computed(() => {
+  if (!props.romance || !requiresMusic.value || !props.tribute) return []
+  if (tributeHasMusicConfigured(props.tribute)) return []
+  return [{ field: 'music', code: 'MISSING_MUSIC', message: 'Adicione uma trilha sonora antes de publicar.' }]
+})
+
+const visibleWarnings = computed(() => {
+  const warnings = validation.value?.warnings ?? []
+  if (!props.romance) return warnings
+  return warnings.filter((issue) => {
+    if (issue.code === 'MISSING_MUSIC' && requiresMusic.value) return false
+    return true
+  })
+})
+
+const showReadyState = computed(
+  () => !publishBlocked.value && !visibleWarnings.value.length,
+)
+
+const headerDescription = computed(() => {
+  if (props.romance) {
+    return billingEnabled.value
+      ? 'Valide os requisitos e pague com PIX para publicar o presente.'
+      : 'Valide os requisitos e publique o presente digital.'
+  }
+  return billingEnabled.value
+    ? 'Valide os requisitos e pague com PIX para publicar a homenagem.'
+    : 'Valide os requisitos e publique a homenagem.'
+})
 
 const canPublishDirectly = computed(() => !billingEnabled.value || hasSubscription.value)
 

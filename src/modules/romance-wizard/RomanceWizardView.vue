@@ -33,6 +33,22 @@
       </div>
     </div>
 
+    <div v-else-if="currentStep === 'preview'" class="romance-wizard__finish">
+      <RomanceFinishStep
+        :tribute-id="tributeId"
+        :form="form"
+        :tribute="tribute"
+        :definition="definition"
+        :experience-id="experienceId"
+        :photo-count="photos.length"
+        :refresh-token="previewRefreshToken"
+        :generating="previewGenerating"
+        :flush-autosave="flushAutosave"
+        @regenerate="refreshPreview"
+        @published="onPublished"
+      />
+    </div>
+
     <div v-else class="romance-wizard__shell">
       <div class="romance-wizard__main">
         <Transition name="wiz-step" mode="out-in">
@@ -80,27 +96,13 @@
               :photos="photos"
               :experience-id="experienceId"
             />
-            <RomanceFinishStep
-              v-else-if="currentStep === 'preview'"
-              :tribute-id="tributeId"
-              :form="form"
-              :tribute="tribute"
-              :definition="definition"
-              :experience-id="experienceId"
-              :refresh-token="previewRefreshToken"
-              :generating="previewGenerating"
-              :flush-autosave="flushAutosave"
-              embedded
-              @regenerate="refreshPreview"
-              @published="onPublished"
-            />
           </div>
         </Transition>
 
         <p v-if="stepError" class="ml-alert ml-alert--danger rom-step-error">{{ stepError }}</p>
       </div>
 
-      <aside v-if="currentStep !== 'preview'" class="romance-wizard__aside">
+      <aside class="romance-wizard__aside">
         <div class="rom-preview-panel">
           <p class="rom-preview-panel__eyebrow">Prévia ao vivo</p>
           <p class="rom-preview-panel__experience">

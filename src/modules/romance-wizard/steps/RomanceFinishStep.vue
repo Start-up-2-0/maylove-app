@@ -1,23 +1,19 @@
 <template>
   <div class="rom-finish">
-    <header class="rom-step-intro">
-      <p class="rom-step-intro__eyebrow">{{ experience?.icon }} {{ experience?.label ?? 'Romance' }}</p>
-      <h2 class="rom-step-intro__title">Pronto para emocionar?</h2>
-      <p class="rom-step-intro__desc">
-        Confira a prévia final e publique — link e QR Code na hora.
-      </p>
-    </header>
+    <RomanceFormShell
+      :icon="experience?.icon ?? '💕'"
+      title="Publicar"
+      prompt="Última conferida — veja a prévia, valide e publique o presente digital."
+    />
 
-    <div v-if="previewHints.length" class="rom-hints">
-      <ul>
-        <li v-for="(hint, index) in previewHints" :key="index">{{ hint }}</li>
-      </ul>
+    <div v-if="summaryItems.length" class="rom-finish__summary">
+      <span v-for="item in summaryItems" :key="item" class="rom-finish__chip">{{ item }}</span>
     </div>
 
     <div class="rom-finish__layout">
-      <section class="rom-panel rom-finish__preview">
+      <section class="rom-form-card rom-finish__preview">
         <div class="rom-finish__preview-head">
-          <h3 class="rom-panel__title">Prévia ao vivo</h3>
+          <h3 class="rom-finish__section-title">Prévia ao vivo</h3>
           <button
             type="button"
             class="ml-btn ml-btn--secondary ml-btn--sm"
@@ -39,14 +35,18 @@
           :tribute="tribute"
           :refresh-token="refreshToken"
           faithful
+          compact
         />
       </section>
 
-      <section class="rom-panel rom-finish__publish">
+      <section class="rom-form-card rom-finish__publish">
         <PublishStep
           :tribute-id="tributeId"
           :tribute="tribute"
+          :experience-id="experienceId"
           :flush-autosave="flushAutosave"
+          embedded
+          romance
           @published="$emit('published')"
         />
       </section>
@@ -59,8 +59,9 @@ import { computed } from 'vue'
 import type { TributeDetail } from '@/api/types'
 import type { useTributeWizard } from '@/composables/useTributeWizard'
 import type { TemplateDefinition } from '@/templates/types'
-import { buildReviewPreviewHints } from '@/modules/tribute-wizard/previewHints'
-import { getRomanceExperience } from '@/modules/romance-wizard/romanceExperiences'
+import { getRomanceExperience, type RomanceExperienceId } from '@/modules/romance-wizard/romanceExperiences'
+import { buildRomanceFinishSummary } from '@/modules/romance-wizard/romanceFinishHelpers'
+import RomanceFormShell from '@/modules/romance-wizard/components/RomanceFormShell.vue'
 import PublishStep from '@/modules/tribute-wizard/steps/PublishStep.vue'
 import TributeLivePreview from '@/components/wizard/TributeLivePreview.vue'
 
@@ -73,41 +74,58 @@ const props = defineProps<{
   refreshToken: number
   generating?: boolean
   flushAutosave?: () => Promise<boolean>
-  embedded?: boolean
+  photoCount?: number
 }>()
 
 defineEmits<{ regenerate: []; published: [] }>()
 
-const previewHints = computed(() =>
-  buildReviewPreviewHints(props.form, props.definition?.layout),
+const experience = computed(() => getRomanceExperience(props.experienceId as RomanceExperienceId | null))
+const summaryItems = computed(() =>
+  buildRomanceFinishSummary(props.form, props.experienceId as RomanceExperienceId | null, props.photoCount ?? 0),
 )
-const experience = computed(() => getRomanceExperience(props.experienceId))
 </script>
 
 <style scoped>
-.rom-hints {
-  margin-bottom: 18px;
-  padding: 14px 18px;
-  border-radius: 14px;
-  background: color-mix(in srgb, var(--rom-accent, var(--primary)) 8%, var(--surface));
-  border: 1px solid color-mix(in srgb, var(--rom-accent, var(--primary)) 18%, var(--border));
+.rom-finish {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
 }
-.rom-hints ul {
-  margin: 0;
-  padding-left: 18px;
-  color: var(--muted);
-  font-size: 0.88rem;
-  line-height: 1.55;
+.rom-finish__summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.rom-finish__chip {
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--rom-muted, #9f1239);
+  background: color-mix(in srgb, var(--rom-accent, #e11d48) 8%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--rom-accent, #e11d48) 14%, var(--border));
 }
 .rom-finish__layout {
   display: grid;
-  gap: 20px;
+  gap: 16px;
+  align-items: start;
 }
-@media (min-width: 1100px) {
+@media (min-width: 960px) {
   .rom-finish__layout {
-    grid-template-columns: 1.15fr 0.85fr;
-    align-items: start;
+    grid-template-columns: minmax(0, 1.2fr) minmax(300px, 0.8fr);
+    gap: 20px;
   }
+  .rom-finish__publish {
+    position: sticky;
+    top: 20px;
+  }
+}
+.rom-finish__section-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--ink);
 }
 .rom-finish__preview-head {
   display: flex;
@@ -121,10 +139,26 @@ const experience = computed(() => getRomanceExperience(props.experienceId))
   align-items: center;
   justify-content: center;
   gap: 10px;
-  min-height: 320px;
+  min-height: 280px;
   color: var(--muted);
 }
 .rom-finish__publish :deep(.publish-step) {
   padding: 0;
+}
+.rom-finish__publish :deep(.wiz-step-header) {
+  display: none;
+}
+.rom-finish__publish :deep(.wiz-card-stack) {
+  gap: 14px;
+}
+.rom-finish__publish :deep(.wiz-card) {
+  padding: 0;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+}
+.rom-finish__publish :deep(.wiz-card__title) {
+  font-size: 1rem;
+  margin-bottom: 10px;
 }
 </style>
