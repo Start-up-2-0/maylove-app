@@ -1,6 +1,7 @@
 import type { TributeDetail } from '@/api/types'
 import type { useTributeWizard } from '@/composables/useTributeWizard'
 import { getRomanceExperience, type RomanceExperienceId } from '@/modules/romance-wizard/romanceExperiences'
+import { isLegacyGenericTitle } from '@/modules/romance-wizard/romanceCopy'
 
 export function buildRomanceFinishSummary(
   form: ReturnType<typeof useTributeWizard>['form'],
@@ -13,6 +14,9 @@ export function buildRomanceFinishSummary(
   if (experience) {
     items.push(`${experience.icon} ${experience.label}`)
   }
+  if (form.title?.trim() && !isLegacyGenericTitle(form.title)) {
+    items.push(`"${form.title.trim()}"`)
+  }
   if (form.honoree_name?.trim()) {
     items.push(`Para ${form.honoree_name.trim()}`)
   }
@@ -24,6 +28,9 @@ export function buildRomanceFinishSummary(
   }
   if (form.music_source !== 'none') {
     items.push('Trilha sonora')
+  }
+  if (form.effects.length) {
+    items.push(`${form.effects.length} efeito${form.effects.length === 1 ? '' : 's'}`)
   }
   if (form.special_date_config.enabled && form.special_date_config.date) {
     items.push('Data especial')

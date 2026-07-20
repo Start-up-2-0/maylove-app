@@ -8,13 +8,13 @@
       :save-error="saveError"
       back-href="/dashboard/romances/new"
       back-label="Experiências"
+      :subtitle="buildMode ? 'Montamos para você' : undefined"
     />
 
-    <RomanceStepper
-      v-if="isEditable || tribute?.status !== 'published'"
+    <RomanceBuildProgress
+      v-if="(isEditable || tribute?.status !== 'published') && currentStep !== 'preview'"
       :current-step="currentStep"
       :steps="experienceSteps"
-      @go="goToStep"
     />
 
     <section v-if="loading" class="text-muted py-12 text-center">Carregando...</section>
@@ -96,6 +96,10 @@
               :photos="photos"
               :experience-id="experienceId"
             />
+            <RomanceEffectsStep
+              v-else-if="currentStep === 'effects'"
+              :form="form"
+            />
           </div>
         </Transition>
 
@@ -103,12 +107,10 @@
       </div>
 
       <aside class="romance-wizard__aside">
-        <div class="rom-preview-panel">
-          <p class="rom-preview-panel__eyebrow">Prévia ao vivo</p>
-          <p class="rom-preview-panel__experience">
-            {{ experience?.icon }} {{ experience?.label }}
-          </p>
-          <p v-if="experience?.opening" class="rom-preview-panel__opening">{{ experience.opening }}</p>
+        <RomancePhonePreview
+          :experience-label="experience ? `${experience.icon} ${experience.label}` : ''"
+          :hint="experience?.opening"
+        >
           <div v-if="previewGenerating" class="rom-preview-panel__loading">
             <span class="ml-spinner ml-spinner--sm" />
           </div>
@@ -121,7 +123,7 @@
             faithful
             compact
           />
-        </div>
+        </RomancePhonePreview>
       </aside>
     </div>
 
@@ -156,7 +158,8 @@ import {
 } from '@/modules/romance-wizard/romanceExperiences'
 import { validateExperienceStep } from '@/modules/romance-wizard/useRomanceWizardValidation'
 import { applyRomanceTitleDefaults, romanceDisplayTitle } from '@/modules/romance-wizard/romanceCopy'
-import RomanceStepper from '@/modules/romance-wizard/components/RomanceStepper.vue'
+import RomanceBuildProgress from '@/modules/romance-wizard/components/RomanceBuildProgress.vue'
+import RomancePhonePreview from '@/modules/romance-wizard/components/RomancePhonePreview.vue'
 import RomanceRecipientStep from '@/modules/romance-wizard/steps/RomanceRecipientStep.vue'
 import RomancePhotosStep from '@/modules/romance-wizard/steps/RomancePhotosStep.vue'
 import RomanceMessageStep from '@/modules/romance-wizard/steps/RomanceMessageStep.vue'
@@ -164,6 +167,7 @@ import RomanceMusicStep from '@/modules/romance-wizard/steps/RomanceMusicStep.vu
 import RomanceSpecialDateStep from '@/modules/romance-wizard/steps/RomanceSpecialDateStep.vue'
 import RomanceVideoStep from '@/modules/romance-wizard/steps/RomanceVideoStep.vue'
 import RomanceChaptersStep from '@/modules/romance-wizard/steps/RomanceChaptersStep.vue'
+import RomanceEffectsStep from '@/modules/romance-wizard/steps/RomanceEffectsStep.vue'
 import RomanceFinishStep from '@/modules/romance-wizard/steps/RomanceFinishStep.vue'
 import WizardHeader from '@/components/wizard/WizardHeader.vue'
 import WizardFooter from '@/components/wizard/WizardFooter.vue'
@@ -208,6 +212,8 @@ const experience = computed(() => getRomanceExperience(experienceId.value))
 const experienceSteps = computed(() => getExperienceSteps(experienceId.value))
 
 const headerTitle = computed(() => romanceDisplayTitle(form) || experience.value?.label || 'Nova experiência')
+
+const buildMode = computed(() => route.query.build === '1')
 
 const stepIndex = computed(() => experienceSteps.value.indexOf(currentStep.value))
 const hasPrevious = computed(() => stepIndex.value > 0)
@@ -255,15 +261,11 @@ watch(currentStep, (step) => {
 })
 
 watch(
-  () => [form.honoree_name, form.message, form.presentation, photos.value.length],
+  () => [form.title, form.honoree_name, form.message, form.presentation, form.effects.length, photos.value.length],
   () => {
     previewRefreshToken.value += 1
   },
 )
-
-function goToStep(step: RomanceExperienceStepId) {
-  currentStep.value = step
-}
 
 function previousStep() {
   const prev = previousExperienceStep(currentStep.value, experienceId.value)

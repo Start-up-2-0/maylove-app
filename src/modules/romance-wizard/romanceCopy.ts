@@ -54,15 +54,15 @@ export function applyRomanceTitleDefaults(
 }
 
 export function romanceDisplayTitle(form: ReturnType<typeof useTributeWizard>['form']): string {
+  if (form.title?.trim()) {
+    return form.title.trim()
+  }
   if (form.honoree_name?.trim()) {
     const name = form.honoree_name.trim()
     if (form.sender_name?.trim()) {
       return `${form.sender_name.trim()} → ${name}`
     }
     return `Para ${name}`
-  }
-  if (form.title?.trim() && !isLegacyGenericTitle(form.title)) {
-    return form.title.trim()
   }
   return defaultRomanceTitle(form.wizard_type_id, form.romance_experience_id)
 }

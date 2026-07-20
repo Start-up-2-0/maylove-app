@@ -7,6 +7,7 @@ import type { TemplateDefinition } from '@/templates/types'
 import { timelineItemHasContent } from '@/utils/timeline'
 import type { RomanceExperienceStepId } from './romanceExperiences'
 import { getRomanceExperience } from './romanceExperiences'
+import { defaultRomanceTitle, isLegacyGenericTitle } from './romanceCopy'
 
 export interface RomanceStepValidationResult {
   valid: boolean
@@ -30,6 +31,9 @@ export function validateExperienceStep(
     case 'recipient':
       if (!form.honoree_name?.trim()) {
         return { valid: false, message: 'Informe o nome de quem receberá este presente.' }
+      }
+      if (!form.title?.trim() || isLegacyGenericTitle(form.title)) {
+        form.title = defaultRomanceTitle(form.wizard_type_id, experienceId ?? form.romance_experience_id)
       }
       return { valid: true }
 
@@ -85,6 +89,9 @@ export function validateExperienceStep(
       }
       return { valid: true }
     }
+
+    case 'effects':
+      return { valid: true }
 
     case 'preview': {
       const schemaIssues = collectPresentationSchemaIssuesFromForm(form, definition, photosCount)

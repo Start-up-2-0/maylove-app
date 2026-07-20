@@ -39,7 +39,9 @@ export function resolveExperienceStep(
     occasion: 'recipient',
     couple: 'recipient',
     story: 'message',
-    style: 'music',
+    style: 'effects',
+    personalization: 'effects',
+    modules: 'effects',
     finish: 'preview',
     publish: 'preview',
     review: 'preview',
@@ -114,11 +116,12 @@ export async function applyRomanceExperienceDefaults(
   form.color_primary = definition.theme.primaryColor
 
   if (!form.title?.trim() || isLegacyGenericTitle(form.title)) {
-    form.title = defaultRomanceTitle(option.id)
+    form.title = defaultRomanceTitle(option.id, experienceId)
   }
 
-  if (definition.effects?.length && !form.effects.length) {
-    form.effects = [...definition.effects]
+  const suggestedEffects = experience.defaultEffects ?? definition.effects ?? []
+  if (!form.effects.length && suggestedEffects.length) {
+    form.effects = [...suggestedEffects]
   }
 
   if (flow.enableSpecialDateByDefault) {

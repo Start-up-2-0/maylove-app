@@ -50,6 +50,10 @@ const router = createRouter({
           component: () => import('@/modules/romance-wizard/NewRomanceView.vue'),
         },
         {
+          path: 'romances/create',
+          redirect: { name: 'romance-new' },
+        },
+        {
           path: 'romances/:id/edit',
           name: 'romance-edit',
           component: () => import('@/modules/romance-wizard/RomanceWizardView.vue'),

@@ -35,16 +35,41 @@
 }
 @media (min-width: 1024px) {
   .romance-wizard__shell {
-    grid-template-columns: minmax(0, 480px) minmax(300px, 1fr);
-    gap: 28px;
-    max-width: 1100px;
+    grid-template-columns: minmax(0, 520px) minmax(320px, 1fr);
+    gap: 32px;
+    max-width: 1180px;
   }
+}
+.romance-wizard__aside {
+  min-width: 0;
+  position: sticky;
+  top: 20px;
+}
+.romance-wizard__aside :deep(.tribute-live-preview) {
+  height: 100%;
+}
+.romance-wizard__aside :deep(.preview-viewport-wrap) {
+  min-height: 100%;
+}
+.romance-wizard__aside :deep(.preview-viewport-frame) {
+  min-height: 420px;
+}
+.romance-wizard__aside :deep(.envelope-frame.flat) {
+  min-height: 100%;
+}
+.romance-wizard__aside :deep(.envelope-frame-inner) {
+  min-height: 100%;
+}
+.romance-wizard__aside :deep(.preview-viewport-wrap--faithful) {
+  min-height: auto;
+  max-height: none;
+  overflow: auto;
+}
+.romance-wizard__aside :deep(.preview-viewport-wrap--compact) {
+  max-height: none;
 }
 .romance-wizard__main {
   width: 100%;
-  min-width: 0;
-}
-.romance-wizard__aside {
   min-width: 0;
 }
 
