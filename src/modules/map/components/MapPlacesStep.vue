@@ -2,11 +2,27 @@
   <div class="places-step">
     <WizardStepHeader
       title="Locais"
-      description="Clique no mapa para adicionar um local ou selecione um marcador para editar."
+      description="Busque um endereço, clique no mapa ou selecione um pin para montar cada mini-homenagem."
     />
 
     <div class="places-layout">
       <div class="places-map">
+        <div class="address-search">
+          <input
+            v-model="addressQuery"
+            class="ml-input"
+            placeholder="Buscar endereço (ex: Paris, Torre Eiffel)"
+            @keydown.enter.prevent="runAddressSearch"
+          />
+          <button class="ml-btn ml-btn--secondary ml-btn--sm" :disabled="searching" @click="runAddressSearch">
+            {{ searching ? '...' : 'Buscar' }}
+          </button>
+        </div>
+        <ul v-if="addressResults.length" class="address-results">
+          <li v-for="result in addressResults" :key="result.label">
+            <button type="button" @click="pickAddress(result)">{{ result.label }}</button>
+          </li>
+        </ul>
         <CoupleMapCanvas
           :places="map.places"
           :selected-place-id="selectedPlaceId"
@@ -43,8 +59,45 @@
             <input v-model="draft.memory_date" type="date" class="ml-input" />
           </label>
           <label class="field">
-            <span>Descrição</span>
+            <span>Emoção</span>
+            <select v-model="draft.sentiment" class="ml-input">
+              <option value="">Selecione</option>
+              <option v-for="opt in SENTIMENT_OPTIONS" :key="opt.value" :value="opt.value">
+                {{ opt.emoji }} {{ opt.label }}
+              </option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Endereço</span>
+            <input v-model="draft.address_label" class="ml-input" maxlength="255" />
+          </label>
+          <label class="field">
+            <span>Cidade</span>
+            <input v-model="draft.city" class="ml-input" maxlength="120" />
+          </label>
+          <label class="field">
+            <span>Descrição / história</span>
             <textarea v-model="draft.description" class="ml-input" rows="3" maxlength="2000" />
+          </label>
+          <label class="field">
+            <span>Carta</span>
+            <textarea v-model="draft.letter" class="ml-input" rows="4" maxlength="5000" placeholder="Uma carta íntima sobre este momento..." />
+          </label>
+          <label class="field">
+            <span>Pessoas presentes</span>
+            <input v-model="draft.people" class="ml-input" placeholder="Ana, João (separados por vírgula)" />
+          </label>
+          <label class="field">
+            <span>Clima / momento</span>
+            <input v-model="draft.weather" class="ml-input" placeholder="Ex: Céu estrelado, 22°C" />
+          </label>
+          <label class="field">
+            <span>Objetos marcantes</span>
+            <input v-model="draft.objects" class="ml-input" placeholder="Buquê, ingresso, aliança..." />
+          </label>
+          <label class="field">
+            <span>Música (URL)</span>
+            <input v-model="draft.music_url" class="ml-input" placeholder="https://..." />
           </label>
           <label class="field field--checkbox">
             <input v-model="draft.is_highlight" type="checkbox" />
@@ -83,7 +136,7 @@
           <ul v-if="map.places.length" class="place-list">
             <li v-for="place in map.places" :key="place.id">
               <button type="button" @click="editPlace(place.id)">
-                <strong>{{ place.title }}</strong>
+                <strong>{{ getPlaceEmoji(place) }} {{ place.title }}</strong>
                 <span>{{ placeTypeLabel(place.place_type) }}</span>
               </button>
             </li>
@@ -113,7 +166,9 @@ import { resolveApiError } from '@/api/errors'
 import { uploadFile } from '@/storage/upload'
 import WizardStepHeader from '@/components/wizard/WizardStepHeader.vue'
 import CoupleMapCanvas from './CoupleMapCanvas.vue'
-import { MAP_PLACE_TYPE_LABELS, MAP_PLACE_TYPE_OPTIONS } from '../mapPlaceTypes'
+import { buildPlaceContentPayload, parsePlaceContent } from '../mapPlaceContent'
+import { searchAddress, type GeocodeResult } from '../geocoding'
+import { MAP_PLACE_TYPE_LABELS, MAP_PLACE_TYPE_OPTIONS, SENTIMENT_OPTIONS, getPlaceEmoji } from '../mapPlaceTypes'
 
 const props = defineProps<{ map: CoupleMapDetail }>()
 const emit = defineEmits<{ changed: [] }>()
@@ -123,7 +178,10 @@ const pendingCoords = ref<{ lat: number; lng: number } | null>(null)
 const saving = ref(false)
 const deleting = ref(false)
 const uploading = ref(false)
+const searching = ref(false)
 const error = ref('')
+const addressQuery = ref('')
+const addressResults = ref<GeocodeResult[]>([])
 
 const draft = reactive({
   id: '' as string | null,
@@ -131,9 +189,17 @@ const draft = reactive({
   title: '',
   description: '',
   memory_date: '',
+  sentiment: '',
+  address_label: '',
+  city: '',
   is_highlight: false,
   latitude: 0,
   longitude: 0,
+  letter: '',
+  people: '',
+  weather: '',
+  objects: '',
+  music_url: '',
 })
 
 const selectedPlace = computed(() =>
@@ -150,11 +216,64 @@ function resetDraft() {
   draft.title = ''
   draft.description = ''
   draft.memory_date = ''
+  draft.sentiment = ''
+  draft.address_label = ''
+  draft.city = ''
   draft.is_highlight = false
   draft.latitude = 0
   draft.longitude = 0
+  draft.letter = ''
+  draft.people = ''
+  draft.weather = ''
+  draft.objects = ''
+  draft.music_url = ''
   pendingCoords.value = null
   selectedPlaceId.value = null
+  addressResults.value = []
+}
+
+async function runAddressSearch() {
+  searching.value = true
+  error.value = ''
+  try {
+    addressResults.value = await searchAddress(addressQuery.value)
+  } catch {
+    error.value = 'Não foi possível buscar o endereço.'
+  } finally {
+    searching.value = false
+  }
+}
+
+function pickAddress(result: GeocodeResult) {
+  pendingCoords.value = { lat: result.latitude, lng: result.longitude }
+  draft.latitude = result.latitude
+  draft.longitude = result.longitude
+  draft.address_label = result.label
+  draft.city = result.city ?? draft.city
+  if (!draft.id) {
+    draft.title = result.city || 'Novo local'
+  }
+  addressResults.value = []
+}
+
+function loadDraftFromPlace(place: NonNullable<typeof selectedPlace.value>) {
+  const content = parsePlaceContent(place)
+  draft.id = place.id
+  draft.place_type = place.place_type
+  draft.title = place.title
+  draft.description = place.description ?? ''
+  draft.memory_date = place.memory_date ?? ''
+  draft.sentiment = place.sentiment ?? ''
+  draft.address_label = place.address_label ?? ''
+  draft.city = place.city ?? ''
+  draft.is_highlight = place.is_highlight
+  draft.latitude = place.latitude
+  draft.longitude = place.longitude
+  draft.letter = content.letter ?? ''
+  draft.people = content.people?.join(', ') ?? ''
+  draft.weather = content.weather ?? ''
+  draft.objects = content.objects?.join(', ') ?? ''
+  draft.music_url = content.music_url ?? ''
 }
 
 function onMapClick(lat: number, lng: number) {
@@ -179,14 +298,7 @@ function editPlace(placeId: string) {
   if (!place) return
   selectedPlaceId.value = placeId
   pendingCoords.value = null
-  draft.id = place.id
-  draft.place_type = place.place_type
-  draft.title = place.title
-  draft.description = place.description ?? ''
-  draft.memory_date = place.memory_date ?? ''
-  draft.is_highlight = place.is_highlight
-  draft.latitude = place.latitude
-  draft.longitude = place.longitude
+  loadDraftFromPlace(place)
 }
 
 function cancelDraft() {
@@ -198,14 +310,28 @@ async function savePlace() {
   saving.value = true
   error.value = ''
   try {
+    const contentJson = buildPlaceContentPayload({
+      letter: draft.letter,
+      people: draft.people.split(',').map((p) => p.trim()).filter(Boolean),
+      weather: draft.weather,
+      objects: draft.objects.split(',').map((o) => o.trim()).filter(Boolean),
+      music_url: draft.music_url,
+      music_title: null,
+      moment_timeline: [],
+      custom_emoji: null,
+    })
     const payload = {
       place_type: draft.place_type,
       title: draft.title.trim(),
       description: draft.description.trim() || null,
       memory_date: draft.memory_date || null,
+      sentiment: draft.sentiment || null,
+      address_label: draft.address_label.trim() || null,
+      city: draft.city.trim() || null,
       is_highlight: draft.is_highlight,
       latitude: draft.latitude,
       longitude: draft.longitude,
+      content_json: contentJson,
     }
     if (draft.id) {
       await updateMapPlace(props.map.id, draft.id, payload)
@@ -375,5 +501,25 @@ async function removeMedia(mediaId: string) {
   .places-layout {
     grid-template-columns: 1fr;
   }
+}
+.address-search {
+  display: flex;
+  gap: 8px;
+}
+.address-results {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+.address-results button {
+  width: 100%;
+  text-align: left;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  font-size: 0.82rem;
 }
 </style>

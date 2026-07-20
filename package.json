@@ -13,6 +13,7 @@
     "axios": "^1.8.4",
     "flowbite": "^4.0.2",
     "flowbite-vue": "^0.2.3",
+    "globe.gl": "^2.46.1",
     "leaflet": "^1.9.4",
     "pinia": "^3.0.1",
     "tailwindcss": "^4.3.2",
