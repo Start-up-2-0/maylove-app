@@ -123,11 +123,16 @@ const deleteError = ref('')
 
 const albumTitle = computed(() => album.value?.title || 'Desempenho do álbum')
 
+function presentationOf(item: AlbumDetail | null): string {
+  return (item?.content_json as { presentation?: string } | undefined)?.presentation ?? ''
+}
+
 const albumMeta = computed(() => {
   const item = album.value
   if (!item) return ''
-  const style = getBookPresentation(item.presentation)?.name ?? 'Livro digital'
-  return `${style} · ${item.photo_count} foto(s)`
+  const style = getBookPresentation(presentationOf(item))?.name ?? 'Livro digital'
+  const count = item.memory_count ?? (item.media ?? []).length
+  return `${style} · ${count} memória(s)`
 })
 
 const publicPath = computed(() => (album.value?.slug ? `/a/${album.value.slug}` : ''))
@@ -158,8 +163,8 @@ const metrics = computed(() => {
   const hasMusic = (item.media ?? []).some((m) => m.media_type === 'audio')
   return [
     {
-      label: 'Fotos',
-      value: String(item.photo_count),
+      label: 'Memórias',
+      value: String(item.memory_count ?? (item.media ?? []).length),
       tint: 'var(--gold-soft)',
       color: 'var(--gold)',
       icon: iconImage,
@@ -173,7 +178,7 @@ const metrics = computed(() => {
     },
     {
       label: 'Estilo',
-      value: getBookPresentation(item.presentation)?.name ?? '—',
+      value: getBookPresentation(presentationOf(item) || '')?.name ?? '—',
       tint: 'var(--violet-soft)',
       color: 'var(--violet)',
       icon: iconBook,

@@ -181,7 +181,6 @@ function stepIndex(step: AlbumWizardStep): number {
 async function goToStep(step: AlbumWizardStep) {
   if (!wizardSteps.value.includes(step)) return
   if (currentStep.value === 'photos' && step !== 'photos') {
-    await photosStepRef.value?.flushPendingCaptionSaves()
     await flushAutosave()
   }
   currentStep.value = step
@@ -205,12 +204,6 @@ async function nextStep() {
   if (navigating.value) return
   navigating.value = true
   try {
-    if (currentStep.value === 'photos') {
-      await photosStepRef.value?.flushPendingCaptionSaves()
-      if (photosStepRef.value?.validateTimelineFields() === false) return
-      advanceStep()
-      return
-    }
     if (currentStep.value === 'preview') {
       await goToPublish()
       return

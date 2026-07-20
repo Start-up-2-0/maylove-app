@@ -1,544 +1,468 @@
 <template>
-  <div class="pages-step">
-    <WizardStepHeader
-      title="Diagramação das páginas"
-      description="Arraste as páginas para reordenar · troque o layout · nas Polaroids mova, gire e redimensione."
-    />
+  <div class="memories-step">
+    <WizardStepHeader title="Memórias" :description="stepDescription" />
 
-    <div class="pages-toolbar">
-      <label class="ml-field pages-toolbar__add">
-        <span>Adicionar página</span>
-        <select v-model="newLayout" class="ml-input ml-input--sm">
-          <option v-for="layout in BOOK_PAGE_LAYOUTS" :key="layout.id" :value="layout.id">
-            {{ layout.label }}
-          </option>
-        </select>
-      </label>
-      <button type="button" class="ml-btn ml-btn--primary" @click="addPage">Adicionar</button>
-      <button
-        type="button"
-        class="ml-btn ml-btn--secondary"
-        :disabled="!photos.length"
-        @click="autoFillFromPhotos"
-      >
-        Gerar a partir da fototeca
-      </button>
-    </div>
+    <section class="layout-panel ml-card">
+      <p class="layout-panel__hint text-muted">
+        Organize o álbum em capítulos e memórias. Cada memória reúne fotos da fototeca, texto, data e
+        local. O livro é gerado automaticamente a partir daqui.
+      </p>
 
-    <p v-if="!form.book_pages.length" class="text-muted pages-empty">
-      Nenhuma página ainda. Gere a partir da fototeca ou adicione layouts (spread, mosaico, Polaroid…).
-    </p>
+      <div v-if="loading" class="text-muted">Carregando memórias…</div>
 
-    <div class="pages-list">
-      <article
-        v-for="(page, index) in form.book_pages"
-        :key="page.id"
-        class="page-card"
-        :class="{ 'page-card--dragging': dragIndex === index, 'page-card--over': dropIndex === index }"
-        draggable="true"
-        @dragstart="onPageDragStart(index, $event)"
-        @dragover.prevent="onPageDragOver(index)"
-        @dragleave="onPageDragLeave(index)"
-        @drop.prevent="onPageDrop(index)"
-        @dragend="onPageDragEnd"
-      >
-        <header class="page-card__head">
-          <div class="page-card__identity">
-            <span class="page-card__handle" title="Arraste para reordenar" aria-hidden="true">⠿</span>
-            <div>
-              <strong>Página {{ index + 1 }}</strong>
-              <p class="page-card__hint">{{ layoutHint(page.layout) }}</p>
-            </div>
-          </div>
-          <div class="page-card__actions">
-            <button type="button" class="ml-icon-btn" :disabled="index === 0" @click="movePage(index, -1)">
-              ↑
-            </button>
+      <div v-else class="chapters">
+        <div v-for="chapter in chapters" :key="chapter.id" class="chapter-card ml-card">
+          <header class="chapter-card__head">
+            <input
+              v-model="chapter.title"
+              class="ml-input chapter-card__title"
+              placeholder="Título do capítulo"
+              @blur="updateChapter(chapter)"
+            />
             <button
-              type="button"
-              class="ml-icon-btn"
-              :disabled="index === form.book_pages.length - 1"
-              @click="movePage(index, 1)"
-            >
-              ↓
-            </button>
-            <button type="button" class="ml-icon-btn" title="Duplicar" @click="duplicatePage(index)">
-              ⧉
-            </button>
-            <button
-              type="button"
               class="ml-icon-btn ml-icon-btn--danger"
-              title="Remover"
-              @click="removePage(index)"
+              title="Remover capítulo"
+              @click="removeChapter(chapter.id)"
             >
               ×
             </button>
-          </div>
-        </header>
+          </header>
 
-        <div class="layout-chips" role="listbox" aria-label="Layout da página">
+          <ul class="memory-list">
+            <li v-for="memory in chapter.memories" :key="memory.id" class="memory-item">
+              <div class="memory-item__thumbs">
+                <span
+                  v-for="media in mediaOf(memory).slice(0, 4)"
+                  :key="media.id"
+                  class="memory-item__thumb"
+                >
+                  <img :src="media.url" alt="" loading="lazy" />
+                </span>
+                <span v-if="!mediaOf(memory).length" class="memory-item__empty">sem fotos</span>
+              </div>
+              <div class="memory-item__body">
+                <input
+                  v-model="memory.title"
+                  class="ml-input ml-input--sm"
+                  placeholder="Título da memória"
+                  @blur="updateMemory(chapter.id, memory)"
+                />
+                <textarea
+                  v-model="memory.description"
+                  class="ml-input ml-input--sm"
+                  rows="2"
+                  placeholder="Descrição"
+                  @blur="updateMemory(chapter.id, memory)"
+                />
+                <div class="memory-item__meta">
+                  <input
+                    v-model="memory.date"
+                    type="date"
+                    class="ml-input ml-input--sm"
+                    @blur="updateMemory(chapter.id, memory)"
+                  />
+                  <button
+                    class="ml-btn ml-btn--ghost ml-btn--sm"
+                    @click="openPicker(chapter.id, memory)"
+                  >
+                    Anexar da fototeca
+                  </button>
+                  <button
+                    class="ml-icon-btn ml-icon-btn--danger"
+                    title="Remover memória"
+                    @click="removeMemory(chapter.id, memory.id)"
+                  >
+                    ×
+                  </button>
+                </div>
+              </div>
+            </li>
+          </ul>
+
           <button
-            v-for="layout in BOOK_PAGE_LAYOUTS"
-            :key="layout.id"
-            type="button"
-            class="layout-chip"
-            :class="{ 'layout-chip--active': page.layout === layout.id }"
-            :title="layout.hint"
-            @click="onLayoutChange(page, layout.id)"
+            class="ml-btn ml-btn--ghost ml-btn--sm"
+            @click="addMemory(chapter.id, chapter.memories.length)"
           >
-            {{ layout.label }}
+            + Memória
           </button>
         </div>
 
-        <div class="page-meta">
-          <input
-            v-model="page.title"
-            class="ml-input ml-input--sm"
-            placeholder="Título da página (opcional)"
-          />
-          <textarea
-            v-if="page.layout === 'text' || page.layout === 'text_photo'"
-            v-model="page.place_name"
-            class="ml-input ml-input--sm"
-            rows="3"
-            placeholder="Texto narrativo desta página…"
-          />
-        </div>
+        <p v-if="!chapters.length" class="text-muted">Nenhum capítulo ainda.</p>
+      </div>
 
-        <div v-if="page.slots.length" class="slots">
-          <div v-for="(slot, slotIndex) in page.slots" :key="`${page.id}-${slotIndex}`" class="slot">
-            <p class="slot__label">Foto {{ slotIndex + 1 }}</p>
-            <select v-model="slot.media_id" class="ml-input ml-input--sm">
-              <option :value="null">Selecionar foto…</option>
-              <option v-for="photo in photos" :key="photo.id" :value="photo.id">
-                {{ photo.title || photo.original_filename || `Foto ${photo.sort_order + 1}` }}
-              </option>
-            </select>
-            <div class="slot__toggles">
-              <label><input v-model="slot.show_date" type="checkbox" /> Data</label>
-              <label><input v-model="slot.show_title" type="checkbox" /> Título</label>
-              <label><input v-model="slot.show_caption" type="checkbox" /> Descrição</label>
-            </div>
-          </div>
-        </div>
+      <button class="ml-btn ml-btn--primary" @click="addChapter(chapters.length)">
+        + Capítulo
+      </button>
+    </section>
 
-        <div v-if="isPolaroidPageLayout(page.layout)" class="scrap-editor">
-          <p class="scrap-editor__label">Composição Polaroid</p>
-          <PolaroidScrapStage
-            :photos="scrapPhotosFor(page)"
-            :frame-style="form.book_config.frame_style"
-            editable
-            @change="(shots) => onScrapChange(page, shots)"
-          />
+    <div v-if="pickerOpen" class="ml-modal" @click.self="closePicker">
+      <div class="ml-modal__panel ml-card">
+        <header class="ml-modal__head">
+          <h3>Anexar fotos à memória</h3>
+          <button class="ml-icon-btn" type="button" aria-label="Fechar" @click="closePicker">×</button>
+        </header>
+        <p v-if="!gallery.length" class="text-muted picker-empty">
+          Envie fotos na etapa Fototeca primeiro.
+        </p>
+        <div v-else class="picker-grid">
+          <label v-for="media in gallery" :key="media.id" class="picker-tile">
+            <input
+              type="checkbox"
+              :checked="selectedIds.includes(media.id)"
+              @change="toggle(media.id)"
+            />
+            <img :src="media.url" alt="" loading="lazy" />
+          </label>
         </div>
-      </article>
+        <footer class="ml-modal__foot">
+          <button class="ml-btn ml-btn--ghost" type="button" @click="closePicker">Cancelar</button>
+          <button class="ml-btn ml-btn--primary" type="button" :disabled="saving" @click="saveSelection">
+            Salvar ({{ selectedIds.length }})
+          </button>
+        </footer>
+      </div>
     </div>
 
-    <p class="text-muted pages-estimate">
-      {{ form.book_pages.length || '0' }} página(s) de conteúdo
-      (+ capa{{ form.closing_message || form.signature ? ' e contracapa' : '' }}).
-      A prévia do livro só é gerada no passo Preview.
-    </p>
+    <p v-if="error" class="ml-alert ml-alert--error">{{ error }}</p>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import type { AlbumMedia } from '@/api/types'
-import type { useAlbumWizard } from '@/composables/useAlbumWizard'
+import { computed, onMounted, ref } from 'vue'
+import { useAlbumStore } from '@/stores/album'
+import type { AlbumChapter, AlbumMedia, AlbumMemory } from '@/api/types'
+import { resolveMediaUrl } from '@/modules/album/book/mediaUrl'
+import { isAlbumVisualMedia } from '@/modules/album/mediaTypes'
+import { useModalLifecycle } from '@/composables/useModalLifecycle'
 import WizardStepHeader from '@/components/wizard/WizardStepHeader.vue'
-import PolaroidScrapStage, { type ScrapShot } from '../book/shared/PolaroidScrapStage.vue'
-import { resolveMediaUrl } from '../book/mediaUrl'
-import {
-  BOOK_PAGE_LAYOUTS,
-  clampPolaroidScale,
-  createBookPage,
-  emptySlots,
-  ensurePolaroidPlacements,
-  isPolaroidPageLayout,
-  slotCountForLayout,
-  type BookPage,
-  type BookPageLayout,
-} from '../book/bookConfig'
-import type { MemoryBookPhoto } from '../book/types'
 
 const props = defineProps<{
-  form: ReturnType<typeof useAlbumWizard>['form']
-  photos: AlbumMedia[]
-  album?: ReturnType<typeof useAlbumWizard>['album']['value']
+  album: { id: string } | null
+  photos?: AlbumMedia[]
+  form?: Record<string, unknown>
 }>()
 
-const newLayout = ref<BookPageLayout>('one')
-const dragIndex = ref<number | null>(null)
-const dropIndex = ref<number | null>(null)
+const store = useAlbumStore()
+const loading = ref(false)
+const error = ref('')
+const chapters = computed<AlbumChapter[]>(() => store.chapters)
 
-function layoutHint(layout: BookPageLayout) {
-  return BOOK_PAGE_LAYOUTS.find((item) => item.id === layout)?.hint ?? ''
+const gallery = computed<Array<{ id: string; url: string }>>(() => {
+  const media = (props.photos?.length ? props.photos : store.current?.media ?? []) as AlbumMedia[]
+  return media
+    .filter((m) => isAlbumVisualMedia(m.media_type))
+    .map((m) => ({ id: m.id, url: resolveMediaUrl(m.url, m.url_thumbnail) ?? '' }))
+    .filter((m) => m.url)
+})
+
+const stepDescription = computed(
+  () => `Capítulos: ${chapters.value.length}. Anexe fotos da fototeca a cada memória.`,
+)
+
+function mediaOf(memory: AlbumMemory): Array<{ id: string; url: string }> {
+  const ids = memory.media_ids ?? []
+  if (!ids.length) return []
+  return gallery.value.filter((g) => ids.includes(g.id))
 }
 
-function scrapPhotosFor(page: BookPage): MemoryBookPhoto[] {
-  const ensured = ensurePolaroidPlacements(page)
-  const result: MemoryBookPhoto[] = []
-  for (const slot of ensured.slots) {
-    if (!slot.media_id) continue
-    const media = props.photos.find((photo) => photo.id === slot.media_id)
-    if (!media) continue
-    result.push({
-      id: media.id,
-      url: resolveMediaUrl(media.url, media.url_thumbnail) ?? '',
-      title: slot.show_title ? media.title ?? undefined : undefined,
-      caption: slot.show_caption ? media.caption ?? undefined : undefined,
-      memoryDate: slot.show_date ? media.memory_date ?? undefined : undefined,
-      placeName: media.place_name ?? undefined,
-      x: slot.x ?? undefined,
-      y: slot.y ?? undefined,
-      rotation: slot.rotation ?? undefined,
-      scale: slot.scale ?? undefined,
+const pickerOpen = ref(false)
+const pickerChapterId = ref('')
+const pickerMemoryId = ref('')
+const selectedIds = ref<string[]>([])
+const saving = ref(false)
+
+function openPicker(chapterId: string, memory: AlbumMemory) {
+  pickerChapterId.value = chapterId
+  pickerMemoryId.value = memory.id
+  selectedIds.value = [...(memory.media_ids ?? [])]
+  pickerOpen.value = true
+}
+
+function closePicker() {
+  pickerOpen.value = false
+  pickerChapterId.value = ''
+  pickerMemoryId.value = ''
+  selectedIds.value = []
+}
+
+useModalLifecycle(pickerOpen, closePicker, { lockScroll: true })
+
+function toggle(id: string) {
+  const index = selectedIds.value.indexOf(id)
+  if (index === -1) selectedIds.value.push(id)
+  else selectedIds.value.splice(index, 1)
+}
+
+async function saveSelection() {
+  if (!pickerChapterId.value || !pickerMemoryId.value) return
+  saving.value = true
+  error.value = ''
+  try {
+    await store.updateMemory(pickerChapterId.value, pickerMemoryId.value, {
+      media_ids: [...selectedIds.value],
     })
-  }
-  return result
-}
-
-function onScrapChange(page: BookPage, shots: ScrapShot[]) {
-  const byId = new Map(shots.map((shot) => [shot.id, shot]))
-  page.slots = page.slots.map((slot) => {
-    if (!slot.media_id) return slot
-    const shot = byId.get(slot.media_id)
-    if (!shot) return slot
-    return {
-      ...slot,
-      x: shot.x,
-      y: shot.y,
-      rotation: shot.rotation,
-      scale: clampPolaroidScale(shot.scale),
-    }
-  })
-}
-
-function reindex() {
-  props.form.book_pages.forEach((page, index) => {
-    page.sort_order = index
-  })
-}
-
-function addPage() {
-  props.form.book_pages.push(createBookPage(newLayout.value, props.form.book_pages.length))
-}
-
-function removePage(index: number) {
-  props.form.book_pages.splice(index, 1)
-  reindex()
-}
-
-function duplicatePage(index: number) {
-  const source = props.form.book_pages[index]
-  const clone: BookPage = {
-    ...structuredClone(source),
-    id: crypto.randomUUID(),
-    sort_order: index + 1,
-  }
-  props.form.book_pages.splice(index + 1, 0, clone)
-  reindex()
-}
-
-function movePage(index: number, delta: number) {
-  const target = index + delta
-  if (target < 0 || target >= props.form.book_pages.length) return
-  const [item] = props.form.book_pages.splice(index, 1)
-  props.form.book_pages.splice(target, 0, item)
-  reindex()
-}
-
-function onPageDragStart(index: number, event: DragEvent) {
-  dragIndex.value = index
-  event.dataTransfer?.setData('text/plain', String(index))
-  if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move'
-}
-
-function onPageDragOver(index: number) {
-  if (dragIndex.value === null || dragIndex.value === index) return
-  dropIndex.value = index
-}
-
-function onPageDragLeave(index: number) {
-  if (dropIndex.value === index) dropIndex.value = null
-}
-
-function onPageDrop(index: number) {
-  if (dragIndex.value === null || dragIndex.value === index) {
-    onPageDragEnd()
-    return
-  }
-  const [item] = props.form.book_pages.splice(dragIndex.value, 1)
-  props.form.book_pages.splice(index, 0, item)
-  reindex()
-  onPageDragEnd()
-}
-
-function onPageDragEnd() {
-  dragIndex.value = null
-  dropIndex.value = null
-}
-
-function onLayoutChange(page: BookPage, layoutId: string) {
-  const layout = layoutId as BookPageLayout
-  const count = slotCountForLayout(layout)
-  page.layout = layout
-  const previous = page.slots
-  page.slots = emptySlots(count, layout).map((slot, index) => ({
-    ...slot,
-    media_id: previous[index]?.media_id ?? null,
-    show_title: previous[index]?.show_title ?? slot.show_title,
-    show_caption: previous[index]?.show_caption ?? slot.show_caption,
-    show_date: previous[index]?.show_date ?? slot.show_date,
-    x: previous[index]?.x ?? slot.x,
-    y: previous[index]?.y ?? slot.y,
-    rotation: previous[index]?.rotation ?? slot.rotation,
-    scale: previous[index]?.scale ?? slot.scale,
-  }))
-  if (isPolaroidPageLayout(layout)) {
-    page.slots = ensurePolaroidPlacements(page).slots
+    closePicker()
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : 'Falha ao anexar fotos.'
+  } finally {
+    saving.value = false
   }
 }
 
-/** Ritmo editorial + ocasional Polaroid scrap. */
-function autoFillFromPhotos() {
-  const sorted = [...props.photos].sort((a, b) => a.sort_order - b.sort_order)
-  const pages: BookPage[] = []
-  let i = 0
-
-  while (i < sorted.length) {
-    const remaining = sorted.length - i
-
-    if (i === 0) {
-      const page = createBookPage('spread', pages.length)
-      page.slots = [
-        {
-          media_id: sorted[i].id,
-          show_title: true,
-          show_caption: false,
-          show_date: true,
-        },
-      ]
-      pages.push(page)
-      i += 1
-      continue
+onMounted(async () => {
+  if (!props.album) return
+  loading.value = true
+  error.value = ''
+  try {
+    if (!store.current || store.current.id !== props.album.id) {
+      await store.loadAlbum(props.album.id)
     }
-
-    if (remaining >= 4 && i % 8 === 0) {
-      const chunk = sorted.slice(i, i + 4)
-      const page = createBookPage('four', pages.length)
-      page.slots = chunk.map((photo) => ({
-        media_id: photo.id,
-        show_title: false,
-        show_caption: false,
-        show_date: false,
-      }))
-      pages.push(page)
-      i += 4
-      continue
-    }
-
-    if (remaining >= 3 && i % 7 === 0) {
-      const chunk = sorted.slice(i, i + 3)
-      const page = createBookPage('polaroid_3', pages.length)
-      page.slots = page.slots.map((slot, idx) => ({
-        ...slot,
-        media_id: chunk[idx]?.id ?? null,
-      }))
-      pages.push(ensurePolaroidPlacements(page))
-      i += 3
-      continue
-    }
-
-    if (remaining >= 2 && i % 5 === 0) {
-      const chunk = sorted.slice(i, i + 2)
-      const page = createBookPage('polaroid_2', pages.length)
-      page.slots = page.slots.map((slot, idx) => ({
-        ...slot,
-        media_id: chunk[idx]?.id ?? null,
-      }))
-      pages.push(ensurePolaroidPlacements(page))
-      i += 2
-      continue
-    }
-
-    if (remaining >= 3 && i % 4 === 0) {
-      const chunk = sorted.slice(i, i + 3)
-      const page = createBookPage('three', pages.length)
-      page.slots = chunk.map((photo) => ({
-        media_id: photo.id,
-        show_title: true,
-        show_caption: false,
-        show_date: true,
-      }))
-      pages.push(page)
-      i += 3
-      continue
-    }
-
-    const page = createBookPage('one', pages.length)
-    page.slots = [
-      {
-        media_id: sorted[i].id,
-        show_title: true,
-        show_caption: true,
-        show_date: true,
-      },
-    ]
-    pages.push(page)
-    i += 1
+    await store.loadChapters(props.album.id)
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : 'Falha ao carregar capítulos.'
+  } finally {
+    loading.value = false
   }
+})
 
-  props.form.book_pages = pages
+async function addChapter(sortOrder: number) {
+  error.value = ''
+  try {
+    await store.createChapter({ title: `Capítulo ${sortOrder + 1}`, sort_order: sortOrder })
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : 'Falha ao criar capítulo.'
+  }
+}
+
+async function updateChapter(chapter: AlbumChapter) {
+  try {
+    await store.updateChapter(chapter.id, { title: chapter.title })
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : 'Falha ao atualizar capítulo.'
+  }
+}
+
+async function removeChapter(chapterId: string) {
+  try {
+    await store.removeChapter(chapterId)
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : 'Falha ao remover capítulo.'
+  }
+}
+
+async function addMemory(chapterId: string, sortOrder: number) {
+  error.value = ''
+  try {
+    await store.createMemory(chapterId, {
+      sort_order: sortOrder,
+      title: '',
+      description: '',
+      date: '',
+    })
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : 'Falha ao criar memória.'
+  }
+}
+
+async function updateMemory(chapterId: string, memory: AlbumMemory) {
+  try {
+    await store.updateMemory(chapterId, memory.id, {
+      title: memory.title,
+      description: memory.description,
+      date: memory.date,
+    })
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : 'Falha ao atualizar memória.'
+  }
+}
+
+async function removeMemory(chapterId: string, memoryId: string) {
+  try {
+    await store.removeMemory(chapterId, memoryId)
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : 'Falha ao remover memória.'
+  }
 }
 </script>
 
 <style scoped>
-.pages-toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  align-items: end;
-  margin-bottom: 18px;
+.layout-panel__hint {
+  margin: 0 0 20px;
+  font-size: 0.94rem;
+  line-height: 1.55;
 }
 
-.pages-toolbar__add {
-  min-width: 200px;
-}
-
-.pages-empty {
-  margin-bottom: 16px;
-}
-
-.pages-list {
+.chapters {
   display: grid;
-  gap: 14px;
+  gap: 16px;
+  margin-bottom: 20px;
 }
 
-.page-card {
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  padding: 14px;
-  background: var(--surface);
-  display: grid;
-  gap: 12px;
-  cursor: grab;
-  transition:
-    border-color 140ms ease,
-    box-shadow 140ms ease,
-    opacity 140ms ease;
+.chapter-card {
+  padding: 16px;
+  background: var(--surface-2);
 }
 
-.page-card--dragging {
-  opacity: 0.55;
-}
-
-.page-card--over {
-  border-color: color-mix(in srgb, var(--accent, #c45d7a) 55%, var(--border));
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent, #c45d7a) 18%, transparent);
-}
-
-.page-card__head {
+.chapter-card__head {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   gap: 10px;
+  margin-bottom: 14px;
 }
 
-.page-card__identity {
-  display: flex;
-  gap: 10px;
-  align-items: flex-start;
-}
-
-.page-card__handle {
-  margin-top: 2px;
-  color: var(--muted);
-  font-size: 1.1rem;
-  letter-spacing: 0.04em;
-  user-select: none;
-}
-
-.layout-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.layout-chip {
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  padding: 5px 10px;
-  background: var(--surface-2, var(--surface));
-  color: var(--ink, inherit);
-  font-size: 0.75rem;
-  cursor: pointer;
-}
-
-.layout-chip--active {
-  border-color: color-mix(in srgb, var(--accent, #c45d7a) 60%, var(--border));
-  background: color-mix(in srgb, var(--accent, #c45d7a) 12%, transparent);
+.chapter-card__title {
+  flex: 1;
   font-weight: 600;
 }
 
-.page-card__hint {
-  margin: 4px 0 0;
-  font-size: 0.78rem;
-  color: var(--muted);
-}
-
-.page-card__actions {
-  display: flex;
-  gap: 4px;
-}
-
-.page-meta,
-.slots {
+.memory-list {
   display: grid;
-  gap: 10px;
+  gap: 12px;
+  margin: 0 0 14px;
+  padding: 0;
+  list-style: none;
 }
 
-.slot {
-  border: 1px dashed var(--border-strong);
-  border-radius: var(--radius-sm);
-  padding: 10px;
+.memory-item {
+  display: grid;
+  grid-template-columns: 88px 1fr;
+  gap: 12px;
+  padding: 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.memory-item__thumbs {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 4px;
+  align-content: start;
+}
+
+.memory-item__thumb {
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: 8px;
+  background: var(--surface-3);
+}
+
+.memory-item__thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.memory-item__empty {
+  grid-column: 1 / -1;
+  display: grid;
+  place-items: center;
+  min-height: 72px;
+  font-size: 0.75rem;
+  color: var(--muted);
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+}
+
+.memory-item__body {
   display: grid;
   gap: 8px;
 }
 
-.slot__label {
-  margin: 0;
-  font-size: 0.78rem;
-  font-weight: 700;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
-
-.slot__toggles {
+.memory-item__meta {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
-  font-size: 0.86rem;
-}
-
-.scrap-editor {
-  display: grid;
+  align-items: center;
   gap: 8px;
 }
 
-.scrap-editor__label {
-  margin: 0;
-  font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--muted);
+.ml-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: var(--overlay);
+  backdrop-filter: blur(2px);
 }
 
-.pages-estimate {
-  margin-top: 16px;
-  font-size: 0.86rem;
+.ml-modal__panel {
+  width: min(720px, 100%);
+  max-height: min(85vh, 760px);
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+}
+
+.ml-modal__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--border);
+}
+
+.ml-modal__head h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.picker-empty {
+  padding: 24px 18px;
+}
+
+.picker-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 10px;
+  padding: 16px 18px;
+  overflow-y: auto;
+}
+
+.picker-tile {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 10px;
+  overflow: hidden;
+  cursor: pointer;
+  border: 2px solid transparent;
+}
+
+.picker-tile:has(input:checked) {
+  border-color: var(--primary);
+}
+
+.picker-tile input {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  z-index: 1;
+}
+
+.picker-tile img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ml-modal__foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 14px 18px;
+  border-top: 1px solid var(--border);
+}
+
+@media (max-width: 640px) {
+  .memory-item {
+    grid-template-columns: 1fr;
+  }
+
+  .memory-item__thumbs {
+    grid-template-columns: repeat(4, 1fr);
+  }
 }
 </style>

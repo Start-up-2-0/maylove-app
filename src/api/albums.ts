@@ -1,16 +1,40 @@
 import { apiClient, unwrap } from './client'
 import type {
+  AlbumCategory,
+  AlbumChapter,
   AlbumDetail,
+  AlbumExperience,
+  AlbumMemory,
+  AlbumMemoryPayload,
+  AlbumQr,
   AlbumSummary,
+  AlbumTimeline,
   AlbumUploadPolicy,
   AlbumValidation,
   ApiEnvelope,
   CheckoutResponse,
+  ExperienceType,
   MusicMediaStatus,
   PresignResponse,
   PublicAlbum,
   AlbumMedia,
+  AlbumMediaType,
 } from './types'
+import {
+  buildAlbumMemoryApiPayload,
+  normalizeAlbumMemory,
+} from './albumMemory'
+
+export async function loadAlbumChaptersWithMemories(albumId: string): Promise<AlbumChapter[]> {
+  const chapters = await listAlbumChapters(albumId)
+  const withMemories = await Promise.all(
+    chapters.map(async (chapter) => ({
+      ...chapter,
+      memories: await listAlbumMemories(albumId, chapter.id),
+    })),
+  )
+  return withMemories.sort((a, b) => a.sort_order - b.sort_order)
+}
 
 export async function fetchAlbumUploadPolicy(): Promise<AlbumUploadPolicy> {
   const response = await apiClient.get<ApiEnvelope<AlbumUploadPolicy>>('/albums/upload-policy')
@@ -24,8 +48,13 @@ export async function listAlbums(status?: string): Promise<AlbumSummary[]> {
   return unwrap(response)
 }
 
-export async function createAlbum(): Promise<AlbumDetail> {
-  const response = await apiClient.post<ApiEnvelope<AlbumDetail>>('/albums')
+export async function createAlbum(payload?: {
+  category?: AlbumCategory
+  title?: string
+  honoree_names?: string
+  theme?: string
+}): Promise<AlbumDetail> {
+  const response = await apiClient.post<ApiEnvelope<AlbumDetail>>('/albums', payload ?? {})
   return unwrap(response)
 }
 
@@ -64,7 +93,7 @@ export async function checkoutAlbum(id: string): Promise<CheckoutResponse> {
 export async function presignAlbumMedia(
   albumId: string,
   payload: {
-    media_type: 'photo' | 'audio'
+    media_type: AlbumMediaType
     filename: string
     mime_type: string
     size_bytes: number
@@ -117,4 +146,147 @@ export async function fetchPublicAlbum(slug: string): Promise<PublicAlbum> {
 
 export async function recordPublicAlbumView(slug: string, sessionId: string): Promise<void> {
   await apiClient.post(`/public/albums/${slug}/view`, { session_id: sessionId })
+}
+
+// ---- Capítulos ----
+
+export async function listAlbumChapters(albumId: string): Promise<AlbumChapter[]> {
+  const response = await apiClient.get<ApiEnvelope<AlbumChapter[]>>(`/albums/${albumId}/chapters`)
+  return unwrap(response)
+}
+
+export async function createAlbumChapter(
+  albumId: string,
+  payload: { title: string; sort_order?: number },
+): Promise<AlbumChapter> {
+  const response = await apiClient.post<ApiEnvelope<AlbumChapter>>(
+    `/albums/${albumId}/chapters`,
+    payload,
+  )
+  return unwrap(response)
+}
+
+export async function updateAlbumChapter(
+  albumId: string,
+  chapterId: string,
+  payload: { title?: string; sort_order?: number },
+): Promise<AlbumChapter> {
+  const response = await apiClient.patch<ApiEnvelope<AlbumChapter>>(
+    `/albums/${albumId}/chapters/${chapterId}`,
+    payload,
+  )
+  return unwrap(response)
+}
+
+export async function deleteAlbumChapter(albumId: string, chapterId: string): Promise<void> {
+  await apiClient.delete(`/albums/${albumId}/chapters/${chapterId}`)
+}
+
+// ---- Memórias ----
+
+export async function listAlbumMemories(
+  albumId: string,
+  chapterId: string,
+): Promise<AlbumMemory[]> {
+  const response = await apiClient.get<ApiEnvelope<AlbumMemory[]>>(
+    `/albums/${albumId}/chapters/${chapterId}/memories`,
+  )
+  return unwrap(response).map((memory) =>
+    normalizeAlbumMemory(memory as unknown as Record<string, unknown>),
+  )
+}
+
+export async function createAlbumMemory(
+  albumId: string,
+  chapterId: string,
+  payload: AlbumMemoryPayload,
+): Promise<AlbumMemory> {
+  const response = await apiClient.post<ApiEnvelope<AlbumMemory>>(
+    `/albums/${albumId}/chapters/${chapterId}/memories`,
+    buildAlbumMemoryApiPayload(payload),
+  )
+  return normalizeAlbumMemory(unwrap(response) as unknown as Record<string, unknown>)
+}
+
+export async function updateAlbumMemory(
+  albumId: string,
+  chapterId: string,
+  memoryId: string,
+  payload: Partial<AlbumMemoryPayload>,
+  existingContentJson?: Record<string, unknown> | null,
+): Promise<AlbumMemory> {
+  const response = await apiClient.patch<ApiEnvelope<AlbumMemory>>(
+    `/albums/${albumId}/chapters/${chapterId}/memories/${memoryId}`,
+    buildAlbumMemoryApiPayload(payload, existingContentJson),
+  )
+  return normalizeAlbumMemory(unwrap(response) as unknown as Record<string, unknown>)
+}
+
+export async function deleteAlbumMemory(
+  albumId: string,
+  chapterId: string,
+  memoryId: string,
+): Promise<void> {
+  await apiClient.delete(`/albums/${albumId}/chapters/${chapterId}/memories/${memoryId}`)
+}
+
+// ---- Experiências ----
+
+export async function listAlbumExperiences(albumId: string): Promise<AlbumExperience[]> {
+  const response = await apiClient.get<ApiEnvelope<AlbumExperience[]>>(
+    `/albums/${albumId}/experiences`,
+  )
+  return unwrap(response)
+}
+
+export async function createAlbumExperience(
+  albumId: string,
+  payload: { type: ExperienceType; memory_id?: string; config: Record<string, unknown> },
+): Promise<AlbumExperience> {
+  const response = await apiClient.post<ApiEnvelope<AlbumExperience>>(
+    `/albums/${albumId}/experiences`,
+    payload,
+  )
+  return unwrap(response)
+}
+
+export async function updateAlbumExperience(
+  albumId: string,
+  experienceId: string,
+  payload: { type?: ExperienceType; config?: Record<string, unknown> },
+): Promise<AlbumExperience> {
+  const response = await apiClient.patch<ApiEnvelope<AlbumExperience>>(
+    `/albums/${albumId}/experiences/${experienceId}`,
+    payload,
+  )
+  return unwrap(response)
+}
+
+export async function deleteAlbumExperience(
+  albumId: string,
+  experienceId: string,
+): Promise<void> {
+  await apiClient.delete(`/albums/${albumId}/experiences/${experienceId}`)
+}
+
+// ---- Linha do Tempo / QR ----
+
+export async function fetchAlbumTimeline(
+  albumId: string,
+  range?: { from?: string; to?: string },
+): Promise<AlbumTimeline> {
+  const response = await apiClient.get<ApiEnvelope<AlbumTimeline>>(`/albums/${albumId}/timeline`, {
+    params: range,
+  })
+  return unwrap(response)
+}
+
+export async function fetchAlbumQr(
+  albumId: string,
+  memoryId?: string,
+): Promise<AlbumQr> {
+  const response = await apiClient.get<ApiEnvelope<AlbumQr>>(`/albums/${albumId}/qr`, {
+    params: memoryId ? { m: memoryId } : undefined,
+  })
+  return unwrap(response)
 }

@@ -67,6 +67,7 @@ import type { useAlbumWizard } from '@/composables/useAlbumWizard'
 import type { AlbumDetail } from '@/api/types'
 import { getBookPresentation } from '@/modules/album/book/presentations'
 import { buildMemoryBookModelFromDetail } from '@/modules/album/book/buildModel'
+import { isAlbumPhotoMedia } from '@/modules/album/mediaTypes'
 import BookRenderer from '@/modules/album/book/BookRenderer.vue'
 import WizardStepHeader from '@/components/wizard/WizardStepHeader.vue'
 
@@ -107,7 +108,7 @@ const presentationLabel = computed(() => {
 })
 
 const photoCount = computed(
-  () => (props.album?.media ?? []).filter((m) => m.media_type === 'photo').length,
+  () => (props.album?.media ?? []).filter((m) => isAlbumPhotoMedia(m.media_type)).length,
 )
 
 const musicLabel = computed(() => {
@@ -117,17 +118,18 @@ const musicLabel = computed(() => {
 
 const bookModel = computed(() => {
   if (generating.value || !props.album) return null
+  const presentation =
+    (props.album.content_json as { presentation?: string } | undefined)?.presentation ??
+    props.form.presentation ??
+    undefined
   return buildMemoryBookModelFromDetail({
     ...props.album,
+    chapters: props.album.chapters ?? [],
     title: props.form.title || props.album.title,
     subtitle: props.form.subtitle || props.album.subtitle,
-    closing_message: props.form.closing_message || props.album.closing_message,
-    signature: props.form.signature || props.album.signature,
     color_primary: props.form.book_config.colors.accent || props.album.color_primary,
-    presentation: props.form.presentation,
-    photos_per_page: props.form.photos_per_page ?? props.album.photos_per_page,
     book_config: props.form.book_config,
-    book_pages: props.form.book_pages,
+    content_json: { ...(props.album.content_json ?? {}), presentation },
   })
 })
 </script>

@@ -65,17 +65,17 @@
       </fieldset>
 
       <label class="ml-field">
-        <span>Mensagem de encerramento (opcional)</span>
+        <span>Nomes da homenagem (opcional)</span>
+        <input v-model="form.honoree_names" class="ml-input" maxlength="120" />
+      </label>
+      <label class="ml-field">
+        <span>Dedicatória (opcional)</span>
         <textarea
-          v-model="form.closing_message"
+          v-model="form.dedication"
           class="ml-input"
           rows="3"
           placeholder="Aparece na contracapa, como um fechamento íntimo."
         />
-      </label>
-      <label class="ml-field">
-        <span>Assinatura (opcional)</span>
-        <input v-model="form.signature" class="ml-input" maxlength="120" />
       </label>
       <label class="ml-check">
         <input v-model="form.is_public" type="checkbox" />

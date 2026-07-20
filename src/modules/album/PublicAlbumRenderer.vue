@@ -50,7 +50,7 @@ import { fetchPublicAlbum, recordPublicAlbumView } from '@/api/albums'
 import type { PublicAlbum } from '@/api/types'
 import MusicPlayerFloat from '@/components/experience/shared/MusicPlayerFloat.vue'
 import LogoMark from '@/components/brand/LogoMark.vue'
-import { buildMemoryBookModel } from '@/modules/album/book/buildModel'
+import { buildMemoryBookModelFromDetail } from '@/modules/album/book/buildModel'
 import BookRenderer from '@/modules/album/book/BookRenderer.vue'
 
 const route = useRoute()
@@ -60,26 +60,7 @@ const error = ref('')
 
 const bookModel = computed(() => {
   if (!album.value) return null
-  return buildMemoryBookModel({
-    title: album.value.title,
-    subtitle: album.value.subtitle,
-    closing_message: album.value.closing_message,
-    signature: album.value.signature,
-    color_primary: album.value.color_primary,
-    presentation: album.value.presentation,
-    photos_per_page: album.value.photos_per_page,
-    book_config: album.value.book_config,
-    book_pages: album.value.book_pages,
-    photos: album.value.photos.map((photo) => ({
-      id: photo.id,
-      url: photo.url ?? '',
-      sort_order: photo.sort_order,
-      title: photo.title,
-      caption: photo.caption,
-      memory_date: photo.memory_date,
-      place_name: photo.place_name,
-    })),
-  })
+  return buildMemoryBookModelFromDetail(album.value)
 })
 
 const shareUrl = computed(() =>

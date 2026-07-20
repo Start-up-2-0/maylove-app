@@ -7,16 +7,16 @@
 
     <section class="layout-panel ml-card">
       <p class="layout-panel__hint text-muted">
-        {{ photos.length }} foto(s) na galeria. Defina a capa, reordene e complete título, descrição, data e local.
+        {{ photos.length }} foto(s) na galeria. Defina a capa e arraste para reordenar. Os metadados
+        de cada foto são editados dentro das memórias.
       </p>
     </section>
-    <div v-if="photos.length" :class="isTimeline ? 'timeline-photos' : 'photo-grid'">
+    <div v-if="photos.length" class="photo-grid">
       <figure
         v-for="(photo, index) in photos"
         :key="photo.id"
         class="photo-tile"
         :class="{
-          'photo-tile--timeline': isTimeline,
           'photo-tile--dragging': photoDragIndex === index,
           'photo-tile--over': photoDropIndex === index,
         }"
@@ -67,46 +67,6 @@
             </button>
           </div>
         </figcaption>
-        <div class="photo-meta">
-          <label class="photo-meta__date">
-            <span class="photo-meta__date-label">
-              Data<span v-if="isTimeline" class="photo-meta__req">*</span>
-              <span v-else> (opcional)</span>
-            </span>
-            <input
-              v-model="captions[photo.id].memory_date"
-              class="ml-input ml-input--sm"
-              :class="{ 'ml-input--invalid': isTimeline && showValidation && !captions[photo.id]?.memory_date }"
-              type="date"
-              :required="isTimeline"
-              @change="queueCaptionSave(photo.id)"
-            />
-          </label>
-          <input
-            v-model="captions[photo.id].title"
-            class="ml-input ml-input--sm"
-            :class="{ 'ml-input--invalid': isTimeline && showValidation && !captions[photo.id]?.title?.trim() }"
-            :placeholder="isTimeline ? 'Título' : 'Título (opcional)'"
-            :required="isTimeline"
-            @input="queueCaptionSave(photo.id)"
-          />
-          <input
-            v-model="captions[photo.id].place_name"
-            class="ml-input ml-input--sm"
-            placeholder="Local (opcional)"
-            maxlength="160"
-            @input="queueCaptionSave(photo.id)"
-          />
-          <textarea
-            v-model="captions[photo.id].caption"
-            class="ml-input ml-input--sm"
-            :class="{ 'ml-input--invalid': isTimeline && showValidation && !captions[photo.id]?.caption?.trim() }"
-            rows="2"
-            :placeholder="isTimeline ? 'Descrição' : 'Descrição (opcional)'"
-            :required="isTimeline"
-            @input="queueCaptionSave(photo.id)"
-          />
-        </div>
       </figure>
     </div>
 
@@ -131,13 +91,12 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import {
   confirmAlbumMedia,
   deleteAlbumMedia,
   presignAlbumMedia,
   reorderAlbumMedia,
-  updateAlbum,
 } from '@/api/albums'
 import type { AlbumMedia } from '@/api/types'
 import { resolveApiError } from '@/api/errors'
@@ -145,7 +104,6 @@ import { uploadFile } from '@/storage/upload'
 import { inferImageMimeType } from '@/storage/mime'
 import { photoUploadHint, validatePhotoUpload } from '@/storage/validateUpload'
 import { MEDIA_LIMITS } from '@/config/mediaLimits'
-import { isTimelinePresentation } from '@/modules/album/book/presentations'
 import { resolveMediaUrl } from '@/modules/album/book/mediaUrl'
 import type { useAlbumWizard } from '@/composables/useAlbumWizard'
 import WizardStepHeader from '@/components/wizard/WizardStepHeader.vue'
@@ -163,49 +121,20 @@ const uploading = ref(false)
 const error = ref('')
 const reordering = ref(false)
 const removingId = ref<string | null>(null)
-const captions = reactive<
-  Record<string, { title: string; caption: string; memory_date: string; place_name: string }>
->({})
-const saveTimers = new Map<string, ReturnType<typeof setTimeout>>()
-const showValidation = ref(false)
 const photoDragIndex = ref<number | null>(null)
 const photoDropIndex = ref<number | null>(null)
 
-const isTimeline = computed(() => isTimelinePresentation(props.form.presentation))
-
 const stepDescription = computed(
   () =>
-    `Envie as fotos da fototeca. Título, descrição, data e local aparecem nas páginas. Arraste para reordenar. Até ${maxPhotos} fotos. ${photoUploadHint()}`,
+    `Envie as fotos da fototeca e arraste para reordenar. Defina a capa do livro. Até ${maxPhotos} fotos. ${photoUploadHint()}`,
 )
 
 watch(
   () => props.form.presentation,
-  (presentation) => {
-    if (isTimelinePresentation(presentation)) {
-      props.form.photos_per_page = 1
-    }
-    showValidation.value = false
+  () => {
+    error.value = ''
   },
 )
-
-watch(
-  () => props.photos,
-  (photos) => {
-    for (const photo of photos) {
-      captions[photo.id] = {
-        title: photo.title ?? '',
-        caption: photo.caption ?? '',
-        memory_date: photo.memory_date ?? '',
-        place_name: photo.place_name ?? '',
-      }
-    }
-  },
-  { immediate: true, deep: true },
-)
-
-onBeforeUnmount(() => {
-  void flushPendingCaptionSaves()
-})
 
 function mediaPreviewUrl(photo: AlbumMedia): string | null {
   return resolveMediaUrl(photo.url, photo.url_thumbnail)
@@ -217,48 +146,14 @@ function isCover(mediaId: string) {
 
 function setAsCover(mediaId: string) {
   props.form.book_config.cover.media_id = mediaId
-  props.form.book_config.cover.mode = 'photo'
 }
 
-function queueCaptionSave(mediaId: string) {
-  const existing = saveTimers.get(mediaId)
-  if (existing) clearTimeout(existing)
-  saveTimers.set(
-    mediaId,
-    setTimeout(() => {
-      saveTimers.delete(mediaId)
-      void saveCaption(mediaId)
-    }, 600),
-  )
-}
-
-async function flushPendingCaptionSaves() {
-  for (const timer of saveTimers.values()) {
-    clearTimeout(timer)
-  }
-  saveTimers.clear()
-  await Promise.all(props.photos.map((photo) => saveCaption(photo.id, false)))
-}
-
-function isPhotoTimelineComplete(photoId: string): boolean {
-  const meta = captions[photoId]
-  if (!meta) return false
-  return Boolean(meta.memory_date && meta.title.trim() && meta.caption.trim())
-}
-
-function validateTimelineFields(): boolean {
-  if (!isTimeline.value) return true
-  showValidation.value = true
-  const valid = props.photos.every((photo) => isPhotoTimelineComplete(photo.id))
-  if (!valid) {
-    error.value = 'Preencha data, título e descrição em todas as fotos da linha do tempo.'
-  }
-  return valid
-}
+// Metadados de foto (título/descrição/data/local) são editados dentro de cada
+// memória (AlbumMemoriesStep) no novo modelo de chapters/memories, não na fototeca.
+function flushPendingCaptionSaves() {}
 
 defineExpose({
   flushPendingCaptionSaves,
-  validateTimelineFields,
 })
 
 async function onFilesSelected(event: Event) {
@@ -286,7 +181,7 @@ async function onFilesSelected(event: Event) {
       }
 
       const presign = await presignAlbumMedia(props.albumId, {
-        media_type: 'photo',
+        media_type: 'image',
         filename: file.name,
         mime_type: mimeType,
         size_bytes: file.size,
@@ -381,26 +276,6 @@ async function onPhotoDrop(index: number) {
 function onPhotoDragEnd() {
   photoDragIndex.value = null
   photoDropIndex.value = null
-}
-
-async function saveCaption(mediaId: string, showError = true) {
-  const meta = captions[mediaId]
-  if (!meta) return
-  try {
-    await updateAlbum(props.albumId, {
-      pages: [{
-        media_id: mediaId,
-        title: meta.title.trim(),
-        caption: meta.caption.trim(),
-        memory_date: meta.memory_date || null,
-        place_name: meta.place_name.trim() || null,
-      }],
-    })
-  } catch {
-    if (showError) {
-      error.value = 'Não foi possível salvar o texto da foto.'
-    }
-  }
 }
 </script>
 

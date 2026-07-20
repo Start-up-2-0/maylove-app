@@ -244,7 +244,7 @@ export interface PresignResponse {
 export interface AlbumMedia {
   id: string
   storage_file_id: string
-  media_type: 'photo' | 'audio'
+  media_type: AlbumMediaType
   original_filename: string
   mime_type: string | null
   size_bytes: number | null
@@ -265,10 +265,9 @@ export interface AlbumSummary {
   title: string | null
   subtitle: string | null
   color_primary: string | null
-  presentation: string
-  photos_per_page: number
   is_public: boolean
-  photo_count: number
+  chapter_count?: number
+  memory_count?: number
   views_count: number
   cover_url?: string | null
   preview_thumbs?: string[]
@@ -278,12 +277,15 @@ export interface AlbumSummary {
 }
 
 export interface AlbumDetail extends AlbumSummary {
-  closing_message: string | null
-  signature: string | null
+  category?: AlbumCategory | null
+  honoree_names?: string | null
+  dedication?: string | null
   music_media_id: string | null
   media: AlbumMedia[]
   book_config?: Record<string, unknown> | null
-  book_pages?: Array<Record<string, unknown>> | null
+  chapters: AlbumChapter[]
+  experiences: AlbumExperience[]
+  content_json?: Record<string, unknown> | null
 }
 
 export interface AlbumValidation {
@@ -305,16 +307,16 @@ export interface PublicAlbum {
   slug: string
   title: string | null
   subtitle: string | null
-  closing_message: string | null
-  signature: string | null
   color_primary: string | null
-  presentation: string
-  photos_per_page: number
-  book_config?: Record<string, unknown> | null
-  book_pages?: Array<Record<string, unknown>> | null
+  category?: AlbumCategory | null
+  honoree_names?: string | null
+  dedication?: string | null
   published_at: string | null
   views_count: number
   photos: PublicAlbumPhoto[]
+  chapters: AlbumChapter[]
+  experiences: AlbumExperience[]
+  content_json?: Record<string, unknown> | null
   music: {
     id: string
     url: string | null
@@ -324,6 +326,111 @@ export interface PublicAlbum {
     start_seconds?: number | null
     end_seconds?: number | null
   } | null
+}
+
+// ---- Álbum (modelo genérico / spec 16) ----
+
+export type AlbumCategory =
+  | 'couple'
+  | 'wedding'
+  | 'proposal'
+  | 'marriage_proposal'
+  | 'birthday'
+  | 'family'
+  | 'parents'
+  | 'mother'
+  | 'children'
+  | 'friends'
+  | 'graduation'
+  | 'company'
+  | 'pet'
+  | 'memorial'
+  | 'posthumous'
+  | 'holiday'
+  | 'custom'
+
+export type AlbumStatus = 'draft' | 'awaiting_payment' | 'published' | 'archived'
+
+export type AlbumMediaType = 'image' | 'video' | 'audio' | 'document'
+
+export type Sentiment = 'feliz' | 'saudade' | 'amor' | 'gratidao' | 'orgulho' | 'paz' | 'outro'
+
+export type ExperienceType = 'bouquet' | 'map' | 'starry_sky' | 'surprise' | 'game'
+
+export interface AlbumMemoryMediaRef {
+  id: string
+  media_type: AlbumMediaType
+  url: string
+}
+
+export interface AlbumMemoryDocumentRef {
+  id: string
+  doc_type: string
+  label?: string
+  url: string
+}
+
+export interface AlbumMemory {
+  id: string
+  sort_order: number
+  title?: string
+  subtitle?: string
+  description?: string
+  date?: string
+  time?: string
+  location?: { lat: number; lng: number; label?: string }
+  climate?: string
+  sentiment?: Sentiment
+  tags: string[]
+  people: string[]
+  media: AlbumMemoryMediaRef[]
+  documents?: AlbumMemoryDocumentRef[]
+  /** IDs de AlbumMedia (fototeca solta) vinculados a esta memória, persistidos em content_json. */
+  media_ids?: string[]
+  content_json?: Record<string, unknown> | null
+}
+
+export type AlbumMemoryPayload = Partial<
+  Omit<AlbumMemory, 'id' | 'media' | 'documents' | 'tags' | 'people'>
+> & {
+  sort_order?: number
+  tags?: string[]
+  people?: string[]
+  media?: AlbumMemoryMediaRef[]
+  documents?: AlbumMemoryDocumentRef[]
+  media_ids?: string[]
+}
+
+export interface AlbumChapter {
+  id: string
+  title: string
+  sort_order: number
+  memories: AlbumMemory[]
+}
+
+export interface AlbumExperience {
+  id: string
+  type: ExperienceType
+  config: Record<string, unknown>
+}
+
+export interface AlbumTimelineItemDto {
+  date: string
+  title: string
+  description?: string
+  chapter_id?: string
+  memory_id?: string
+  media?: AlbumMemoryMediaRef[]
+}
+
+export interface AlbumTimeline {
+  items: AlbumTimelineItemDto[]
+}
+
+export interface AlbumQr {
+  memory_id?: string
+  url: string
+  image_base64?: string
 }
 
 export interface AlbumUploadPolicy {

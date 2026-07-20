@@ -84,7 +84,7 @@
           </RouterLink>
           <p v-if="album.subtitle" class="gal-card__desc">{{ album.subtitle }}</p>
           <p class="gal-card__meta">
-            {{ album.photo_count }} {{ album.photo_count === 1 ? 'foto' : 'fotos' }}
+            {{ album.memory_count ?? 0 }} {{ (album.memory_count ?? 0) === 1 ? 'memória' : 'memórias' }}
             · {{ formatDate(album.published_at || album.created_at) }}
           </p>
         </div>

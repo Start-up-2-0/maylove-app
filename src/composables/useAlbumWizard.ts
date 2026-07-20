@@ -1,18 +1,13 @@
 import { computed, reactive, ref } from 'vue'
-import { fetchAlbum, updateAlbum } from '@/api/albums'
+import { fetchAlbum, loadAlbumChaptersWithMemories, updateAlbum } from '@/api/albums'
 import type { AlbumDetail } from '@/api/types'
-import {
-  DEFAULT_BOOK_PRESENTATION,
-  isInstantPhotoPresentation,
-  isMuralPresentation,
-  isTimelinePresentation,
-} from '@/modules/album/book/presentations'
+import { DEFAULT_BOOK_PRESENTATION } from '@/modules/album/book/presentations'
+import { isAlbumPhotoMedia } from '@/modules/album/mediaTypes'
 import {
   DEFAULT_BOOK_CONFIG,
   normalizeBookConfig,
   resolveBookConfig,
   type BookConfig,
-  type BookPage,
 } from '@/modules/album/book/bookConfig'
 import type { BookPresentationId } from '@/modules/album/book/types'
 import { useAutosave } from './useAutosave'
@@ -25,45 +20,41 @@ export function useAlbumWizard(albumId: string) {
   const form = reactive({
     title: '',
     subtitle: '',
-    closing_message: '',
-    signature: '',
+    honoree_names: '',
+    dedication: '',
+    category: '',
     color_primary: DEFAULT_BOOK_CONFIG.colors.accent,
     is_public: true,
     presentation: DEFAULT_BOOK_PRESENTATION as BookPresentationId,
-    photos_per_page: 1,
     book_config: normalizeBookConfig(DEFAULT_BOOK_CONFIG) as BookConfig,
-    book_pages: [] as BookPage[],
   })
 
   const autosavePayload = computed(() => ({
     title: form.title || null,
     subtitle: form.subtitle || null,
-    closing_message: form.closing_message || null,
-    signature: form.signature || null,
+    honoree_names: form.honoree_names || null,
+    dedication: form.dedication || null,
+    category: form.category || null,
     color_primary: form.book_config.colors.accent || form.color_primary,
     is_public: form.is_public,
-    presentation: form.presentation,
-    photos_per_page: form.photos_per_page,
     book_config: form.book_config,
-    book_pages: form.book_pages,
+    content_json: { presentation: form.presentation },
   }))
 
-  const {
-    saving,
-    savedAt,
-    error: saveError,
-    flush: flushAutosave,
-  } = useAutosave(autosavePayload, async (payload) => {
-    if (!album.value || !isEditable.value) return
-    album.value = await updateAlbum(albumId, payload)
-  })
+  const { saving, savedAt, error: saveError, flush: flushAutosave } = useAutosave(
+    autosavePayload,
+    async (payload) => {
+      if (!album.value || !isEditable.value) return
+      album.value = await updateAlbum(albumId, payload)
+    },
+  )
 
   const isEditable = computed(
     () => album.value?.status === 'draft' || album.value?.status === 'awaiting_payment',
   )
 
   const photos = computed(() =>
-    (album.value?.media ?? []).filter((item) => item.media_type === 'photo'),
+    (album.value?.media ?? []).filter((item) => isAlbumPhotoMedia(item.media_type)),
   )
 
   const audio = computed(
@@ -74,7 +65,13 @@ export function useAlbumWizard(albumId: string) {
     loading.value = true
     error.value = ''
     try {
-      album.value = await fetchAlbum(albumId)
+      const data = await fetchAlbum(albumId)
+      const chapters = await loadAlbumChaptersWithMemories(albumId)
+      album.value = {
+        ...data,
+        chapters,
+        experiences: data.experiences ?? [],
+      }
       syncFormFromAlbum(album.value)
     } catch {
       error.value = 'Não foi possível carregar o álbum.'
@@ -86,31 +83,30 @@ export function useAlbumWizard(albumId: string) {
   function syncFormFromAlbum(data: AlbumDetail) {
     form.title = data.title ?? ''
     form.subtitle = data.subtitle ?? ''
-    form.closing_message = data.closing_message ?? ''
-    form.signature = data.signature ?? ''
+    form.honoree_names = data.honoree_names ?? ''
+    form.dedication = data.dedication ?? ''
+    form.category = data.category ?? ''
     form.color_primary = data.color_primary ?? DEFAULT_BOOK_CONFIG.colors.accent
     form.is_public = data.is_public
-    form.presentation = (data.presentation as BookPresentationId) || DEFAULT_BOOK_PRESENTATION
-    const isMural = isMuralPresentation(form.presentation)
-    const isInstant = isInstantPhotoPresentation(form.presentation)
-    form.photos_per_page =
-      isTimelinePresentation(form.presentation) || isMural || isInstant
-        ? isInstant
-          ? 6
-          : 1
-        : (data.photos_per_page ?? 1)
+    form.presentation =
+      ((data.content_json as { presentation?: string } | undefined)?.presentation as
+        | BookPresentationId
+        | undefined) || (DEFAULT_BOOK_PRESENTATION as BookPresentationId)
 
     form.book_config = resolveBookConfig(data.book_config as BookConfig | null, form.presentation)
     if (!form.book_config.colors.accent && data.color_primary) {
       form.book_config.colors.accent = data.color_primary
     }
-    form.book_pages = Array.isArray(data.book_pages)
-      ? (data.book_pages as unknown as BookPage[])
-      : []
   }
 
   async function reload() {
-    album.value = await fetchAlbum(albumId)
+    const data = await fetchAlbum(albumId)
+    const chapters = await loadAlbumChaptersWithMemories(albumId)
+    album.value = {
+      ...data,
+      chapters,
+      experiences: data.experiences ?? [],
+    }
     syncFormFromAlbum(album.value)
   }
 
