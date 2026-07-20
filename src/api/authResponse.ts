@@ -10,14 +10,24 @@ type User = AuthPayload['user']
 
 /** Access token vem no header x-maylove-token (não no JSON) por segurança. */
 export function readAccessTokenFromResponse(response: AxiosResponse): string | null {
-  const headers = response.headers
+  const headers = response.headers as AxiosResponse['headers'] & {
+    get?: (name: string) => string | undefined
+  }
+
+  const fromGetter =
+    typeof headers.get === 'function'
+      ? headers.get(AUTH_TOKEN_HEADER) ?? headers.get('x-maylove-token')
+      : null
+
   const raw =
+    fromGetter ??
     headers[AUTH_TOKEN_HEADER] ??
     headers[AUTH_TOKEN_HEADER.toLowerCase()] ??
     headers['x-maylove-token']
 
   if (!raw) return null
-  return Array.isArray(raw) ? raw[0] : String(raw)
+  const value = Array.isArray(raw) ? raw[0] : String(raw)
+  return value.trim() || null
 }
 
 export function authPayloadFromResponse(

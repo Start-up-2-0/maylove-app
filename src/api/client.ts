@@ -1,6 +1,8 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios'
 import { startSessionRefreshScheduler } from '@/composables/useSessionRefresh'
 import { authPayloadFromRefreshResponse } from '@/api/authResponse'
+import { hasAuthRetried, markAuthRetried, setAccessTokenHeader, type AuthRetryConfig } from '@/api/authRetry'
+import { useAuthStore } from '@/stores/auth'
 import {
   clearAuthSession,
   getAccessToken,
@@ -57,6 +59,11 @@ export async function refreshAuthSession(): Promise<StoredAuthSession> {
   const payload = authPayloadFromRefreshResponse(response)
   const session = toStoredSession(payload)
   persistAuthSession(session)
+  try {
+    useAuthStore().token = session.token
+  } catch {
+    /* Pinia ainda não inicializado */
+  }
   startSessionRefreshScheduler()
   return session
 }
@@ -72,14 +79,15 @@ export const apiClient = axios.create({
 apiClient.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   const token = getAccessToken()
   if (token) {
-    config.headers.set(AUTH_TOKEN_HEADER, token)
+    setAccessTokenHeader(config, AUTH_TOKEN_HEADER, token)
   }
   return config
 })
 
 let refreshPromise: Promise<string | null> | null = null
 
-function shouldAttemptRefresh(error: AxiosError<ApiErrorBody>, url?: string): boolean {
+function shouldAttemptRefresh(error: AxiosError<ApiErrorBody>, config?: AuthRetryConfig, url?: string): boolean {
+  if (hasAuthRetried(config)) return false
   if (error.response?.status !== 401) return false
   if (!url || url.includes('/auth/refresh') || url.includes('/auth/login')) return false
 
@@ -90,17 +98,26 @@ function shouldAttemptRefresh(error: AxiosError<ApiErrorBody>, url?: string): bo
 apiClient.interceptors.response.use(
   (response) => response,
   async (error: AxiosError<ApiErrorBody>) => {
-    const original = error.config
+    const original = error.config as AuthRetryConfig | undefined
 
-    if (!original || !shouldAttemptRefresh(error, original.url)) {
+    if (!original || !shouldAttemptRefresh(error, original, original.url)) {
       return Promise.reject(error)
     }
+
+    markAuthRetried(original)
 
     if (!refreshPromise) {
       refreshPromise = refreshAuthSession()
         .then((session) => session.token)
         .catch(() => {
           clearAuthSession()
+          try {
+            const auth = useAuthStore()
+            auth.token = null
+            auth.user = null
+          } catch {
+            /* noop */
+          }
           return null
         })
         .finally(() => {
@@ -113,7 +130,7 @@ apiClient.interceptors.response.use(
       return Promise.reject(error)
     }
 
-    original.headers.set(AUTH_TOKEN_HEADER, newToken)
+    setAccessTokenHeader(original, AUTH_TOKEN_HEADER, newToken)
     return apiClient.request(original)
   },
 )
