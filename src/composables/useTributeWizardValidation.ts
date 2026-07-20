@@ -6,6 +6,7 @@ import {
   issuesForWizardStep,
 } from '@/modules/tribute-wizard/presentationValidation'
 import { TRIBUTE_WIZARD_STEPS } from '@/modules/tribute-wizard/tributeWizardSteps'
+import { getWizardSteps } from '@/modules/tribute-wizard/tributeTypeFlow'
 import type { TemplateDefinition } from '@/templates/types'
 
 export interface StepValidationResult {
@@ -78,14 +79,28 @@ export function validateWizardStep(
   }
 }
 
-export function nextWizardStep(current: WizardStep): WizardStep | null {
-  const index = TRIBUTE_WIZARD_STEPS.indexOf(current)
-  if (index < 0 || index >= TRIBUTE_WIZARD_STEPS.length - 1) return null
-  return TRIBUTE_WIZARD_STEPS[index + 1]
+export function nextWizardStep(
+  current: WizardStep,
+  wizardTypeId?: string | null,
+): WizardStep | null {
+  const steps = getWizardSteps(wizardTypeId)
+  const fullIndex = TRIBUTE_WIZARD_STEPS.indexOf(current)
+  for (let i = fullIndex + 1; i < TRIBUTE_WIZARD_STEPS.length; i++) {
+    const candidate = TRIBUTE_WIZARD_STEPS[i]
+    if (steps.includes(candidate)) return candidate
+  }
+  return null
 }
 
-export function previousWizardStep(current: WizardStep): WizardStep | null {
-  const index = TRIBUTE_WIZARD_STEPS.indexOf(current)
-  if (index <= 0) return null
-  return TRIBUTE_WIZARD_STEPS[index - 1]
+export function previousWizardStep(
+  current: WizardStep,
+  wizardTypeId?: string | null,
+): WizardStep | null {
+  const steps = getWizardSteps(wizardTypeId)
+  const fullIndex = TRIBUTE_WIZARD_STEPS.indexOf(current)
+  for (let i = fullIndex - 1; i >= 0; i--) {
+    const candidate = TRIBUTE_WIZARD_STEPS[i]
+    if (steps.includes(candidate)) return candidate
+  }
+  return null
 }

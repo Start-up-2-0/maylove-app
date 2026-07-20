@@ -192,7 +192,3 @@ export function resolveWizardStep(raw: string | undefined | null): WizardStep {
   if (TRIBUTE_WIZARD_STEPS.includes(raw as WizardStep)) return raw as WizardStep
   return LEGACY_STEP_ALIASES[raw] ?? 'type'
 }
-
-export function stepIndex(step: WizardStep): number {
-  return TRIBUTE_WIZARD_STEPS.indexOf(step)
-}

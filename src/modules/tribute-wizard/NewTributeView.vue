@@ -1,26 +1,20 @@
-<template>
-  <div class="new-launcher">
-    <span class="ml-spinner" />
-    <p>Preparando sua homenagem...</p>
-    <p v-if="error" class="new-launcher__error">{{ error }}</p>
-  </div>
-</template>
-
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { listTemplates, listTributeTypes } from '@/api/catalog'
-import { createTribute } from '@/api/tributes'
+import { createTribute, updateTribute } from '@/api/tributes'
 import { resolveApiError } from '@/api/errors'
 import { listTemplateDefinitions } from '@/templates/registry'
+import { listStyles } from '@/templates/styles'
 import { WIZARD_TRIBUTE_TYPE_OPTIONS } from '@/modules/tribute-wizard/tributeWizardSteps'
 import {
-  pickDefaultTemplateDefinition,
+  pickTemplateDefinitionForType,
+  resolveDefaultPresentationId,
+} from '@/modules/tribute-wizard/tributeTypeFlow'
+import {
   resolveCompatibleTemplate,
   resolveTributeTypeForWizardOption,
 } from '@/modules/tribute-wizard/tributeCatalogResolve'
-import { presentationForLayout } from '@/templates/presentations'
-import { listStyles } from '@/templates/styles'
 
 const router = useRouter()
 const error = ref('')
@@ -29,7 +23,7 @@ onMounted(async () => {
   try {
     const defaultOption = WIZARD_TRIBUTE_TYPE_OPTIONS[0]
     const definitions = listTemplateDefinitions()
-    const def = pickDefaultTemplateDefinition(defaultOption, definitions)
+    const def = pickTemplateDefinitionForType(defaultOption, definitions)
     if (!def) throw new Error('Catálogo indisponível')
 
     const types = await listTributeTypes()
@@ -41,15 +35,16 @@ onMounted(async () => {
     if (!template) throw new Error('Nenhum template compatível com este tipo.')
 
     const tribute = await createTribute(type.id, template.id)
-    const presentation = presentationForLayout(def.layout)?.id ?? 'scroll-classic'
+    const presentation = resolveDefaultPresentationId(defaultOption, def)
     const styleId = listStyles()[0]?.id ?? ''
 
-    const { updateTribute } = await import('@/api/tributes')
     await updateTribute(tribute.id, {
+      color_primary: def.theme.primaryColor,
       content_json: {
         presentation,
         style_id: styleId,
         wizard_category_slug: defaultOption.categorySlug,
+        effects: def.effects?.length ? def.effects : undefined,
       },
     })
 
@@ -62,6 +57,14 @@ onMounted(async () => {
   }
 })
 </script>
+
+<template>
+  <div class="new-launcher">
+    <span class="ml-spinner" />
+    <p>Preparando sua homenagem...</p>
+    <p v-if="error" class="new-launcher__error">{{ error }}</p>
+  </div>
+</template>
 
 <style scoped>
 .new-launcher {

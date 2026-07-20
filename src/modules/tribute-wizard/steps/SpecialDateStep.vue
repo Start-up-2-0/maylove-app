@@ -14,7 +14,7 @@
       </span>
       <span class="sd-toggle__copy">
         <strong>Incluir data especial</strong>
-        <span class="sd-toggle__hint">Essa data poderá aparecer em diferentes áreas da homenagem.</span>
+        <span class="sd-toggle__hint">{{ specialDateHint }}</span>
       </span>
     </label>
 
@@ -108,14 +108,24 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import type { SpecialDateCounterMode, SpecialDateDisplayFormat } from '@/api/types'
 import type { useTributeWizard } from '@/composables/useTributeWizard'
 import { SPECIAL_DATE_KIND_OPTIONS } from '@/modules/tribute-wizard/tributeWizardSteps'
+import { getWizardTypeFlowConfig } from '@/modules/tribute-wizard/tributeTypeFlow'
 import WizardStepHeader from '@/components/wizard/WizardStepHeader.vue'
 
-defineProps<{
+const props = defineProps<{
   form: ReturnType<typeof useTributeWizard>['form']
 }>()
+
+const specialDateHint = computed(() => {
+  const flow = getWizardTypeFlowConfig(props.form.wizard_type_id)
+  return (
+    flow.specialDateHint ??
+    'Essa data poderá aparecer em diferentes áreas da homenagem.'
+  )
+})
 
 const kindOptions = SPECIAL_DATE_KIND_OPTIONS
 

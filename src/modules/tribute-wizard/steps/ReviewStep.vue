@@ -85,6 +85,7 @@ import {
   TRIBUTE_WIZARD_STEP_LABELS,
   WIZARD_TRIBUTE_TYPE_OPTIONS,
 } from '@/modules/tribute-wizard/tributeWizardSteps'
+import { getWizardSteps } from '@/modules/tribute-wizard/tributeTypeFlow'
 import { describeDerivedModules } from '@/utils/tributeModules'
 import { buildReviewPreviewHints } from '@/modules/tribute-wizard/previewHints'
 import WizardStepHeader from '@/components/wizard/WizardStepHeader.vue'
@@ -132,45 +133,49 @@ const previewHints = computed(() =>
   buildReviewPreviewHints(props.form, props.definition?.layout),
 )
 
-const summaryItems = computed(() => [
-  {
-    step: 'type' as WizardStep,
-    label: TRIBUTE_WIZARD_STEP_LABELS.type,
-    value: typeLabel.value,
-  },
-  {
-    step: 'basics' as WizardStep,
-    label: 'Informações',
-    value: props.form.honoree_name || props.form.title || '—',
-  },
-  {
-    step: 'special-date' as WizardStep,
-    label: 'Data especial',
-    value: props.form.special_date_config.enabled
-      ? props.form.special_date_config.title || 'Configurada'
-      : 'Não incluída',
-  },
-  {
-    step: 'story' as WizardStep,
-    label: 'História',
-    value: `${props.form.timeline.length} momento(s) · ${photoCount.value} foto(s)`,
-  },
-  {
-    step: 'personalization' as WizardStep,
-    label: 'Personalização',
-    value: props.form.style_id ? 'Estilo personalizado' : 'Padrão do modelo',
-  },
-  {
-    step: 'texts' as WizardStep,
-    label: TRIBUTE_WIZARD_STEP_LABELS.texts,
-    value: textsSummary.value,
-  },
-  {
-    step: 'modules' as WizardStep,
-    label: 'Recursos',
-    value: activeModules.value,
-  },
-])
+const summaryItems = computed(() => {
+  const activeSteps = new Set(getWizardSteps(props.form.wizard_type_id))
+  const items = [
+    {
+      step: 'type' as WizardStep,
+      label: TRIBUTE_WIZARD_STEP_LABELS.type,
+      value: typeLabel.value,
+    },
+    {
+      step: 'basics' as WizardStep,
+      label: 'Informações',
+      value: props.form.honoree_name || props.form.title || '—',
+    },
+    {
+      step: 'special-date' as WizardStep,
+      label: 'Data especial',
+      value: props.form.special_date_config.enabled
+        ? props.form.special_date_config.title || 'Configurada'
+        : 'Não incluída',
+    },
+    {
+      step: 'story' as WizardStep,
+      label: 'História',
+      value: `${props.form.timeline.length} momento(s) · ${photoCount.value} foto(s)`,
+    },
+    {
+      step: 'personalization' as WizardStep,
+      label: 'Personalização',
+      value: props.form.style_id ? 'Estilo personalizado' : 'Padrão do modelo',
+    },
+    {
+      step: 'texts' as WizardStep,
+      label: TRIBUTE_WIZARD_STEP_LABELS.texts,
+      value: textsSummary.value,
+    },
+    {
+      step: 'modules' as WizardStep,
+      label: 'Recursos',
+      value: activeModules.value,
+    },
+  ]
+  return items.filter((item) => activeSteps.has(item.step))
+})
 </script>
 
 <style scoped>

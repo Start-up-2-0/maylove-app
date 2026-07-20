@@ -11,7 +11,7 @@
     <WizardStepper
       v-if="isEditable || tribute?.status !== 'published'"
       :current-step="currentStep"
-      :steps="TRIBUTE_WIZARD_STEPS"
+      :steps="activeSteps"
       @go="goToStep"
     />
 
@@ -124,10 +124,13 @@ import {
 import type { WizardStep } from '@/api/types'
 import { getTemplateDefinition } from '@/templates/registry'
 import {
-  TRIBUTE_WIZARD_STEPS,
   resolveWizardStep,
-  stepIndex,
 } from '@/modules/tribute-wizard/tributeWizardSteps'
+import {
+  getWizardSteps,
+  normalizeWizardStep,
+  stepIndex,
+} from '@/modules/tribute-wizard/tributeTypeFlow'
 import WizardHeader from '@/components/wizard/WizardHeader.vue'
 import WizardStepper from '@/components/wizard/WizardStepper.vue'
 import WizardFooter from '@/components/wizard/WizardFooter.vue'
@@ -168,19 +171,29 @@ const {
 
 const definition = computed(() => getTemplateDefinition(tribute.value?.template.slug))
 
+const activeSteps = computed(() => getWizardSteps(form.wizard_type_id))
+
 const headerTitle = computed(
   () => form.title || form.honoree_name || tribute.value?.title || 'Criar homenagem',
 )
 
-const hasPrevious = computed(() => stepIndex(currentStep.value) > 0)
-const hasNext = computed(() => stepIndex(currentStep.value) < TRIBUTE_WIZARD_STEPS.length - 1)
+const hasPrevious = computed(() => stepIndex(currentStep.value, form.wizard_type_id) > 0)
+const hasNext = computed(
+  () => stepIndex(currentStep.value, form.wizard_type_id) < activeSteps.value.length - 1,
+)
 
 onMounted(async () => {
   await load()
-  currentStep.value = resolveWizardStep(
-    typeof route.query.step === 'string' ? route.query.step : null,
-  )
+  const raw = resolveWizardStep(typeof route.query.step === 'string' ? route.query.step : null)
+  currentStep.value = normalizeWizardStep(raw, form.wizard_type_id)
 })
+
+watch(
+  () => form.wizard_type_id,
+  (typeId) => {
+    currentStep.value = normalizeWizardStep(currentStep.value, typeId)
+  },
+)
 
 watch(currentStep, (step) => {
   stepError.value = ''
@@ -195,7 +208,7 @@ function goToStep(step: WizardStep) {
 }
 
 function previousStep() {
-  const prev = previousWizardStep(currentStep.value)
+  const prev = previousWizardStep(currentStep.value, form.wizard_type_id)
   if (prev) currentStep.value = prev
 }
 
@@ -214,7 +227,7 @@ async function nextStep() {
       goToStep('publish')
       return
     }
-    const next = nextWizardStep(currentStep.value)
+    const next = nextWizardStep(currentStep.value, form.wizard_type_id)
     if (next) {
       if (next === 'review') {
         await flushAutosave()

@@ -1,3 +1,68 @@
+<script setup lang="ts">
+import { onMounted, ref } from 'vue'
+import { listTemplates, listTributeTypes } from '@/api/catalog'
+import type { TributeType } from '@/api/types'
+import type { useTributeWizard } from '@/composables/useTributeWizard'
+import {
+  WIZARD_TRIBUTE_TYPE_OPTIONS,
+  type WizardTributeTypeOption,
+} from '@/modules/tribute-wizard/tributeWizardSteps'
+import { applyTypeDefaults } from '@/modules/tribute-wizard/tributeTypeFlow'
+import { resolveTributeTypeForWizardOption } from '@/modules/tribute-wizard/tributeCatalogResolve'
+import { listTemplateDefinitions } from '@/templates/registry'
+import WizardStepHeader from '@/components/wizard/WizardStepHeader.vue'
+
+const props = defineProps<{
+  form: ReturnType<typeof useTributeWizard>['form']
+  tributeId: string
+  tributeTypes?: TributeType[]
+}>()
+
+const emit = defineEmits<{ changed: [] }>()
+
+const options = WIZARD_TRIBUTE_TYPE_OPTIONS
+const catalogTypes = ref<TributeType[]>(props.tributeTypes ?? [])
+const applying = ref(false)
+
+onMounted(async () => {
+  if (catalogTypes.value.length) return
+  try {
+    catalogTypes.value = await listTributeTypes()
+  } catch {
+    catalogTypes.value = []
+  }
+})
+
+function resolveApiType(option: WizardTributeTypeOption): TributeType | null {
+  return resolveTributeTypeForWizardOption(
+    catalogTypes.value,
+    option,
+    listTemplateDefinitions(),
+  )
+}
+
+async function select(option: WizardTributeTypeOption) {
+  const apiType = resolveApiType(option)
+  if (!apiType) return
+
+  applying.value = true
+  try {
+    const templates = await listTemplates(apiType.id)
+    const applied = await applyTypeDefaults({
+      form: props.form,
+      tributeId: props.tributeId,
+      option,
+      apiType,
+      definitions: listTemplateDefinitions(),
+      templates,
+    })
+    if (applied) emit('changed')
+  } finally {
+    applying.value = false
+  }
+}
+</script>
+
 <template>
   <div class="type-step wiz-step-content">
     <WizardStepHeader
@@ -36,76 +101,6 @@
     </section>
   </div>
 </template>
-
-<script setup lang="ts">
-import { onMounted, ref } from 'vue'
-import { listTributeTypes } from '@/api/catalog'
-import { updateTribute } from '@/api/tributes'
-import type { TributeType } from '@/api/types'
-import type { useTributeWizard } from '@/composables/useTributeWizard'
-import {
-  WIZARD_TRIBUTE_TYPE_OPTIONS,
-  type WizardTributeTypeOption,
-} from '@/modules/tribute-wizard/tributeWizardSteps'
-import { resolveTributeTypeForWizardOption } from '@/modules/tribute-wizard/tributeCatalogResolve'
-import { listTemplateDefinitions } from '@/templates/registry'
-import WizardStepHeader from '@/components/wizard/WizardStepHeader.vue'
-
-const props = defineProps<{
-  form: ReturnType<typeof useTributeWizard>['form']
-  tributeId: string
-  tributeTypes?: TributeType[]
-}>()
-
-const emit = defineEmits<{ changed: [] }>()
-
-const options = WIZARD_TRIBUTE_TYPE_OPTIONS
-const catalogTypes = ref<TributeType[]>(props.tributeTypes ?? [])
-const applying = ref(false)
-
-onMounted(async () => {
-  if (catalogTypes.value.length) return
-  try {
-    catalogTypes.value = await listTributeTypes()
-  } catch {
-    catalogTypes.value = []
-  }
-})
-
-function resolveApiType(option: WizardTributeTypeOption): TributeType | null {
-  return resolveTributeTypeForWizardOption(
-    catalogTypes.value,
-    option,
-    listTemplateDefinitions(),
-  )
-}
-
-async function select(option: WizardTributeTypeOption) {
-  props.form.wizard_type_id = option.id
-  props.form.wizard_category_slug = option.categorySlug
-
-  const apiType = resolveApiType(option)
-  if (!apiType) return
-
-  const defaults = apiType.default_texts ?? {}
-  if (!props.form.title?.trim() && defaults.title) props.form.title = defaults.title
-  if (!props.form.message?.trim() && defaults.message) props.form.message = defaults.message
-  if (apiType.default_palette?.[0]) props.form.color_primary = apiType.default_palette[0]
-
-  applying.value = true
-  try {
-    await updateTribute(props.tributeId, {
-      tribute_type_id: apiType.id,
-      content_json: {
-        wizard_category_slug: option.categorySlug,
-      },
-    })
-    emit('changed')
-  } finally {
-    applying.value = false
-  }
-}
-</script>
 
 <style scoped>
 .type-grid {

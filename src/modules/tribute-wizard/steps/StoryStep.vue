@@ -1,8 +1,8 @@
 <template>
   <div class="story-step wiz-step-content">
     <WizardStepHeader
-      title="Nossa história"
-      description="Adicione momentos importantes da história — cada um com fotos, textos, datas e emoções."
+      :title="storyTitle"
+      :description="storyDescription"
     />
 
     <div class="wiz-card-stack">
@@ -114,15 +114,25 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import type { TributeMedia, TributeTimelineItem } from '@/api/types'
 import type { useTributeWizard } from '@/composables/useTributeWizard'
 import { STORY_EMOTION_OPTIONS } from '@/modules/tribute-wizard/tributeWizardSteps'
+import { getWizardTypeFlowConfig } from '@/modules/tribute-wizard/tributeTypeFlow'
 import WizardStepHeader from '@/components/wizard/WizardStepHeader.vue'
 
 const props = defineProps<{
   form: ReturnType<typeof useTributeWizard>['form']
   photos: TributeMedia[]
 }>()
+
+const flow = computed(() => getWizardTypeFlowConfig(props.form.wizard_type_id))
+const storyTitle = computed(() => flow.value.storyStepLabel ?? 'Nossa história')
+const storyDescription = computed(
+  () =>
+    flow.value.storyStepDescription ??
+    'Adicione momentos importantes da história — cada um com fotos, textos, datas e emoções.',
+)
 
 const emotions = STORY_EMOTION_OPTIONS
 

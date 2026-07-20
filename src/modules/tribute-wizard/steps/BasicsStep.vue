@@ -41,12 +41,18 @@
             :key="def.slug"
             type="button"
             class="tpl-card"
-            :class="{ 'tpl-card--active': selectedSlug === def.slug }"
+            :class="{
+              'tpl-card--active': selectedSlug === def.slug,
+              'tpl-card--recommended': recommendedSlug === def.slug && selectedSlug !== def.slug,
+            }"
             :style="tplVars(def)"
             @click="selectTemplate(def)"
           >
             <span class="tpl-card__swatch" aria-hidden="true" />
-            <strong class="tpl-card__name">{{ def.name }}</strong>
+            <strong class="tpl-card__name">
+              {{ def.name }}
+              <span v-if="recommendedSlug === def.slug" class="tpl-card__badge">Sugerido</span>
+            </strong>
             <span class="tpl-card__flow">{{ layoutLabel(def) }}</span>
           </button>
         </div>
@@ -91,6 +97,7 @@ import { listTemplateDefinitions } from '@/templates/registry'
 import { EXPERIENCE_LAYOUT_LABELS, type TemplateDefinition } from '@/templates/types'
 import { presentationForLayout } from '@/templates/presentations'
 import { listStyles } from '@/templates/styles'
+import { getWizardTypeFlowConfig } from '@/modules/tribute-wizard/tributeTypeFlow'
 import { syncModulesFromPresentation } from '@/utils/tributeModules'
 import WizardStepHeader from '@/components/wizard/WizardStepHeader.vue'
 import PhotosStep from './PhotosStep.vue'
@@ -109,6 +116,10 @@ const allDefinitions = listTemplateDefinitions()
 const catalogTemplates = ref<Template[]>([])
 
 const categorySlug = computed(() => props.form.wizard_category_slug)
+
+const recommendedSlug = computed(
+  () => getWizardTypeFlowConfig(props.form.wizard_type_id).defaultTemplateSlug ?? '',
+)
 
 const templates = computed(() => {
   if (!categorySlug.value) return allDefinitions.slice(0, 8)
@@ -212,6 +223,23 @@ async function selectTemplate(def: TemplateDefinition) {
 .tpl-card__name {
   font-size: 0.88rem;
   font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.tpl-card__badge {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: var(--primary-softer);
+  color: var(--primary-strong);
+}
+.tpl-card--recommended {
+  border-color: color-mix(in srgb, var(--primary) 35%, var(--border-strong));
 }
 .tpl-card__flow {
   font-size: 0.74rem;
