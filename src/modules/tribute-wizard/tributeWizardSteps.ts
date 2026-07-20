@@ -52,7 +52,7 @@ export const WIZARD_TRIBUTE_TYPE_OPTIONS: WizardTributeTypeOption[] = [
     icon: '❤️',
     description: 'Um convite especial para começar uma história a dois.',
     categorySlug: 'pedido-namoro',
-    typeSlugs: ['namorados', 'pedido-namoro', 'pedido'],
+    typeSlugs: ['pedido', 'pedido-namoro', 'namorados'],
   },
   {
     id: 'pedido-casamento',

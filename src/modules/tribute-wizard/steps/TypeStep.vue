@@ -47,6 +47,8 @@ import {
   WIZARD_TRIBUTE_TYPE_OPTIONS,
   type WizardTributeTypeOption,
 } from '@/modules/tribute-wizard/tributeWizardSteps'
+import { resolveTributeTypeForWizardOption } from '@/modules/tribute-wizard/tributeCatalogResolve'
+import { listTemplateDefinitions } from '@/templates/registry'
 import WizardStepHeader from '@/components/wizard/WizardStepHeader.vue'
 
 const props = defineProps<{
@@ -71,11 +73,11 @@ onMounted(async () => {
 })
 
 function resolveApiType(option: WizardTributeTypeOption): TributeType | null {
-  for (const slug of option.typeSlugs) {
-    const match = catalogTypes.value.find((item) => item.slug === slug)
-    if (match) return match
-  }
-  return catalogTypes.value[0] ?? null
+  return resolveTributeTypeForWizardOption(
+    catalogTypes.value,
+    option,
+    listTemplateDefinitions(),
+  )
 }
 
 async function select(option: WizardTributeTypeOption) {

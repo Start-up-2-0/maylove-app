@@ -14,6 +14,11 @@ import { createTribute } from '@/api/tributes'
 import { resolveApiError } from '@/api/errors'
 import { listTemplateDefinitions } from '@/templates/registry'
 import { WIZARD_TRIBUTE_TYPE_OPTIONS } from '@/modules/tribute-wizard/tributeWizardSteps'
+import {
+  pickDefaultTemplateDefinition,
+  resolveCompatibleTemplate,
+  resolveTributeTypeForWizardOption,
+} from '@/modules/tribute-wizard/tributeCatalogResolve'
 import { presentationForLayout } from '@/templates/presentations'
 import { listStyles } from '@/templates/styles'
 
@@ -22,17 +27,18 @@ const error = ref('')
 
 onMounted(async () => {
   try {
-    const [types, templates] = await Promise.all([listTributeTypes(), listTemplates()])
     const defaultOption = WIZARD_TRIBUTE_TYPE_OPTIONS[0]
     const definitions = listTemplateDefinitions()
-    const categoryDefs = definitions.filter((def) => def.category === defaultOption.categorySlug)
-    const def = categoryDefs[0] ?? definitions[0]
+    const def = pickDefaultTemplateDefinition(defaultOption, definitions)
     if (!def) throw new Error('Catálogo indisponível')
 
-    const template = templates.find((item) => item.slug === def.slug) ?? templates[0]
-    const type =
-      types.find((item) => defaultOption.typeSlugs.includes(item.slug)) ?? types[0]
-    if (!template || !type) throw new Error('Catálogo indisponível')
+    const types = await listTributeTypes()
+    const type = resolveTributeTypeForWizardOption(types, defaultOption, definitions)
+    if (!type) throw new Error('Catálogo indisponível')
+
+    const templates = await listTemplates(type.id)
+    const template = resolveCompatibleTemplate(templates, def)
+    if (!template) throw new Error('Nenhum template compatível com este tipo.')
 
     const tribute = await createTribute(type.id, template.id)
     const presentation = presentationForLayout(def.layout)?.id ?? 'scroll-classic'
