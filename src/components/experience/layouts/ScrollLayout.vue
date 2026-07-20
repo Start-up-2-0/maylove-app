@@ -1,13 +1,20 @@
 <template>
   <div class="exp-sections">
-    <component
-      :is="getSectionComponent(section.type)"
-      v-for="section in orderedSections"
-      :key="section.id"
-      :section="section"
-      :content="content"
-      :theme="theme"
-    />
+    <template v-for="item in flowItems" :key="item.key">
+      <SpecialDateBlock
+        v-if="item.kind === 'special-date'"
+        :content="content"
+        :theme="theme"
+        placement="after-cover"
+      />
+      <component
+        :is="getSectionComponent(item.section.type)"
+        v-else
+        :section="item.section"
+        :content="content"
+        :theme="theme"
+      />
+    </template>
 
     <section v-if="mode === 'full' && shareUrl" class="exp-section exp-share">
       <div class="exp-container exp-share__inner">
@@ -25,21 +32,23 @@ import type { LayoutComponentProps, SectionInstance } from '@/templates/types'
 import { getSectionComponent } from '@/templates/sections'
 import ShareBar from '../shared/ShareBar.vue'
 import QrCode from '../shared/QrCode.vue'
+import SpecialDateBlock from '../shared/SpecialDateBlock.vue'
+import { buildScrollFlowItems, filterSectionsForSpecialDate } from '@/utils/specialDate'
 
 const props = defineProps<LayoutComponentProps>()
 
-// Respeita a ordem/ativação de seções definida pelo usuário (content.sectionOrder).
-// Sem customização, usa a ordem padrão do template.
 const orderedSections = computed<SectionInstance[]>(() => {
-  const all = props.definition.sections
+  const base = filterSectionsForSpecialDate(props.definition.sections, props.content)
   const order = props.content.sectionOrder
-  if (!order || !order.length) return all
-  const byId = new Map(all.map((section) => [section.id, section]))
+  if (!order || !order.length) return base
+  const byId = new Map(base.map((section) => [section.id, section]))
   const picked = order
     .map((id) => byId.get(id))
     .filter((section): section is SectionInstance => Boolean(section))
-  return picked.length ? picked : all
+  return picked.length ? picked : base
 })
+
+const flowItems = computed(() => buildScrollFlowItems(orderedSections.value, props.content))
 </script>
 
 <style scoped>

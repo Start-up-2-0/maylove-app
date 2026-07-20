@@ -45,7 +45,13 @@
           {{ copied ? 'Copiado!' : 'Copiar link' }}
         </button>
       </div>
-      <a :href="publicUrl" target="_blank" class="ml-btn ml-btn--secondary">Abrir página</a>
+      <a :href="publicUrl" target="_blank" class="ml-btn ml-btn--secondary">Abrir página publicada</a>
+
+      <div v-if="showQrCode" class="published-card__qr">
+        <h4>QR Code</h4>
+        <img :src="qrCodeUrl" width="180" height="180" alt="QR Code da homenagem" />
+        <p class="text-muted">Escaneie para abrir a homenagem no celular.</p>
+      </div>
     </div>
 
     <div v-else class="publish-actions">
@@ -169,6 +175,16 @@ const publicUrl = computed(() => {
   if (!slug) return ''
   return `${window.location.origin}/h/${slug}`
 })
+
+const showQrCode = computed(
+  () => props.tribute?.content_json?.modules?.qr_code !== false && Boolean(publicUrl.value),
+)
+
+const qrCodeUrl = computed(() =>
+  publicUrl.value
+    ? `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(publicUrl.value)}`
+    : '',
+)
 
 const paymentStatus = computed(() => route.query.payment)
 const paymentMessage = computed(() => {
@@ -294,6 +310,21 @@ async function copyLink() {
   grid-template-columns: 1fr auto;
   gap: 12px;
   margin-bottom: 12px;
+}
+.published-card__qr {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+  text-align: center;
+}
+.published-card__qr h4 {
+  font-size: 0.94rem;
+  margin-bottom: 12px;
+}
+.published-card__qr img {
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: #fff;
 }
 
 .publish-actions {

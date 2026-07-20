@@ -1,8 +1,41 @@
 import { computed, reactive, ref } from 'vue'
 import { fetchTribute, updateTribute } from '@/api/tributes'
-import type { TributeDetail, TributeEventInfo, TributeTimelineItem } from '@/api/types'
+import type {
+  TributeDetail,
+  TributeEventInfo,
+  TributeModulesConfig,
+  TributeSpecialDateConfig,
+  TributeTimelineItem,
+} from '@/api/types'
 import { fallbackTimelineTitle, timelineItemHasContent } from '@/utils/timeline'
+import { WIZARD_TRIBUTE_TYPE_OPTIONS } from '@/modules/tribute-wizard/tributeWizardSteps'
 import { useAutosave } from './useAutosave'
+
+const DEFAULT_SPECIAL_DATE: TributeSpecialDateConfig = {
+  enabled: false,
+  kind: 'custom',
+  date: '',
+  time: '',
+  title: '',
+  description: '',
+  counter_mode: 'since',
+  display_format: 'card',
+}
+
+const DEFAULT_MODULES: TributeModulesConfig = {
+  digital_album: true,
+  letter: false,
+  timeline: true,
+  couple_map: false,
+  digital_book: false,
+  quiz: false,
+  playlist: false,
+  night_sky: false,
+  qr_code: true,
+  comments: false,
+  reactions: false,
+  gifts: false,
+}
 
 export function useTributeWizard(tributeId: string) {
   const tribute = ref<TributeDetail | null>(null)
@@ -10,6 +43,9 @@ export function useTributeWizard(tributeId: string) {
   const error = ref('')
 
   const form = reactive({
+    wizard_type_id: '' as string,
+    wizard_category_slug: '' as string,
+    template_id: '' as string,
     title: '',
     subtitle: '',
     honoree_name: '',
@@ -38,6 +74,8 @@ export function useTributeWizard(tributeId: string) {
     messages: [] as string[],
     timeline: [] as TributeTimelineItem[],
     event_info: { date: '', location: '', map_url: '' } as TributeEventInfo,
+    special_date_config: { ...DEFAULT_SPECIAL_DATE } as TributeSpecialDateConfig,
+    modules: { ...DEFAULT_MODULES } as TributeModulesConfig,
     music_autoplay: true,
     music_loop: true,
     music_start_seconds: 0,
@@ -68,8 +106,29 @@ export function useTributeWizard(tributeId: string) {
         if (item.description?.trim()) entry.description = item.description.trim()
         if (item.photo_media_id?.trim()) entry.photo_media_id = item.photo_media_id.trim()
         if (item.photo_url?.trim()) entry.photo_url = item.photo_url.trim()
+        if (item.location?.trim()) entry.location = item.location.trim()
+        if (item.emotion?.trim()) entry.emotion = item.emotion.trim()
+        if (item.video_url?.trim()) entry.video_url = item.video_url.trim()
         return entry
       })
+  }
+
+  function cleanSpecialDateConfig(): TributeSpecialDateConfig | null {
+    const cfg = form.special_date_config
+    if (!cfg.enabled) return { enabled: false }
+    const entry: TributeSpecialDateConfig = { enabled: true }
+    if (cfg.kind) entry.kind = cfg.kind
+    if (cfg.date?.trim()) entry.date = cfg.date.trim()
+    if (cfg.time?.trim()) entry.time = cfg.time.trim()
+    if (cfg.title?.trim()) entry.title = cfg.title.trim()
+    if (cfg.description?.trim()) entry.description = cfg.description.trim()
+    if (cfg.counter_mode) entry.counter_mode = cfg.counter_mode
+    if (cfg.display_format) entry.display_format = cfg.display_format
+    return entry
+  }
+
+  function cleanModules(): TributeModulesConfig {
+    return { ...form.modules }
   }
 
   const autosavePayload = computed(() => ({
@@ -78,10 +137,13 @@ export function useTributeWizard(tributeId: string) {
     honoree_name: form.honoree_name || null,
     message: form.message || null,
     closing_message: form.closing_message || null,
-    special_date: form.special_date || null,
+    special_date: form.special_date_config.enabled
+      ? form.special_date_config.date || form.special_date || null
+      : form.special_date || null,
     color_primary: form.color_primary,
     music_source: form.music_source,
     music_track_id: form.music_source === 'library' ? form.music_track_id : null,
+    ...(form.template_id ? { template_id: form.template_id } : {}),
     content_json: {
       effects: [...form.effects],
       style_id: form.style_id || null,
@@ -101,6 +163,9 @@ export function useTributeWizard(tributeId: string) {
       messages: form.messages.map((msg) => msg.trim()).filter((msg) => msg.length > 0),
       timeline: cleanTimeline(),
       event_info: cleanEventInfo(),
+      special_date_config: cleanSpecialDateConfig(),
+      modules: cleanModules(),
+      wizard_category_slug: form.wizard_category_slug || null,
       music_autoplay: form.music_autoplay,
       music_loop: form.music_loop,
       ...(form.music_duration_seconds > 0
@@ -146,6 +211,17 @@ export function useTributeWizard(tributeId: string) {
   }
 
   function syncFormFromTribute(data: TributeDetail) {
+    form.template_id = data.template.id
+    const savedCategory = data.content_json?.wizard_category_slug as string | undefined
+    const option =
+      WIZARD_TRIBUTE_TYPE_OPTIONS.find(
+        (item) =>
+          item.id === savedCategory ||
+          item.categorySlug === savedCategory ||
+          item.typeSlugs.includes(data.tribute_type.slug),
+      ) ?? WIZARD_TRIBUTE_TYPE_OPTIONS.find((item) => item.typeSlugs.includes(data.tribute_type.slug))
+    form.wizard_type_id = option?.id ?? ''
+    form.wizard_category_slug = option?.categorySlug ?? savedCategory ?? data.tribute_type.slug ?? ''
     form.title = data.title ?? ''
     form.subtitle = data.subtitle ?? ''
     form.honoree_name = data.honoree_name ?? ''
@@ -177,6 +253,17 @@ export function useTributeWizard(tributeId: string) {
       date: data.content_json?.event_info?.date ?? '',
       location: data.content_json?.event_info?.location ?? '',
       map_url: data.content_json?.event_info?.map_url ?? '',
+    }
+    const savedSpecial = data.content_json?.special_date_config
+    form.special_date_config = {
+      ...DEFAULT_SPECIAL_DATE,
+      ...(savedSpecial ?? {}),
+      enabled: savedSpecial?.enabled ?? Boolean(data.special_date),
+      date: savedSpecial?.date ?? data.special_date ?? '',
+    }
+    form.modules = {
+      ...DEFAULT_MODULES,
+      ...(data.content_json?.modules ?? {}),
     }
     form.music_autoplay = data.content_json?.music_autoplay ?? true
     form.music_loop = data.content_json?.music_loop ?? true

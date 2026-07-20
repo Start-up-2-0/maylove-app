@@ -1,6 +1,7 @@
 <template>
   <div class="appearance-step">
     <WizardStepHeader
+      v-if="!embedded"
       title="Estilo e aparência"
       description="Escolha um estilo visual e ajuste as cores. A estrutura do template não muda — só a “roupa”."
     />
@@ -272,10 +273,14 @@ import {
 } from '@/templates/types'
 import WizardStepHeader from '@/components/wizard/WizardStepHeader.vue'
 
-const props = defineProps<{
-  form: ReturnType<typeof useTributeWizard>['form']
-  definition: TemplateDefinition
-}>()
+const props = withDefaults(
+  defineProps<{
+    form: ReturnType<typeof useTributeWizard>['form']
+    definition?: TemplateDefinition | null
+    embedded?: boolean
+  }>(),
+  { embedded: false, definition: null },
+)
 
 const styles = listStyles()
 const fonts = DISPLAY_FONTS
@@ -283,7 +288,7 @@ const backgrounds = BACKGROUND_PRESETS
 
 // Layout efetivo: a apresentação escolhida sobrepõe o padrão do template.
 const layout = computed<ExperienceLayout>(
-  () => getPresentation(props.form.presentation)?.layout ?? props.definition.layout ?? 'scroll',
+  () => getPresentation(props.form.presentation)?.layout ?? props.definition?.layout ?? 'scroll',
 )
 const presentationEmoji = computed(() => getPresentation(props.form.presentation)?.emoji ?? '✨')
 
@@ -299,7 +304,7 @@ interface SectionRow {
 const arrangement = ref<SectionRow[]>(buildArrangement())
 
 function buildArrangement(): SectionRow[] {
-  const all = props.definition.sections
+  const all = props.definition?.sections ?? []
   const order = props.form.section_order
   if (!order || !order.length) {
     return all.map((section) => ({ id: section.id, type: section.type, enabled: true }))
@@ -339,7 +344,7 @@ function sectionMeta(type: SectionType) {
 
 // Reconstroi quando o template muda ou quando o form é ressincronizado externamente.
 watch(
-  [() => props.definition.slug, () => props.form.section_order],
+  [() => props.definition?.slug, () => props.form.section_order],
   () => {
     const currentEnabled = arrangement.value
       .filter((row) => row.enabled)
@@ -394,11 +399,11 @@ const TEXT_SECTIONS: SectionType[] = ['hero', 'finalMessage', 'typewriter', 'mes
 // photo_style/text_style só afetam os blocos da rolagem; nas experiências
 // narrativas o próprio shell controla como fotos e textos aparecem.
 const showPhotoStyle = computed(
-  () => isScroll.value && props.definition.sections.some((s) => PHOTO_SECTIONS.includes(s.type)),
+  () => isScroll.value && (props.definition?.sections ?? []).some((s) => PHOTO_SECTIONS.includes(s.type)),
 )
 
 const showTextStyle = computed(
-  () => isScroll.value && props.definition.sections.some((s) => TEXT_SECTIONS.includes(s.type)),
+  () => isScroll.value && (props.definition?.sections ?? []).some((s) => TEXT_SECTIONS.includes(s.type)),
 )
 
 function applyStyle(style: TemplateStyle) {

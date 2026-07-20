@@ -1,0 +1,176 @@
+<template>
+  <div class="review-step">
+    <WizardStepHeader
+      title="Revisão"
+      description="Confira o resumo completo antes de publicar. Toque em qualquer seção para editar."
+    />
+
+    <div class="rv-summary">
+      <button
+        v-for="item in summaryItems"
+        :key="item.step"
+        type="button"
+        class="rv-item"
+        @click="$emit('edit', item.step)"
+      >
+        <span class="rv-item__label">{{ item.label }}</span>
+        <span class="rv-item__value">{{ item.value }}</span>
+        <span class="rv-item__edit">Editar →</span>
+      </button>
+    </div>
+
+    <section class="rv-preview">
+      <h3 class="rv-preview__title">
+        <span class="rv-preview__dot" />
+        Prévia da homenagem
+      </h3>
+      <TributeLivePreview
+        :tribute-id="tributeId"
+        :form="form"
+        :tribute="tribute"
+        :refresh-token="refreshToken"
+        faithful
+      />
+    </section>
+
+    <div class="rv-actions">
+      <button type="button" class="ml-btn ml-btn--primary ml-btn--lg" @click="$emit('go-publish')">
+        Tudo certo — ir para publicar
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M5 12h14M13 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </button>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { computed } from 'vue'
+import type { TributeDetail, WizardStep } from '@/api/types'
+import type { useTributeWizard } from '@/composables/useTributeWizard'
+import {
+  TRIBUTE_MODULE_OPTIONS,
+  TRIBUTE_WIZARD_STEP_LABELS,
+  WIZARD_TRIBUTE_TYPE_OPTIONS,
+} from '@/modules/tribute-wizard/tributeWizardSteps'
+import WizardStepHeader from '@/components/wizard/WizardStepHeader.vue'
+import TributeLivePreview from '@/components/wizard/TributeLivePreview.vue'
+
+const props = defineProps<{
+  tributeId: string
+  form: ReturnType<typeof useTributeWizard>['form']
+  tribute: TributeDetail | null
+  refreshToken: number
+}>()
+
+defineEmits<{ 'go-publish': []; edit: [step: WizardStep] }>()
+
+const typeLabel = computed(() => {
+  const option = WIZARD_TRIBUTE_TYPE_OPTIONS.find((item) => item.id === props.form.wizard_type_id)
+  return option?.label ?? props.tribute?.tribute_type.name ?? '—'
+})
+
+const activeModules = computed(() =>
+  TRIBUTE_MODULE_OPTIONS.filter((mod) => props.form.modules[mod.id])
+    .map((mod) => mod.label)
+    .join(', ') || 'Nenhum',
+)
+
+const photoCount = computed(
+  () => (props.tribute?.media ?? []).filter((m) => m.media_type === 'photo').length,
+)
+
+const summaryItems = computed(() => [
+  {
+    step: 'type' as WizardStep,
+    label: TRIBUTE_WIZARD_STEP_LABELS.type,
+    value: typeLabel.value,
+  },
+  {
+    step: 'basics' as WizardStep,
+    label: 'Informações',
+    value: props.form.honoree_name || props.form.title || '—',
+  },
+  {
+    step: 'special-date' as WizardStep,
+    label: 'Data especial',
+    value: props.form.special_date_config.enabled
+      ? props.form.special_date_config.title || 'Configurada'
+      : 'Não incluída',
+  },
+  {
+    step: 'story' as WizardStep,
+    label: 'História',
+    value: `${props.form.timeline.length} momento(s) · ${photoCount.value} foto(s)`,
+  },
+  {
+    step: 'personalization' as WizardStep,
+    label: 'Personalização',
+    value: props.form.style_id ? 'Estilo personalizado' : 'Padrão do modelo',
+  },
+  {
+    step: 'modules' as WizardStep,
+    label: 'Recursos',
+    value: activeModules.value,
+  },
+])
+</script>
+
+<style scoped>
+.rv-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 10px;
+  margin-bottom: 24px;
+}
+.rv-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px;
+  text-align: left;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--surface-3);
+  transition: border-color var(--dur) var(--ease), transform var(--dur) var(--ease);
+}
+.rv-item:hover {
+  border-color: var(--primary);
+  transform: translateY(-1px);
+}
+.rv-item__label {
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.rv-item__value {
+  font-size: 0.94rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+.rv-item__edit {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--primary-strong);
+  margin-top: 4px;
+}
+.rv-preview__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 14px;
+}
+.rv-preview__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--success);
+}
+.rv-actions {
+  margin-top: 24px;
+}
+</style>

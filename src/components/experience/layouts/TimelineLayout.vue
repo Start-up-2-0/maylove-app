@@ -7,6 +7,13 @@
       <span class="tl__hero-hint" aria-hidden="true" />
     </header>
 
+    <SpecialDateBlock
+      v-if="showSpecialDate"
+      :content="content"
+      :theme="theme"
+      placement="after-cover"
+    />
+
     <div ref="track" class="tl__track">
       <span class="tl__line" aria-hidden="true">
         <span class="tl__line-fill" :style="{ height: `${fill}%` }" />
@@ -49,6 +56,8 @@ import type { ExperienceMediaItem, LayoutComponentProps } from '@/templates/type
 import { vReveal } from '@/composables/useReveal'
 import ShareBar from '../shared/ShareBar.vue'
 import RichText from '../shared/RichText.vue'
+import SpecialDateBlock from '../shared/SpecialDateBlock.vue'
+import { shouldShowWizardSpecialDate } from '@/utils/specialDate'
 
 interface TimelineEntry {
   date?: string
@@ -58,6 +67,8 @@ interface TimelineEntry {
 }
 
 const props = defineProps<LayoutComponentProps>()
+
+const showSpecialDate = computed(() => shouldShowWizardSpecialDate(props.content))
 
 const signatureLabel = computed(() => props.content.signature || props.content.senderName || '')
 const showFooter = computed(
@@ -134,6 +145,11 @@ onBeforeUnmount(() => {
   width: 2px;
   height: 46px;
   background: linear-gradient(var(--exp-primary), transparent);
+}
+.tl :deep(.special-date-block--after-cover) {
+  margin-top: clamp(-20px, -2vw, -8px);
+  padding-top: 0;
+  padding-bottom: clamp(24px, 4vw, 40px);
 }
 
 .tl__track {

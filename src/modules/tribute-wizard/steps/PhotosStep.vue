@@ -1,6 +1,7 @@
 <template>
   <div class="photos-step">
     <WizardStepHeader
+      v-if="!compact"
       title="Fotos da homenagem"
       :description="`Envie pelo menos uma foto. Máximo de ${maxPhotos} neste template.`"
     />
@@ -75,16 +76,22 @@ import { resolvePresentationSchema } from '@/templates/presentationSchema'
 import type { TemplateDefinition } from '@/templates/types'
 import WizardStepHeader from '@/components/wizard/WizardStepHeader.vue'
 
-const props = defineProps<{
-  tributeId: string
-  photos: TributeMedia[]
-  maxPhotos: number
-  form: ReturnType<typeof useTributeWizard>['form']
-  definition: TemplateDefinition
-}>()
+const props = withDefaults(
+  defineProps<{
+    tributeId: string
+    photos: TributeMedia[]
+    maxPhotos: number
+    form: ReturnType<typeof useTributeWizard>['form']
+    definition?: TemplateDefinition | null
+    compact?: boolean
+  }>(),
+  { compact: false, definition: null },
+)
 
 // O schema da apresentação define como as fotos são usadas e o mínimo recomendado.
-const schema = computed(() => resolvePresentationSchema(props.form.presentation, props.definition))
+const schema = computed(() =>
+  resolvePresentationSchema(props.form.presentation, props.definition ?? undefined),
+)
 const presentationEmoji = computed(() => schema.value.presentationEmoji)
 
 const needsMore = computed(

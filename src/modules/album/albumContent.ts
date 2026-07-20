@@ -28,6 +28,7 @@ export function buildAlbumExperienceContent(input: {
     celebration: '',
     signature: input.signature ?? '',
     specialDate: null,
+    specialDateConfig: null,
     photos: input.photos.map((photo) => ({
       id: photo.id,
       url: photo.url,

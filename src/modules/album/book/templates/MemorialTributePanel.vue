@@ -19,22 +19,25 @@
       <button type="button" class="mem-tribute-btn" @click="openModal('message')">
         <span class="mem-tribute-btn__icon" aria-hidden="true">💌</span>
         <span>Deixar mensagem</span>
-        <small>Depoimento de carinho</small>
+        <small>Depoimento permanente</small>
       </button>
     </div>
 
-    <div v-if="activeTributes.length" class="mem-tributes__list">
+    <p v-if="loading" class="mem-tributes__status">Carregando homenagens...</p>
+    <p v-else-if="loadError" class="mem-tributes__error">{{ loadError }}</p>
+
+    <div v-else-if="tributes.length" class="mem-tributes__list">
       <article
-        v-for="item in activeTributes"
+        v-for="item in tributes"
         :key="item.id"
         class="mem-tribute-card"
         :class="`mem-tribute-card--${item.type}`"
       >
         <span class="mem-tribute-card__icon" aria-hidden="true">{{ iconFor(item.type) }}</span>
         <div>
-          <strong>{{ item.author }}</strong>
+          <strong>{{ item.author_name }}</strong>
           <p>{{ item.message }}</p>
-          <time>{{ formatDate(item.createdAt) }}</time>
+          <time>{{ formatDate(item.created_at) }}</time>
         </div>
       </article>
     </div>
@@ -49,7 +52,7 @@
         </header>
         <label class="mem-field">
           <span>Seu nome</span>
-          <input v-model="form.author" class="mem-input" maxlength="80" required />
+          <input v-model="form.author_name" class="mem-input" maxlength="80" required />
         </label>
         <label class="mem-field">
           <span>Mensagem</span>
@@ -62,9 +65,12 @@
             placeholder="Escreva com carinho e respeito..."
           />
         </label>
+        <p v-if="submitError" class="mem-modal__error">{{ submitError }}</p>
         <footer class="mem-modal__foot">
           <button type="button" class="mem-btn mem-btn--ghost" @click="closeModal">Cancelar</button>
-          <button type="submit" class="mem-btn mem-btn--primary">Enviar homenagem</button>
+          <button type="submit" class="mem-btn mem-btn--primary" :disabled="submitting">
+            {{ submitting ? 'Enviando...' : 'Enviar homenagem' }}
+          </button>
         </footer>
       </form>
     </div>
@@ -73,32 +79,20 @@
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
-
-type TributeType = 'candle' | 'flower' | 'message'
-
-interface StoredTribute {
-  id: string
-  type: TributeType
-  author: string
-  message: string
-  createdAt: string
-  expiresAt: string | null
-}
+import { fetchPublicAlbumTributes, submitPublicAlbumTribute } from '@/api/albums'
+import type { AlbumVisitorTribute, AlbumVisitorTributeType } from '@/api/types'
+import { resolveApiError } from '@/api/errors'
 
 const props = defineProps<{ albumSlug: string }>()
 
 const modalOpen = ref(false)
-const modalType = ref<TributeType>('message')
-const tributes = ref<StoredTribute[]>([])
-const form = reactive({ author: '', message: '' })
-
-const storageKey = computed(() => `maylove_memorial_tributes_${props.albumSlug}`)
-
-const activeTributes = computed(() =>
-  tributes.value
-    .filter((item) => !item.expiresAt || new Date(item.expiresAt) > new Date())
-    .sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
-)
+const modalType = ref<AlbumVisitorTributeType>('message')
+const tributes = ref<AlbumVisitorTribute[]>([])
+const loading = ref(true)
+const loadError = ref('')
+const submitError = ref('')
+const submitting = ref(false)
+const form = reactive({ author_name: '', message: '' })
 
 const modalTitle = computed(() => {
   switch (modalType.value) {
@@ -112,53 +106,53 @@ const modalTitle = computed(() => {
 })
 
 onMounted(() => {
-  loadTributes()
+  void loadTributes()
 })
 
-function loadTributes() {
+async function loadTributes() {
+  loading.value = true
+  loadError.value = ''
   try {
-    const raw = localStorage.getItem(storageKey.value)
-    tributes.value = raw ? (JSON.parse(raw) as StoredTribute[]) : []
-  } catch {
-    tributes.value = []
+    tributes.value = await fetchPublicAlbumTributes(props.albumSlug)
+  } catch (err) {
+    loadError.value = resolveApiError(err, 'Não foi possível carregar as homenagens.')
+  } finally {
+    loading.value = false
   }
 }
 
-function persist() {
-  localStorage.setItem(storageKey.value, JSON.stringify(tributes.value))
-}
-
-function openModal(type: TributeType) {
+function openModal(type: AlbumVisitorTributeType) {
   modalType.value = type
-  form.author = ''
+  form.author_name = ''
   form.message = ''
+  submitError.value = ''
   modalOpen.value = true
 }
 
 function closeModal() {
+  if (submitting.value) return
   modalOpen.value = false
 }
 
-function submitTribute() {
-  const now = new Date()
-  const days = modalType.value === 'candle' ? 7 : modalType.value === 'flower' ? 10 : null
-  const expiresAt = days
-    ? new Date(now.getTime() + days * 24 * 60 * 60 * 1000).toISOString()
-    : null
-
-  tributes.value.unshift({
-    id: crypto.randomUUID(),
-    type: modalType.value,
-    author: form.author.trim(),
-    message: form.message.trim(),
-    createdAt: now.toISOString(),
-    expiresAt,
-  })
-  persist()
-  closeModal()
+async function submitTribute() {
+  submitting.value = true
+  submitError.value = ''
+  try {
+    const created = await submitPublicAlbumTribute(props.albumSlug, {
+      type: modalType.value,
+      author_name: form.author_name.trim(),
+      message: form.message.trim(),
+    })
+    tributes.value = [created, ...tributes.value.filter((item) => item.id !== created.id)]
+    closeModal()
+  } catch (err) {
+    submitError.value = resolveApiError(err, 'Não foi possível enviar a homenagem.')
+  } finally {
+    submitting.value = false
+  }
 }
 
-function iconFor(type: TributeType): string {
+function iconFor(type: AlbumVisitorTributeType): string {
   if (type === 'candle') return '🕯️'
   if (type === 'flower') return '💐'
   return '💌'
@@ -195,6 +189,21 @@ function formatDate(value: string): string {
   margin: 0;
   color: var(--mem-muted, #a89f94);
   font-size: 0.95rem;
+}
+
+.mem-tributes__status,
+.mem-tributes__error {
+  text-align: center;
+  font-size: 0.9rem;
+  margin-bottom: 16px;
+}
+
+.mem-tributes__status {
+  color: var(--mem-muted, #a89f94);
+}
+
+.mem-tributes__error {
+  color: #f0a0a0;
 }
 
 .mem-tributes__actions {
@@ -342,6 +351,12 @@ function formatDate(value: string): string {
   font: inherit;
 }
 
+.mem-modal__error {
+  margin: 0 0 10px;
+  font-size: 0.86rem;
+  color: #f0a0a0;
+}
+
 .mem-modal__foot {
   display: flex;
   justify-content: flex-end;
@@ -356,6 +371,11 @@ function formatDate(value: string): string {
   font-weight: 600;
   font-size: 0.88rem;
   cursor: pointer;
+}
+
+.mem-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .mem-btn--ghost {

@@ -51,6 +51,7 @@ const bgStyle = computed(() => ({
 }))
 
 const dateLabel = computed(() => {
+  if (props.content.specialDateConfig?.enabled) return ''
   if (!props.content.specialDate) return ''
   const parsed = new Date(props.content.specialDate)
   if (Number.isNaN(parsed.getTime())) return ''

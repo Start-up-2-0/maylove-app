@@ -76,6 +76,14 @@
           <p class="metric__label">{{ metric.label }}</p>
         </article>
       </section>
+
+      <AlbumQrCard
+        v-if="album.status === 'published' && isMemorial"
+        :album-id="albumId"
+        variant="memorial"
+        :headline="memorialHeadline"
+        :subtitle="album.subtitle"
+      />
     </template>
 
     <Teleport to="body">
@@ -109,6 +117,8 @@ import { useRoute, useRouter, RouterLink } from 'vue-router'
 import { deleteAlbum, fetchAlbum } from '@/api/albums'
 import type { AlbumDetail } from '@/api/types'
 import { getBookPresentation } from '@/modules/album/book/presentations'
+import { isMemorialCategory, isMemorialPresentation } from '@/modules/album/albumModels'
+import AlbumQrCard from '@/modules/album/components/AlbumQrCard.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -140,6 +150,26 @@ const publicPath = computed(() => (album.value?.slug ? `/a/${album.value.slug}` 
 const publicUrl = computed(() =>
   album.value?.slug ? `${window.location.origin}/a/${album.value.slug}` : '',
 )
+
+const isMemorial = computed(() => {
+  const item = album.value
+  if (!item) return false
+  const presentation =
+    item.presentation ??
+    (item.content_json as { presentation?: string } | undefined)?.presentation
+  return isMemorialPresentation(presentation) || isMemorialCategory(item.category)
+})
+
+const memorialHeadline = computed(() => {
+  const item = album.value
+  if (!item) return null
+  if (item.honoree_names?.trim()) {
+    return item.honoree_names.trim().startsWith('Em memória')
+      ? item.honoree_names.trim()
+      : `Em memória de ${item.honoree_names.trim()}`
+  }
+  return item.title?.trim() || null
+})
 
 const statusLabel = computed(() => {
   const status = album.value?.status ?? ''

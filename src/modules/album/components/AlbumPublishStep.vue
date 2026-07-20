@@ -36,6 +36,13 @@
         </button>
       </div>
       <a :href="publicUrl" target="_blank" class="ml-btn ml-btn--secondary">Abrir página</a>
+      <AlbumQrCard
+        v-if="isMemorial"
+        :album-id="albumId"
+        variant="memorial"
+        :headline="memorialHeadline"
+        :subtitle="album?.subtitle"
+      />
     </div>
 
     <div v-else class="publish-actions">
@@ -74,6 +81,8 @@ import type { AlbumDetail, AlbumValidation, CheckoutResponse } from '@/api/types
 import { resolveApiError } from '@/api/errors'
 import WizardStepHeader from '@/components/wizard/WizardStepHeader.vue'
 import PixCheckoutPanel from '@/components/billing/PixCheckoutPanel.vue'
+import AlbumQrCard from './AlbumQrCard.vue'
+import { isMemorialCategory, isMemorialPresentation } from '../albumModels'
 
 const props = defineProps<{
   albumId: string
@@ -94,6 +103,26 @@ const checkout = ref<CheckoutResponse | null>(null)
 const priceLabel = ref('10,99')
 
 const publishBlocked = computed(() => !validation.value?.valid)
+
+const isMemorial = computed(() => {
+  const item = props.album
+  if (!item) return false
+  const presentation =
+    item.presentation ??
+    (item.content_json as { presentation?: string } | undefined)?.presentation
+  return isMemorialPresentation(presentation) || isMemorialCategory(item.category)
+})
+
+const memorialHeadline = computed(() => {
+  const item = props.album
+  if (!item) return null
+  if (item.honoree_names?.trim()) {
+    return item.honoree_names.trim().startsWith('Em memória')
+      ? item.honoree_names.trim()
+      : `Em memória de ${item.honoree_names.trim()}`
+  }
+  return item.title?.trim() || null
+})
 
 const publicUrl = computed(() => {
   const slug = props.album?.slug

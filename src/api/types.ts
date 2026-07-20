@@ -95,6 +95,38 @@ export interface TributeTimelineItem {
   description?: string
   photo_url?: string
   photo_media_id?: string
+  location?: string
+  emotion?: string
+  video_url?: string
+}
+
+export type SpecialDateCounterMode = 'countdown' | 'since' | 'none'
+export type SpecialDateDisplayFormat = 'compact' | 'card' | 'hero' | 'inline'
+
+export interface TributeSpecialDateConfig {
+  enabled?: boolean
+  kind?: 'first_meeting' | 'first_kiss' | 'dating_proposal' | 'wedding' | 'anniversary' | 'custom'
+  date?: string
+  time?: string
+  title?: string
+  description?: string
+  counter_mode?: SpecialDateCounterMode
+  display_format?: SpecialDateDisplayFormat
+}
+
+export interface TributeModulesConfig {
+  digital_album?: boolean
+  letter?: boolean
+  timeline?: boolean
+  couple_map?: boolean
+  digital_book?: boolean
+  quiz?: boolean
+  playlist?: boolean
+  night_sky?: boolean
+  qr_code?: boolean
+  comments?: boolean
+  reactions?: boolean
+  gifts?: boolean
 }
 
 export interface TributeEventInfo {
@@ -150,6 +182,12 @@ export interface TributeContentJson {
   include_opening_message?: boolean
   /** Exibe mensagem de encerramento ao final da experiência. */
   include_closing_message?: boolean
+  /** Configuração da data especial com contador. */
+  special_date_config?: TributeSpecialDateConfig
+  /** Módulos extras ativos na homenagem. */
+  modules?: TributeModulesConfig
+  /** Categoria escolhida no wizard (slug interno). */
+  wizard_category_slug?: string | null
 }
 
 export interface TributeDetail {
@@ -262,9 +300,11 @@ export interface AlbumSummary {
   id: string
   slug: string
   status: 'draft' | 'awaiting_payment' | 'published' | 'archived'
+  category?: AlbumCategory | null
   title: string | null
   subtitle: string | null
   color_primary: string | null
+  presentation?: string | null
   is_public: boolean
   chapter_count?: number
   memory_count?: number
@@ -431,9 +471,22 @@ export interface AlbumTimeline {
 }
 
 export interface AlbumQr {
-  memory_id?: string
+  slug: string
+  public_url: string
+  deep_link: string
   url: string
-  image_base64?: string
+  memory_id?: string | null
+}
+
+export type AlbumVisitorTributeType = 'candle' | 'flower' | 'message'
+
+export interface AlbumVisitorTribute {
+  id: string
+  type: AlbumVisitorTributeType
+  author_name: string
+  message: string
+  expires_at: string | null
+  created_at: string
 }
 
 export interface AlbumUploadPolicy {
@@ -551,41 +604,36 @@ export const TRIBUTE_EFFECTS = [
 export type TributeEffect = (typeof TRIBUTE_EFFECTS)[number]
 
 export type WizardStep =
-  | 'presentation'
-  | 'photos'
-  | 'moments'
-  | 'texts'
-  | 'style'
-  | 'music'
-  | 'video'
-  | 'event'
-  | 'effects'
-  | 'preview'
+  | 'type'
+  | 'basics'
+  | 'special-date'
+  | 'story'
+  | 'personalization'
+  | 'modules'
+  | 'review'
   | 'publish'
 
+/** @deprecated Use TRIBUTE_WIZARD_STEPS de tributeWizardSteps.ts */
 export const WIZARD_STEPS: WizardStep[] = [
-  'presentation',
-  'style',
-  'texts',
-  'photos',
-  'music',
-  'effects',
-  'preview',
+  'type',
+  'basics',
+  'special-date',
+  'story',
+  'personalization',
+  'modules',
+  'review',
   'publish',
 ]
 
 export const WIZARD_STEP_LABELS: Record<WizardStep, string> = {
-  presentation: 'Apresentação',
-  photos: 'Fotos',
-  moments: 'Momentos',
-  texts: 'Textos',
-  style: 'Estilo',
-  music: 'Música',
-  video: 'Vídeo',
-  event: 'Evento',
-  effects: 'Efeitos',
-  preview: 'Revisar e Concluir',
-  publish: 'Publicar',
+  type: 'Tipo',
+  basics: 'Informações',
+  'special-date': 'Data especial',
+  story: 'Nossa história',
+  personalization: 'Personalização',
+  modules: 'Recursos extras',
+  review: 'Revisão',
+  publish: 'Publicação',
 }
 
 export type CoupleMapStatus = 'draft' | 'awaiting_payment' | 'published' | 'archived'

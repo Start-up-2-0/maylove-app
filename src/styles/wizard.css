@@ -15,6 +15,64 @@
   width: 100%;
 }
 
+.wizard-body--guided {
+  width: 100%;
+}
+
+.wizard-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 380px);
+  gap: clamp(16px, 2.5vw, 28px);
+  align-items: start;
+}
+
+.wizard-split__form {
+  min-width: 0;
+}
+
+.wizard-split__preview {
+  min-width: 0;
+}
+
+.wizard-body--review .wizard-split {
+  grid-template-columns: 1fr;
+}
+
+/* Transições entre etapas */
+.wiz-step-enter-active,
+.wiz-step-leave-active {
+  transition:
+    opacity var(--dur-lg, 0.32s) var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)),
+    transform var(--dur-lg, 0.32s) var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1));
+}
+
+.wiz-step-enter-from {
+  opacity: 0;
+  transform: translateX(12px);
+}
+
+.wiz-step-leave-to {
+  opacity: 0;
+  transform: translateX(-12px);
+}
+
+@media (max-width: 1023px) {
+  .wizard-split {
+    grid-template-columns: 1fr;
+  }
+
+  .wizard-split__preview {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wiz-step-enter-active,
+  .wiz-step-leave-active {
+    transition: none;
+  }
+}
+
 .wizard-body {
   width: 100%;
 }

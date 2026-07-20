@@ -19,6 +19,10 @@ import {
   resolveTimelinePhoto,
   timelineItemHasContent,
 } from '@/utils/timeline'
+import {
+  resolveSpecialDateConfig,
+  specialDateIso,
+} from '@/utils/specialDate'
 
 type WizardForm = ReturnType<typeof useTributeWizard>['form']
 
@@ -172,13 +176,20 @@ export function resolveContent(def: TemplateDefinition, opts: ResolveOptions): E
     (useSample ? sample.closingMessage : '') ||
     (useSample ? 'Feito com carinho' : '')
 
-  const specialDate =
+  const legacySpecialDate =
     form?.special_date ||
     detail?.special_date ||
     publicData?.special_date ||
     tribute?.special_date ||
     (useSample ? sample.specialDate : '') ||
     null
+
+  const specialDateConfig = resolveSpecialDateConfig(
+    form?.special_date_config ?? content.special_date_config,
+    legacySpecialDate,
+  )
+
+  const specialDate = specialDateIso(specialDateConfig) || legacySpecialDate
 
   const realPhotos = publicData
     ? mediaFromPublic(publicData.media)
@@ -289,6 +300,7 @@ export function resolveContent(def: TemplateDefinition, opts: ResolveOptions): E
     celebration,
     signature: form?.signature || content.signature || (useSample ? sample.signature : '') || senderName,
     specialDate,
+    specialDateConfig,
     photos,
     videoUrl: form?.video_url || content.video_url || (useSample ? sample.videoUrl : null) || null,
     music: {

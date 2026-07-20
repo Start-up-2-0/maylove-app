@@ -7,6 +7,8 @@ import type {
   AlbumMemory,
   AlbumMemoryPayload,
   AlbumQr,
+  AlbumVisitorTribute,
+  AlbumVisitorTributeType,
   AlbumSummary,
   AlbumTimeline,
   AlbumUploadPolicy,
@@ -288,5 +290,25 @@ export async function fetchAlbumQr(
   const response = await apiClient.get<ApiEnvelope<AlbumQr>>(`/albums/${albumId}/qr`, {
     params: memoryId ? { m: memoryId } : undefined,
   })
+  return unwrap(response)
+}
+
+// ---- Tributos de visitantes (memorial) ----
+
+export async function fetchPublicAlbumTributes(slug: string): Promise<AlbumVisitorTribute[]> {
+  const response = await apiClient.get<ApiEnvelope<AlbumVisitorTribute[]>>(
+    `/public/albums/${slug}/tributes`,
+  )
+  return unwrap(response)
+}
+
+export async function submitPublicAlbumTribute(
+  slug: string,
+  payload: { type: AlbumVisitorTributeType; author_name: string; message: string },
+): Promise<AlbumVisitorTribute> {
+  const response = await apiClient.post<ApiEnvelope<AlbumVisitorTribute>>(
+    `/public/albums/${slug}/tributes`,
+    payload,
+  )
   return unwrap(response)
 }

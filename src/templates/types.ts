@@ -1,4 +1,5 @@
 import type { TributeEffect } from '@/api/types'
+import type { ResolvedSpecialDateConfig } from '@/utils/specialDate'
 
 /**
  * Tipos de secao suportados pela engine. Adicionar uma nova capacidade =
@@ -174,6 +175,8 @@ export interface ExperienceContent {
   celebration: string
   signature: string
   specialDate: string | null
+  /** Configuração rica da data especial (wizard). */
+  specialDateConfig: ResolvedSpecialDateConfig | null
   photos: ExperienceMediaItem[]
   videoUrl: string | null
   music: {

@@ -1,6 +1,7 @@
 <template>
   <div class="effects-step">
     <WizardStepHeader
+      v-if="!embedded"
       title="Efeitos visuais"
       description="Selecione animações que aparecerão na página pública."
     />
@@ -32,9 +33,13 @@ import { TRIBUTE_EFFECTS, type TributeEffect } from '@/api/types'
 import type { useTributeWizard } from '@/composables/useTributeWizard'
 import WizardStepHeader from '@/components/wizard/WizardStepHeader.vue'
 
-const props = defineProps<{
-  form: ReturnType<typeof useTributeWizard>['form']
-}>()
+const props = withDefaults(
+  defineProps<{
+    form: ReturnType<typeof useTributeWizard>['form']
+    embedded?: boolean
+  }>(),
+  { embedded: false },
+)
 
 const effectMeta: Record<TributeEffect, { label: string; emoji: string }> = {
   confetti: { label: 'Confete', emoji: '🎉' },

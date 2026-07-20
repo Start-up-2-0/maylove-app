@@ -1,0 +1,169 @@
+<template>
+  <div class="type-step">
+    <WizardStepHeader
+      title="Tipo de homenagem"
+      description="A escolha define sugestões de conteúdo, templates e personalizações para a sua memória."
+    />
+
+    <div class="type-grid">
+      <button
+        v-for="option in options"
+        :key="option.id"
+        type="button"
+        class="type-card"
+        :class="{ 'type-card--active': form.wizard_type_id === option.id }"
+        @click="select(option)"
+      >
+        <span class="type-card__icon" aria-hidden="true">{{ option.icon }}</span>
+        <strong class="type-card__label">{{ option.label }}</strong>
+        <span class="type-card__desc">{{ option.description }}</span>
+        <span v-if="form.wizard_type_id === option.id" class="type-card__check" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.6">
+            <path d="M20 6 9 17l-5-5" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </span>
+      </button>
+    </div>
+
+    <p v-if="applying" class="type-step__status">
+      <span class="ml-spinner ml-spinner--sm" />
+      Aplicando sugestões...
+    </p>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { onMounted, ref } from 'vue'
+import { listTributeTypes } from '@/api/catalog'
+import { updateTribute } from '@/api/tributes'
+import type { TributeType } from '@/api/types'
+import type { useTributeWizard } from '@/composables/useTributeWizard'
+import {
+  WIZARD_TRIBUTE_TYPE_OPTIONS,
+  type WizardTributeTypeOption,
+} from '@/modules/tribute-wizard/tributeWizardSteps'
+import WizardStepHeader from '@/components/wizard/WizardStepHeader.vue'
+
+const props = defineProps<{
+  form: ReturnType<typeof useTributeWizard>['form']
+  tributeId: string
+  tributeTypes?: TributeType[]
+}>()
+
+const emit = defineEmits<{ changed: [] }>()
+
+const options = WIZARD_TRIBUTE_TYPE_OPTIONS
+const catalogTypes = ref<TributeType[]>(props.tributeTypes ?? [])
+const applying = ref(false)
+
+onMounted(async () => {
+  if (catalogTypes.value.length) return
+  try {
+    catalogTypes.value = await listTributeTypes()
+  } catch {
+    catalogTypes.value = []
+  }
+})
+
+function resolveApiType(option: WizardTributeTypeOption): TributeType | null {
+  for (const slug of option.typeSlugs) {
+    const match = catalogTypes.value.find((item) => item.slug === slug)
+    if (match) return match
+  }
+  return catalogTypes.value[0] ?? null
+}
+
+async function select(option: WizardTributeTypeOption) {
+  props.form.wizard_type_id = option.id
+  props.form.wizard_category_slug = option.categorySlug
+
+  const apiType = resolveApiType(option)
+  if (!apiType) return
+
+  const defaults = apiType.default_texts ?? {}
+  if (!props.form.title?.trim() && defaults.title) props.form.title = defaults.title
+  if (!props.form.message?.trim() && defaults.message) props.form.message = defaults.message
+  if (apiType.default_palette?.[0]) props.form.color_primary = apiType.default_palette[0]
+
+  applying.value = true
+  try {
+    await updateTribute(props.tributeId, {
+      tribute_type_id: apiType.id,
+      content_json: {
+        wizard_category_slug: option.categorySlug,
+      },
+    })
+    emit('changed')
+  } finally {
+    applying.value = false
+  }
+}
+</script>
+
+<style scoped>
+.type-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+}
+.type-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 18px 16px;
+  text-align: left;
+  border-radius: var(--radius-md);
+  border: 1.5px solid var(--border-strong);
+  background: var(--surface);
+  transition:
+    border-color var(--dur) var(--ease),
+    background var(--dur) var(--ease),
+    transform var(--dur) var(--ease),
+    box-shadow var(--dur) var(--ease);
+}
+.type-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--primary);
+  box-shadow: var(--shadow-md);
+}
+.type-card--active {
+  border-color: var(--primary);
+  background: var(--primary-softer);
+  box-shadow: 0 0 0 3px var(--primary-ring);
+}
+.type-card__icon {
+  font-size: 1.7rem;
+  line-height: 1;
+}
+.type-card__label {
+  font-size: 0.96rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+.type-card__desc {
+  font-size: 0.78rem;
+  color: var(--muted);
+  line-height: 1.35;
+}
+.type-card__check {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  color: #fff;
+  background: var(--primary);
+}
+.type-step__status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+</style>
