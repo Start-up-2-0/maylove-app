@@ -10,6 +10,7 @@ import type {
 import { fallbackTimelineTitle, timelineItemHasContent } from '@/utils/timeline'
 import { WIZARD_TRIBUTE_TYPE_OPTIONS } from '@/modules/tribute-wizard/tributeWizardSteps'
 import { getTemplateDefinition } from '@/templates/registry'
+import { layoutUsesOptionalTextBlocks, resolvePresentationSchema } from '@/templates/presentationSchema'
 import { syncModulesFromPresentation } from '@/utils/tributeModules'
 import { useAutosave } from './useAutosave'
 
@@ -168,6 +169,7 @@ export function useTributeWizard(tributeId: string) {
       special_date_config: cleanSpecialDateConfig(),
       modules: cleanModules(),
       wizard_category_slug: form.wizard_category_slug || null,
+      wizard_type_id: form.wizard_type_id || null,
       music_autoplay: form.music_autoplay,
       music_loop: form.music_loop,
       ...(form.music_duration_seconds > 0
@@ -214,15 +216,21 @@ export function useTributeWizard(tributeId: string) {
 
   function syncFormFromTribute(data: TributeDetail) {
     form.template_id = data.template.id
+    const savedTypeId = data.content_json?.wizard_type_id
     const savedCategory = data.content_json?.wizard_category_slug as string | undefined
+    const optionById = savedTypeId
+      ? WIZARD_TRIBUTE_TYPE_OPTIONS.find((item) => item.id === savedTypeId)
+      : undefined
     const option =
+      optionById ??
       WIZARD_TRIBUTE_TYPE_OPTIONS.find(
         (item) =>
           item.id === savedCategory ||
           item.categorySlug === savedCategory ||
           item.typeSlugs.includes(data.tribute_type.slug),
-      ) ?? WIZARD_TRIBUTE_TYPE_OPTIONS.find((item) => item.typeSlugs.includes(data.tribute_type.slug))
-    form.wizard_type_id = option?.id ?? ''
+      ) ??
+      WIZARD_TRIBUTE_TYPE_OPTIONS.find((item) => item.typeSlugs.includes(data.tribute_type.slug))
+    form.wizard_type_id = option?.id ?? savedTypeId ?? ''
     form.wizard_category_slug = option?.categorySlug ?? savedCategory ?? data.tribute_type.slug ?? ''
     form.title = data.title ?? ''
     form.subtitle = data.subtitle ?? ''
@@ -284,10 +292,13 @@ export function useTributeWizard(tributeId: string) {
     form.music_end_seconds =
       data.content_json?.music_end_seconds ??
       (form.music_duration_seconds > 0 ? form.music_duration_seconds : 0)
+    const definition = getTemplateDefinition(data.template.slug)
+    const layout = resolvePresentationSchema(form.presentation, definition).layout
+    const optionalTextBlocks = layoutUsesOptionalTextBlocks(layout)
     form.include_opening_message =
       typeof data.content_json?.include_opening_message === 'boolean'
         ? data.content_json.include_opening_message
-        : Boolean(data.message?.trim())
+        : optionalTextBlocks && Boolean(data.message?.trim())
     form.include_closing_message =
       typeof data.content_json?.include_closing_message === 'boolean'
         ? data.content_json.include_closing_message

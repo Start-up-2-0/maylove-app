@@ -188,6 +188,8 @@ export interface TributeContentJson {
   modules?: TributeModulesConfig
   /** Categoria escolhida no wizard (slug interno). */
   wizard_category_slug?: string | null
+  /** ID estável do tipo escolhido no wizard (ex.: declaracao-amor). */
+  wizard_type_id?: string | null
 }
 
 export interface TributeDetail {

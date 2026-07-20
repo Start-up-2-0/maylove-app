@@ -92,6 +92,7 @@
                 v-else-if="currentStep === 'publish'"
                 :tribute-id="tributeId"
                 :tribute="tribute"
+                :flush-autosave="flushAutosave"
                 @published="onPublished"
               />
             </div>

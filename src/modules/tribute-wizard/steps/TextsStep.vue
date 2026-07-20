@@ -149,7 +149,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
 import type { useTributeWizard } from '@/composables/useTributeWizard'
 import { resolvePresentationSchema, layoutUsesOptionalTextBlocks } from '@/templates/presentationSchema'
 import type { TemplateDefinition } from '@/templates/types'
@@ -173,6 +173,19 @@ const messageRequired = computed(() => schema.value.required.includes('message')
 const usesOptionalBlocks = computed(() => layoutUsesOptionalTextBlocks(schema.value.layout))
 const presentationLabel = computed(() => schema.value.presentationLabel)
 const presentationEmoji = computed(() => schema.value.presentationEmoji)
+
+function messageHasText(value?: string | null): boolean {
+  return Boolean(value && value.replace(/<[^>]*>/g, '').trim())
+}
+
+watch(
+  () => props.form.message,
+  (value) => {
+    if (usesOptionalBlocks.value && messageHasText(value)) {
+      props.form.include_opening_message = true
+    }
+  },
+)
 </script>
 
 <style scoped>

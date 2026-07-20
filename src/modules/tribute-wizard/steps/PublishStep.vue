@@ -111,6 +111,7 @@ import PixCheckoutPanel from '@/components/billing/PixCheckoutPanel.vue'
 const props = defineProps<{
   tributeId: string
   tribute: TributeDetail | null
+  flushAutosave?: () => Promise<boolean>
 }>()
 
 const schemaIssues = computed(() => {
@@ -179,6 +180,9 @@ const paymentAlertClass = computed(() => {
 
 onMounted(async () => {
   try {
+    if (props.flushAutosave) {
+      await props.flushAutosave()
+    }
     const [validationResult, subscription, product] = await Promise.all([
       validateTribute(props.tributeId),
       fetchSubscription(),
@@ -205,6 +209,19 @@ async function publish() {
   publishing.value = true
   actionError.value = ''
   try {
+    if (props.flushAutosave) {
+      const saved = await props.flushAutosave()
+      if (!saved) {
+        actionError.value = 'Não foi possível salvar as alterações. Aguarde e tente publicar de novo.'
+        return
+      }
+    }
+    const validationResult = await validateTribute(props.tributeId)
+    validation.value = validationResult
+    if (!validationResult.valid || schemaIssues.value.length > 0) {
+      actionError.value = 'Corrija os itens pendentes antes de publicar.'
+      return
+    }
     await publishTribute(props.tributeId)
     emit('published')
   } catch {
@@ -220,6 +237,19 @@ async function startCheckout() {
   checkingOut.value = true
   actionError.value = ''
   try {
+    if (props.flushAutosave) {
+      const saved = await props.flushAutosave()
+      if (!saved) {
+        actionError.value = 'Não foi possível salvar as alterações. Aguarde e tente gerar o PIX de novo.'
+        return
+      }
+    }
+    const validationResult = await validateTribute(props.tributeId)
+    validation.value = validationResult
+    if (!validationResult.valid || schemaIssues.value.length > 0) {
+      actionError.value = 'Corrija os itens pendentes antes de pagar.'
+      return
+    }
     checkout.value = await checkoutTribute(props.tributeId)
     if (!checkout.value.pix?.qr_code && !checkout.value.checkout_url) {
       actionError.value = 'Checkout PIX indisponível no momento.'
