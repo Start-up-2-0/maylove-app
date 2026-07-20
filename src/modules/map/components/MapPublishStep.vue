@@ -71,7 +71,11 @@ import { resolveApiError } from '@/api/errors'
 import WizardStepHeader from '@/components/wizard/WizardStepHeader.vue'
 import PixCheckoutPanel from '@/components/billing/PixCheckoutPanel.vue'
 
-const props = defineProps<{ mapId: string; map: CoupleMapDetail | null }>()
+const props = defineProps<{
+  mapId: string
+  map: CoupleMapDetail | null
+  flushAutosave?: () => Promise<boolean>
+}>()
 const emit = defineEmits<{ published: [] }>()
 
 const validation = ref<CoupleMapValidation | null>(null)
@@ -94,6 +98,9 @@ const publicUrl = computed(() => {
 
 onMounted(async () => {
   try {
+    if (props.flushAutosave) {
+      await props.flushAutosave()
+    }
     const [result, subscription, product] = await Promise.all([
       validateMap(props.mapId),
       fetchSubscription().catch(() => ({ billing_enabled: false, has_subscription: false })),
@@ -116,6 +123,13 @@ async function publish() {
   publishing.value = true
   actionError.value = ''
   try {
+    if (props.flushAutosave) {
+      const saved = await props.flushAutosave()
+      if (!saved) {
+        actionError.value = 'Não foi possível salvar as alterações. Tente novamente.'
+        return
+      }
+    }
     const result = await validateMap(props.mapId)
     validation.value = result
     if (!result.valid) {
@@ -135,6 +149,13 @@ async function startCheckout() {
   checkingOut.value = true
   actionError.value = ''
   try {
+    if (props.flushAutosave) {
+      const saved = await props.flushAutosave()
+      if (!saved) {
+        actionError.value = 'Não foi possível salvar as alterações. Aguarde e tente gerar o PIX de novo.'
+        return
+      }
+    }
     const result = await validateMap(props.mapId)
     validation.value = result
     if (!result.valid) {

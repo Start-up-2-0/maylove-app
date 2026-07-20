@@ -3,48 +3,61 @@
     <WizardHeader
       :title="map?.title || 'Editar mapa'"
       :status="map?.status ?? 'draft'"
-      :saving="false"
-      :saved-at="null"
-      save-error=""
+      :saving="saving"
+      :saved-at="savedAt"
+      :save-error="saveError"
       back-href="/dashboard/maps"
       back-label="Meus mapas"
     />
 
-    <nav v-if="isEditable" class="map-stepper">
-      <button
-        v-for="step in steps"
-        :key="step.id"
-        type="button"
-        class="map-stepper__item"
-        :class="{ 'map-stepper__item--active': currentStep === step.id }"
-        @click="goToStep(step.id)"
-      >
-        {{ step.label }}
-      </button>
-    </nav>
+    <MapWizardStepper
+      v-if="isEditable || map?.status !== 'published'"
+      :current-step="currentStep"
+      @go="goToStep"
+    />
 
     <section v-if="loading" class="text-muted py-12 text-center">Carregando...</section>
+
     <section v-else-if="error" class="ml-alert ml-alert--danger">{{ error }}</section>
 
     <div v-else-if="!isEditable && map?.status === 'published'" class="ml-card wiz-panel">
       <h2 class="text-xl font-semibold mb-2">Mapa publicado</h2>
       <p class="text-muted mb-5">Este mapa já está no ar e não pode ser editado.</p>
       <div class="flex flex-wrap gap-3">
-        <a :href="`/map/${map.slug}`" target="_blank" class="ml-btn ml-btn--primary">Abrir página pública</a>
-        <RouterLink to="/dashboard/maps" class="ml-btn ml-btn--secondary">Voltar</RouterLink>
+        <a :href="`/map/${map.slug}`" target="_blank" class="ml-btn ml-btn--primary">
+          Abrir página pública
+        </a>
+        <RouterLink to="/dashboard/maps" class="ml-btn ml-btn--secondary">
+          Voltar aos mapas
+        </RouterLink>
       </div>
     </div>
 
-    <div v-else-if="map" class="wizard-body">
-      <div class="ml-card wiz-panel">
-        <MapBasicsStep v-if="currentStep === 'basics'" :map="map" @saved="onMapSaved" />
-        <MapPlacesStep v-else-if="currentStep === 'places'" :map="map" @changed="reload" />
-        <MapPublishStep
-          v-else-if="currentStep === 'publish'"
-          :map-id="mapId"
-          :map="map"
-          @published="onPublished"
-        />
+    <div
+      v-else
+      class="wizard-body"
+      :class="{ 'wizard-body--review': currentStep === 'publish' }"
+    >
+      <div class="wizard-editor">
+        <div class="ml-card wiz-panel" :class="{ 'wiz-panel--review': currentStep === 'publish' }">
+          <Transition name="wiz-step" mode="out-in">
+            <div :key="currentStep" class="wiz-step-panel">
+              <MapBasicsStep v-if="currentStep === 'basics'" :form="form" />
+              <MapPlacesStep
+                v-else-if="currentStep === 'places'"
+                :map="map!"
+                @changed="reload"
+              />
+              <MapPublishStep
+                v-else-if="currentStep === 'publish'"
+                :map-id="mapId"
+                :map="map"
+                :flush-autosave="flushAutosave"
+                @published="onPublished"
+              />
+            </div>
+          </Transition>
+        </div>
       </div>
     </div>
 
@@ -60,113 +73,98 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
-import { fetchMap } from '@/api/maps'
-import { resolveApiError } from '@/api/errors'
-import type { CoupleMapDetail } from '@/api/types'
+import { useMapWizard } from '@/composables/useMapWizard'
 import WizardHeader from '@/components/wizard/WizardHeader.vue'
 import WizardFooter from '@/components/wizard/WizardFooter.vue'
+import MapWizardStepper from './MapWizardStepper.vue'
+import { MAP_WIZARD_STEPS, type MapWizardStep } from './mapWizardSteps'
 import MapBasicsStep from './components/MapBasicsStep.vue'
 import MapPlacesStep from './components/MapPlacesStep.vue'
 import MapPublishStep from './components/MapPublishStep.vue'
-
-type MapWizardStep = 'basics' | 'places' | 'publish'
 
 const route = useRoute()
 const router = useRouter()
 const mapId = route.params.id as string
 
-const steps = [
-  { id: 'basics' as const, label: 'Informações' },
-  { id: 'places' as const, label: 'Locais' },
-  { id: 'publish' as const, label: 'Publicar' },
-]
-
 const currentStep = ref<MapWizardStep>('basics')
-const map = ref<CoupleMapDetail | null>(null)
-const loading = ref(true)
-const error = ref('')
 const navigating = ref(false)
 
-const isEditable = computed(() => map.value?.status === 'draft' || map.value?.status === 'awaiting_payment')
+const {
+  map,
+  form,
+  loading,
+  error,
+  saving,
+  savedAt,
+  saveError,
+  flushAutosave,
+  isEditable,
+  load,
+  reload,
+} = useMapWizard(mapId)
 
-const stepIndex = computed(() => steps.findIndex((s) => s.id === currentStep.value))
-const hasPrevious = computed(() => stepIndex.value > 0)
-const hasNext = computed(() => stepIndex.value < steps.length - 1)
-
-async function load() {
-  loading.value = true
-  error.value = ''
-  try {
-    map.value = await fetchMap(mapId)
-  } catch (err) {
-    error.value = resolveApiError(err, 'Não foi possível carregar o mapa.')
-  } finally {
-    loading.value = false
+onMounted(async () => {
+  await load()
+  const step = route.query.step
+  if (typeof step === 'string' && MAP_WIZARD_STEPS.includes(step as MapWizardStep)) {
+    currentStep.value = step as MapWizardStep
   }
+})
+
+watch(currentStep, (step) => {
+  void router.replace({ query: { ...route.query, step } })
+})
+
+const hasPrevious = computed(() => stepIndex(currentStep.value) > 0)
+const hasNext = computed(() => stepIndex(currentStep.value) < MAP_WIZARD_STEPS.length - 1)
+
+function stepIndex(step: MapWizardStep): number {
+  return MAP_WIZARD_STEPS.indexOf(step)
 }
 
-async function reload() {
-  try {
-    map.value = await fetchMap(mapId)
-  } catch (err) {
-    error.value = resolveApiError(err, 'Não foi possível atualizar o mapa.')
+async function goToStep(step: MapWizardStep) {
+  if (currentStep.value === 'basics' && step !== 'basics') {
+    await flushAutosave()
   }
-}
-
-function goToStep(step: MapWizardStep) {
   currentStep.value = step
-  router.replace({ query: { ...route.query, step } })
 }
 
 function previousStep() {
-  if (!hasPrevious.value) return
-  goToStep(steps[stepIndex.value - 1]!.id)
+  if (navigating.value) return
+  const index = stepIndex(currentStep.value)
+  if (index > 0) currentStep.value = MAP_WIZARD_STEPS[index - 1]!
 }
 
-function nextStep() {
-  if (!hasNext.value) return
-  goToStep(steps[stepIndex.value + 1]!.id)
-}
-
-function onMapSaved(updated: CoupleMapDetail) {
-  map.value = updated
+async function nextStep() {
+  if (navigating.value) return
+  navigating.value = true
+  try {
+    if (currentStep.value === 'basics') {
+      const ok = await flushAutosave()
+      if (!ok) return
+    }
+    const index = stepIndex(currentStep.value)
+    if (index < MAP_WIZARD_STEPS.length - 1) {
+      currentStep.value = MAP_WIZARD_STEPS[index + 1]!
+    }
+  } finally {
+    navigating.value = false
+  }
 }
 
 async function onPublished() {
   await reload()
   currentStep.value = 'publish'
 }
-
-onMounted(async () => {
-  await load()
-  const step = route.query.step
-  if (step === 'basics' || step === 'places' || step === 'publish') {
-    currentStep.value = step
-  }
-})
 </script>
 
 <style scoped>
-.map-stepper {
-  display: flex;
-  gap: 8px;
-  margin: 0 0 20px;
-  flex-wrap: wrap;
+.wiz-panel {
+  padding: clamp(20px, 3vw, 28px);
 }
-.map-stepper__item {
-  border: 1px solid var(--border);
-  background: var(--surface);
-  color: var(--muted);
-  border-radius: 999px;
-  padding: 8px 14px;
-  font-weight: 600;
-  font-size: 0.85rem;
-}
-.map-stepper__item--active {
-  color: var(--primary);
-  border-color: color-mix(in srgb, var(--primary) 35%, var(--border));
-  background: color-mix(in srgb, var(--primary) 8%, var(--surface));
+.wiz-panel--review {
+  padding: clamp(20px, 3vw, 32px);
 }
 </style>
