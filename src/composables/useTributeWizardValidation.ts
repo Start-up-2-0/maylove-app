@@ -1,6 +1,12 @@
 import type { WizardStep } from '@/api/types'
 import type { useTributeWizard } from '@/composables/useTributeWizard'
+import {
+  collectPresentationSchemaIssuesFromForm,
+  firstIssueMessage,
+  issuesForWizardStep,
+} from '@/modules/tribute-wizard/presentationValidation'
 import { TRIBUTE_WIZARD_STEPS } from '@/modules/tribute-wizard/tributeWizardSteps'
+import type { TemplateDefinition } from '@/templates/types'
 
 export interface StepValidationResult {
   valid: boolean
@@ -11,7 +17,10 @@ export function validateWizardStep(
   step: WizardStep,
   form: ReturnType<typeof useTributeWizard>['form'],
   photosCount = 0,
+  definition?: TemplateDefinition | null,
 ): StepValidationResult {
+  const schemaIssues = collectPresentationSchemaIssuesFromForm(form, definition, photosCount)
+
   switch (step) {
     case 'type':
       if (!form.wizard_type_id && !form.wizard_category_slug) {
@@ -25,9 +34,6 @@ export function validateWizardStep(
       }
       if (!form.template_id) {
         return { valid: false, message: 'Escolha um modelo visual.' }
-      }
-      if (!form.message?.trim() && !form.title?.trim()) {
-        return { valid: false, message: 'Escreva um título ou uma mensagem inicial.' }
       }
       if (photosCount < 1) {
         return { valid: false, message: 'Adicione pelo menos uma foto de capa.' }
@@ -45,7 +51,22 @@ export function validateWizardStep(
       }
       return { valid: true }
 
-    case 'story':
+    case 'texts': {
+      const issues = issuesForWizardStep('texts', schemaIssues)
+      if (issues.length) {
+        return { valid: false, message: firstIssueMessage(issues) }
+      }
+      return { valid: true }
+    }
+
+    case 'story': {
+      const issues = issuesForWizardStep('story', schemaIssues)
+      if (issues.length) {
+        return { valid: false, message: firstIssueMessage(issues) }
+      }
+      return { valid: true }
+    }
+
     case 'personalization':
     case 'modules':
     case 'review':

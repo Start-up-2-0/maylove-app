@@ -66,21 +66,6 @@
         />
       </section>
 
-      <section class="wiz-card">
-        <h3 class="wiz-card__title">Mensagem inicial *</h3>
-        <p class="wiz-card__hint">As palavras que abrem essa homenagem.</p>
-        <label class="ml-field">
-          <textarea
-            v-model="form.message"
-            class="ml-input ml-textarea"
-            rows="5"
-            maxlength="2048"
-            placeholder="Escreva com o coração..."
-          />
-          <span class="ml-hint">{{ (form.message ?? '').length }}/2048</span>
-        </label>
-      </section>
-
       <section v-if="supportsMusic" class="wiz-card">
         <h3 class="wiz-card__title">Música principal</h3>
         <p class="wiz-card__hint">Opcional — trilha sonora da homenagem.</p>
@@ -106,6 +91,7 @@ import { listTemplateDefinitions } from '@/templates/registry'
 import { EXPERIENCE_LAYOUT_LABELS, type TemplateDefinition } from '@/templates/types'
 import { presentationForLayout } from '@/templates/presentations'
 import { listStyles } from '@/templates/styles'
+import { syncModulesFromPresentation } from '@/utils/tributeModules'
 import WizardStepHeader from '@/components/wizard/WizardStepHeader.vue'
 import PhotosStep from './PhotosStep.vue'
 import MusicStep from './MusicStep.vue'
@@ -175,6 +161,7 @@ async function selectTemplate(def: TemplateDefinition) {
     props.form.style_id = listStyles()[0]?.id ?? ''
   }
   props.form.color_primary = def.theme.primaryColor
+  syncModulesFromPresentation(props.form.modules, props.form.presentation, def)
 
   await updateTribute(props.tributeId, {
     template_id: catalog.id,

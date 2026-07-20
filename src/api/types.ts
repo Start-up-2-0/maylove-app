@@ -609,6 +609,7 @@ export type WizardStep =
   | 'special-date'
   | 'story'
   | 'personalization'
+  | 'texts'
   | 'modules'
   | 'review'
   | 'publish'
@@ -620,6 +621,7 @@ export const WIZARD_STEPS: WizardStep[] = [
   'special-date',
   'story',
   'personalization',
+  'texts',
   'modules',
   'review',
   'publish',
@@ -631,6 +633,7 @@ export const WIZARD_STEP_LABELS: Record<WizardStep, string> = {
   'special-date': 'Data especial',
   story: 'Nossa história',
   personalization: 'Personalização',
+  texts: 'Textos',
   modules: 'Recursos extras',
   review: 'Revisão',
   publish: 'Publicação',

@@ -3,10 +3,7 @@ import type { useTributeWizard } from '@/composables/useTributeWizard'
 import { getPresentation } from '@/templates/presentations'
 import type { ExperienceLayout } from '@/templates/types'
 import { timelineItemHasContent } from '@/utils/timeline'
-import {
-  isLetterLayout,
-  shouldShowTimelineModule,
-} from '@/utils/tributeModules'
+import { shouldShowTimelineModule } from '@/utils/tributeModules'
 
 export function buildReviewPreviewHints(
   form: ReturnType<typeof useTributeWizard>['form'],
@@ -22,22 +19,12 @@ export function buildReviewPreviewHints(
 
   hints.push(`Estilo de exibição: ${presentationLabel}.`)
 
-  if (modules.letter && !isLetterLayout(layout)) {
-    hints.push(
-      'Recurso Carta ativo: o texto principal aparece de acordo com o estilo escolhido em Personalização. Para experiência de carta, selecione apresentação "Carta Simples" ou "Carta Animada".',
-    )
-  }
-
   if (momentCount > 0) {
-    if (modules.timeline === false) {
-      hints.push(
-        `${momentCount} momento(s) preenchido(s), mas a linha do tempo está desativada em Recursos extras — eles não serão exibidos.`,
-      )
-    } else if (layout === 'cinematic') {
+    if (layout === 'cinematic') {
       hints.push(
         `Seus ${momentCount} momento(s) aparecem como legenda nos slides e também na linha do tempo abaixo do slider.`,
       )
-    } else if (layout === 'letter') {
+    } else if (layout === 'letter' || layout === 'envelope') {
       hints.push('Seus momentos aparecem na linha do tempo abaixo do texto da carta.')
     } else if (layout === 'timeline') {
       hints.push('Seus momentos compõem a linha do tempo principal da homenagem.')

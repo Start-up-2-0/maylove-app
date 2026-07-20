@@ -54,6 +54,7 @@ import { computed } from 'vue'
 import type { useTributeWizard } from '@/composables/useTributeWizard'
 import { listPresentations } from '@/templates/presentations'
 import { EXPERIENCE_LAYOUT_LABELS, type TemplateDefinition } from '@/templates/types'
+import { syncModulesFromPresentation } from '@/utils/tributeModules'
 import WizardStepHeader from '@/components/wizard/WizardStepHeader.vue'
 
 const props = withDefaults(
@@ -73,6 +74,7 @@ const defaultLayoutLabel = computed(
 
 function select(id: string) {
   props.form.presentation = id
+  syncModulesFromPresentation(props.form.modules, id, props.definition)
 }
 </script>
 

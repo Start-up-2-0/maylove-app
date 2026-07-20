@@ -9,6 +9,8 @@ import type {
 } from '@/api/types'
 import { fallbackTimelineTitle, timelineItemHasContent } from '@/utils/timeline'
 import { WIZARD_TRIBUTE_TYPE_OPTIONS } from '@/modules/tribute-wizard/tributeWizardSteps'
+import { getTemplateDefinition } from '@/templates/registry'
+import { syncModulesFromPresentation } from '@/utils/tributeModules'
 import { useAutosave } from './useAutosave'
 
 const DEFAULT_SPECIAL_DATE: TributeSpecialDateConfig = {
@@ -265,6 +267,11 @@ export function useTributeWizard(tributeId: string) {
       ...DEFAULT_MODULES,
       ...(data.content_json?.modules ?? {}),
     }
+    syncModulesFromPresentation(
+      form.modules,
+      form.presentation,
+      getTemplateDefinition(data.template.slug),
+    )
     form.music_autoplay = data.content_json?.music_autoplay ?? true
     form.music_loop = data.content_json?.music_loop ?? true
     const duration =

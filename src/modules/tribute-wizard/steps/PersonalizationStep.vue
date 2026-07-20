@@ -2,7 +2,7 @@
   <div class="personalization-step wiz-step-content">
     <WizardStepHeader
       title="Personalização"
-      description="Configure paleta, fontes, fundo, animações, efeitos visuais e estilo da página."
+      description="Escolha como a homenagem será exibida e configure paleta, fontes e efeitos visuais."
     />
 
     <div class="wiz-card-stack">

@@ -1,5 +1,6 @@
 import type { TributeModulesConfig } from '@/api/types'
-import type { ExperienceLayout } from '@/templates/types'
+import { getPresentation } from '@/templates/presentations'
+import type { ExperienceLayout, TemplateDefinition } from '@/templates/types'
 
 /** Defaults alinhados ao wizard — timeline e álbum ligados por padrão. */
 export const DEFAULT_TRIBUTE_MODULES: Required<TributeModulesConfig> = {
@@ -56,4 +57,42 @@ export function shouldBoostLetterContent(
   hasMessage: boolean,
 ): boolean {
   return modules.letter === true && !isLetterLayout(layout) && hasMessage
+}
+
+/** Módulos derivados automaticamente do estilo de apresentação — não aparecem como toggles. */
+export const DERIVED_MODULE_IDS = ['letter', 'timeline', 'digital_album'] as const
+
+export type DerivedModuleId = (typeof DERIVED_MODULE_IDS)[number]
+
+/** Sincroniza módulos estruturais com o layout da apresentação escolhida. */
+export function syncModulesFromPresentation(
+  modules: TributeModulesConfig,
+  presentationId: string | null | undefined,
+  definition?: TemplateDefinition | null,
+): void {
+  const presentation = getPresentation(presentationId)
+  const layout: ExperienceLayout = presentation?.layout ?? definition?.layout ?? 'scroll'
+
+  modules.letter = isLetterLayout(layout)
+  modules.timeline = true
+  modules.digital_album = layout === 'album'
+}
+
+export function describeDerivedModules(
+  presentationId: string | null | undefined,
+  definition?: TemplateDefinition | null,
+): string[] {
+  const presentation = getPresentation(presentationId)
+  const layout: ExperienceLayout = presentation?.layout ?? definition?.layout ?? 'scroll'
+  const labels: string[] = []
+
+  if (isLetterLayout(layout)) labels.push('Carta')
+  if (layout === 'album') labels.push('Álbum digital')
+  if (NATIVE_TIMELINE_LAYOUTS.includes(layout)) {
+    labels.push('Linha do tempo')
+  } else {
+    labels.push('Linha do tempo (quando houver momentos)')
+  }
+
+  return labels
 }

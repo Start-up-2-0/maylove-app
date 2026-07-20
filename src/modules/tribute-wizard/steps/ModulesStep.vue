@@ -2,56 +2,82 @@
   <div class="modules-step wiz-step-content">
     <WizardStepHeader
       title="Recursos extras"
-      description="Selecione quais módulos ficarão ativos na sua homenagem."
+      description="Recursos opcionais além do estilo de apresentação escolhido."
     />
 
-    <section class="wiz-card">
-      <h3 class="wiz-card__title">Módulos disponíveis</h3>
-      <p class="wiz-card__hint">Ative os recursos que deseja incluir na homenagem.</p>
+    <div class="wiz-card-stack">
+      <section class="wiz-card mod-derived">
+        <h3 class="wiz-card__title">Incluído na apresentação</h3>
+        <p class="wiz-card__hint">
+          Estes recursos vêm automaticamente do estilo
+          <strong>{{ presentationLabel }}</strong> — configure-o em Personalização.
+        </p>
+        <ul class="mod-derived__list">
+          <li v-for="(item, index) in derivedModules" :key="index">{{ item }}</li>
+        </ul>
+      </section>
 
-      <div class="mod-grid">
-        <button
-          v-for="mod in moduleOptions"
-          :key="mod.id"
-          type="button"
-          class="mod-card"
-          :class="{
-            'mod-card--active': form.modules[mod.id],
-            'mod-card--disabled': Boolean(mod.badge),
-          }"
-          :disabled="Boolean(mod.badge)"
-          @click="toggle(mod.id)"
-        >
-          <span class="mod-card__icon" aria-hidden="true">{{ mod.icon }}</span>
-          <div class="mod-card__body">
-            <strong class="mod-card__label">
-              {{ mod.label }}
-              <span v-if="mod.badge" class="mod-card__badge">{{ mod.badge }}</span>
-            </strong>
-            <span class="mod-card__desc">{{ mod.description }}</span>
-          </div>
-          <span class="mod-card__switch" :class="{ 'mod-card__switch--on': form.modules[mod.id] }" />
-        </button>
-      </div>
+      <section class="wiz-card">
+        <h3 class="wiz-card__title">Add-ons opcionais</h3>
+        <p class="wiz-card__hint">Ative recursos extras que não dependem do estilo de apresentação.</p>
 
-      <p class="mod-hint">
-        Módulos marcados como "Em breve" estarão disponíveis em atualizações futuras.
-      </p>
-    </section>
+        <div class="mod-grid">
+          <button
+            v-for="mod in moduleOptions"
+            :key="mod.id"
+            type="button"
+            class="mod-card"
+            :class="{
+              'mod-card--active': form.modules[mod.id],
+              'mod-card--disabled': Boolean(mod.badge),
+            }"
+            :disabled="Boolean(mod.badge)"
+            @click="toggle(mod.id)"
+          >
+            <span class="mod-card__icon" aria-hidden="true">{{ mod.icon }}</span>
+            <div class="mod-card__body">
+              <strong class="mod-card__label">
+                {{ mod.label }}
+                <span v-if="mod.badge" class="mod-card__badge">{{ mod.badge }}</span>
+              </strong>
+              <span class="mod-card__desc">{{ mod.description }}</span>
+            </div>
+            <span class="mod-card__switch" :class="{ 'mod-card__switch--on': form.modules[mod.id] }" />
+          </button>
+        </div>
+
+        <p class="mod-hint">
+          Módulos marcados como "Em breve" estarão disponíveis em atualizações futuras.
+        </p>
+      </section>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import type { TributeModulesConfig } from '@/api/types'
 import type { useTributeWizard } from '@/composables/useTributeWizard'
-import { TRIBUTE_MODULE_OPTIONS } from '@/modules/tribute-wizard/tributeWizardSteps'
+import { TRIBUTE_ADDON_MODULE_OPTIONS } from '@/modules/tribute-wizard/tributeWizardSteps'
+import { resolvePresentationSchema } from '@/templates/presentationSchema'
+import type { TemplateDefinition } from '@/templates/types'
+import { describeDerivedModules } from '@/utils/tributeModules'
 import WizardStepHeader from '@/components/wizard/WizardStepHeader.vue'
 
 const props = defineProps<{
   form: ReturnType<typeof useTributeWizard>['form']
+  definition?: TemplateDefinition | null
 }>()
 
-const moduleOptions = TRIBUTE_MODULE_OPTIONS
+const moduleOptions = TRIBUTE_ADDON_MODULE_OPTIONS
+
+const presentationLabel = computed(
+  () => resolvePresentationSchema(props.form.presentation, props.definition).presentationLabel,
+)
+
+const derivedModules = computed(() =>
+  describeDerivedModules(props.form.presentation, props.definition),
+)
 
 function toggle(id: keyof TributeModulesConfig) {
   props.form.modules[id] = !props.form.modules[id]
@@ -59,6 +85,18 @@ function toggle(id: keyof TributeModulesConfig) {
 </script>
 
 <style scoped>
+.mod-derived__list {
+  margin: 0;
+  padding: 0 0 0 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.9rem;
+  color: var(--text);
+}
+.mod-derived__list li::marker {
+  color: var(--primary);
+}
 .mod-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));

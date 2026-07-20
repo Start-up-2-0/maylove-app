@@ -1,12 +1,13 @@
 import type { WizardStep } from '@/api/types'
 
-/** Fluxo guiado fixo de 8 etapas — experiência progressiva e emocional. */
+/** Fluxo guiado fixo de 9 etapas — experiência progressiva e emocional. */
 export const TRIBUTE_WIZARD_STEPS: WizardStep[] = [
   'type',
   'basics',
   'special-date',
   'story',
   'personalization',
+  'texts',
   'modules',
   'review',
   'publish',
@@ -18,6 +19,7 @@ export const TRIBUTE_WIZARD_STEP_LABELS: Record<WizardStep, string> = {
   'special-date': 'Data especial',
   story: 'Nossa história',
   personalization: 'Personalização',
+  texts: 'Textos',
   modules: 'Recursos extras',
   review: 'Revisão',
   publish: 'Publicação',
@@ -25,11 +27,12 @@ export const TRIBUTE_WIZARD_STEP_LABELS: Record<WizardStep, string> = {
 
 export const TRIBUTE_WIZARD_STEP_DESCRIPTIONS: Record<WizardStep, string> = {
   type: 'Escolha o tipo de homenagem para receber sugestões personalizadas.',
-  basics: 'Nome, pessoa homenageada, capa, modelo, música e mensagem inicial.',
+  basics: 'Nome, pessoa homenageada, capa, modelo e música.',
   'special-date': 'Destaque uma data importante com contador regressivo ou desde o evento.',
   story: 'Conte momentos marcantes com fotos, textos e emoções.',
-  personalization: 'Paleta, fontes, fundo, animações e efeitos visuais.',
-  modules: 'Ative recursos extras como álbum, carta, linha do tempo e mais.',
+  personalization: 'Estilo de apresentação, paleta, fontes e efeitos visuais.',
+  texts: 'Subtítulo, mensagem principal, despedida e assinatura — adaptados ao estilo escolhido.',
+  modules: 'Recursos opcionais como QR Code e funcionalidades futuras.',
   review: 'Confira tudo antes de publicar e ajuste o que precisar.',
   publish: 'Publique, compartilhe o link e gere o QR Code.',
 }
@@ -165,11 +168,16 @@ export const TRIBUTE_MODULE_OPTIONS: TributeModuleOption[] = [
   { id: 'gifts', label: 'Presentes', description: 'Lista de presentes ou PIX.', icon: '🎁', badge: 'Em breve' },
 ]
 
+/** Módulos opcionais editáveis na etapa Recursos — os estruturais vêm da apresentação. */
+export const TRIBUTE_ADDON_MODULE_OPTIONS = TRIBUTE_MODULE_OPTIONS.filter(
+  (mod) => !['letter', 'timeline', 'digital_album'].includes(mod.id),
+)
+
 /** Mapeia query params antigos para o novo fluxo. */
 export const LEGACY_STEP_ALIASES: Record<string, WizardStep> = {
-  presentation: 'type',
+  presentation: 'personalization',
   style: 'personalization',
-  texts: 'basics',
+  texts: 'texts',
   photos: 'basics',
   moments: 'story',
   music: 'basics',

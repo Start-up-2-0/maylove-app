@@ -104,7 +104,7 @@ import {
 import { fetchBillingProduct } from '@/api/billing'
 import type { CheckoutResponse, TributeDetail, TributeValidation } from '@/api/types'
 import { getTemplateDefinition } from '@/templates/registry'
-import { resolvePresentationSchema } from '@/templates/presentationSchema'
+import { collectPresentationSchemaIssuesFromTribute } from '@/modules/tribute-wizard/presentationValidation'
 import WizardStepHeader from '@/components/wizard/WizardStepHeader.vue'
 import PixCheckoutPanel from '@/components/billing/PixCheckoutPanel.vue'
 
@@ -113,47 +113,11 @@ const props = defineProps<{
   tribute: TributeDetail | null
 }>()
 
-const MOMENT_LAYOUTS = ['envelope', 'timeline', 'album', 'storytelling', 'cinematic', 'proposal']
-
-const schemaIssues = computed<{ field: string; code: string; message: string }[]>(() => {
+const schemaIssues = computed(() => {
   const tribute = props.tribute
   if (!tribute) return []
   const definition = getTemplateDefinition(tribute.template.slug)
-  const schema = resolvePresentationSchema(tribute.content_json?.presentation, definition)
-  const issues: { field: string; code: string; message: string }[] = []
-
-  const hasText = (value?: string | null) => Boolean(value && value.replace(/<[^>]*>/g, '').trim())
-  if (schema.required.includes('title') && !hasText(tribute.title)) {
-    issues.push({ field: 'title', code: 'REQUIRED', message: 'Defina um título para a homenagem.' })
-  }
-  if (schema.required.includes('message') && !hasText(tribute.message)) {
-    issues.push({ field: 'message', code: 'REQUIRED', message: 'Escreva a mensagem principal.' })
-  }
-
-  const photoCount = (tribute.media ?? []).filter((m) => m.media_type === 'photo').length
-  const usesMoments = MOMENT_LAYOUTS.includes(schema.layout)
-
-  if (usesMoments) {
-    const moments = tribute.content_json?.timeline ?? []
-    const filledMoments = moments.filter(
-      (m) => hasText(m.description) || hasText(m.title),
-    )
-    if (filledMoments.length === 0 && photoCount === 0) {
-      issues.push({
-        field: 'moments',
-        code: 'MIN_MOMENTS',
-        message: 'Adicione ao menos um trecho com texto (ou uma foto) para esta experiência.',
-      })
-    }
-  } else if (schema.limits.minPhotos > 0 && photoCount < schema.limits.minPhotos) {
-    issues.push({
-      field: 'photos',
-      code: 'MIN_PHOTOS',
-      message: `Envie pelo menos ${schema.limits.minPhotos} foto(s) para este estilo.`,
-    })
-  }
-
-  return issues
+  return collectPresentationSchemaIssuesFromTribute(tribute, definition)
 })
 
 const publishBlocked = computed(

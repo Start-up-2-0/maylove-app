@@ -81,10 +81,11 @@ import type { TributeDetail, WizardStep } from '@/api/types'
 import type { useTributeWizard } from '@/composables/useTributeWizard'
 import type { TemplateDefinition } from '@/templates/types'
 import {
-  TRIBUTE_MODULE_OPTIONS,
+  TRIBUTE_ADDON_MODULE_OPTIONS,
   TRIBUTE_WIZARD_STEP_LABELS,
   WIZARD_TRIBUTE_TYPE_OPTIONS,
 } from '@/modules/tribute-wizard/tributeWizardSteps'
+import { describeDerivedModules } from '@/utils/tributeModules'
 import { buildReviewPreviewHints } from '@/modules/tribute-wizard/previewHints'
 import WizardStepHeader from '@/components/wizard/WizardStepHeader.vue'
 import TributeLivePreview from '@/components/wizard/TributeLivePreview.vue'
@@ -105,11 +106,23 @@ const typeLabel = computed(() => {
   return option?.label ?? props.tribute?.tribute_type.name ?? '—'
 })
 
-const activeModules = computed(() =>
-  TRIBUTE_MODULE_OPTIONS.filter((mod) => props.form.modules[mod.id])
-    .map((mod) => mod.label)
-    .join(', ') || 'Nenhum',
-)
+const activeModules = computed(() => {
+  const derived = describeDerivedModules(props.form.presentation, props.definition)
+  const addons = TRIBUTE_ADDON_MODULE_OPTIONS.filter((mod) => props.form.modules[mod.id]).map(
+    (mod) => mod.label,
+  )
+  return [...derived, ...addons].join(', ') || 'Padrão do modelo'
+})
+
+const textsSummary = computed(() => {
+  const parts: string[] = []
+  if (props.form.title?.trim()) parts.push(props.form.title.trim())
+  if (props.form.subtitle?.trim()) parts.push(props.form.subtitle.trim())
+  if (props.form.signature?.trim() || props.form.sender_name?.trim()) {
+    parts.push(props.form.signature?.trim() || props.form.sender_name?.trim() || '')
+  }
+  return parts.join(' · ') || '—'
+})
 
 const photoCount = computed(
   () => (props.tribute?.media ?? []).filter((m) => m.media_type === 'photo').length,
@@ -146,6 +159,11 @@ const summaryItems = computed(() => [
     step: 'personalization' as WizardStep,
     label: 'Personalização',
     value: props.form.style_id ? 'Estilo personalizado' : 'Padrão do modelo',
+  },
+  {
+    step: 'texts' as WizardStep,
+    label: TRIBUTE_WIZARD_STEP_LABELS.texts,
+    value: textsSummary.value,
   },
   {
     step: 'modules' as WizardStep,

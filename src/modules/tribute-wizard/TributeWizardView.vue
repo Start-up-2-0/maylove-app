@@ -65,7 +65,16 @@
                 :form="form"
                 :definition="definition"
               />
-              <ModulesStep v-else-if="currentStep === 'modules'" :form="form" />
+              <TextsStep
+                v-else-if="currentStep === 'texts'"
+                :form="form"
+                :definition="definition"
+              />
+              <ModulesStep
+                v-else-if="currentStep === 'modules'"
+                :form="form"
+                :definition="definition"
+              />
               <ReviewStep
                 v-else-if="currentStep === 'review'"
                 :tribute-id="tributeId"
@@ -127,6 +136,7 @@ import BasicsStep from './steps/BasicsStep.vue'
 import SpecialDateStep from './steps/SpecialDateStep.vue'
 import StoryStep from './steps/StoryStep.vue'
 import PersonalizationStep from './steps/PersonalizationStep.vue'
+import TextsStep from './steps/TextsStep.vue'
 import ModulesStep from './steps/ModulesStep.vue'
 import ReviewStep from './steps/ReviewStep.vue'
 import PublishStep from './steps/PublishStep.vue'
@@ -191,7 +201,7 @@ function previousStep() {
 
 async function nextStep() {
   stepError.value = ''
-  const result = validateWizardStep(currentStep.value, form, photos.value.length)
+  const result = validateWizardStep(currentStep.value, form, photos.value.length, definition.value)
   if (!result.valid) {
     stepError.value = result.message ?? 'Revise os campos antes de continuar.'
     return
