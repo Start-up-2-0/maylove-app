@@ -1,18 +1,25 @@
 <template>
-  <div class="romance-wizard romance-wizard--editor">
-    <WizardHeader
-      :title="headerTitle"
-      :status="tribute?.status ?? 'draft'"
-      :saving="saving"
-      :saved-at="savedAt"
-      :save-error="saveError"
-      back-href="/dashboard/romances/new"
-      back-label="Experiências"
-      :subtitle="buildMode ? 'Montamos para você' : undefined"
-    />
+  <RomanceBuildShell
+    :title="shellTitle"
+    :subtitle="shellSubtitle"
+    back-href="/dashboard/romances/new"
+    back-label="Experiências"
+    :show-header="!loading && !error"
+  >
+    <template v-if="!loading && !error" #meta>
+      <span class="ml-badge" :class="statusBadgeClass">{{ statusLabel }}</span>
+      <span v-if="saving" class="rom-save-meta">
+        <span class="rom-save-meta__dot rom-save-meta__dot--saving" />
+        Salvando...
+      </span>
+      <span v-else-if="savedAt" class="rom-save-meta">
+        <span class="rom-save-meta__dot rom-save-meta__dot--saved" />
+        Salvo
+      </span>
+    </template>
 
     <RomanceBuildProgress
-      v-if="(isEditable || tribute?.status !== 'published') && currentStep !== 'preview'"
+      v-if="(isEditable || tribute?.status !== 'published') && currentStep !== 'preview' && !loading && !error"
       :current-step="currentStep"
       :steps="experienceSteps"
     />
@@ -49,93 +56,93 @@
       />
     </div>
 
-    <div v-else class="romance-wizard__shell">
-      <div class="romance-wizard__main">
-        <Transition name="wiz-step" mode="out-in">
-          <div :key="currentStep" class="romance-wizard__panel">
-            <RomanceRecipientStep
-              v-if="currentStep === 'recipient'"
-              :form="form"
-              :experience-id="experienceId"
-            />
-            <RomancePhotosStep
-              v-else-if="currentStep === 'photos'"
-              :form="form"
-              :tribute-id="tributeId"
-              :tribute-type-id="tribute?.tribute_type.id"
-              :photos="photos"
-              :definition="definition"
-              :experience-id="experienceId"
-              @media-changed="onMediaChanged"
-            />
-            <RomanceMessageStep
-              v-else-if="currentStep === 'message'"
-              :form="form"
-              :experience-id="experienceId"
-            />
-            <RomanceMusicStep
-              v-else-if="currentStep === 'music'"
-              :form="form"
-              :tribute-id="tributeId"
-              :experience-id="experienceId"
-              @media-changed="onMediaChanged"
-            />
-            <RomanceSpecialDateStep
-              v-else-if="currentStep === 'special-date'"
-              :form="form"
-              :experience-id="experienceId"
-            />
-            <RomanceVideoStep
-              v-else-if="currentStep === 'video'"
-              :form="form"
-              :experience-id="experienceId"
-            />
-            <RomanceChaptersStep
-              v-else-if="currentStep === 'chapters'"
-              :form="form"
-              :photos="photos"
-              :experience-id="experienceId"
-            />
-            <RomanceEffectsStep
-              v-else-if="currentStep === 'effects'"
-              :form="form"
-            />
-          </div>
-        </Transition>
-
-        <p v-if="stepError" class="ml-alert ml-alert--danger rom-step-error">{{ stepError }}</p>
-      </div>
-
-      <aside class="romance-wizard__aside">
-        <RomancePhonePreview
-          :experience-label="experience ? `${experience.icon} ${experience.label}` : ''"
-          :hint="experience?.opening"
-        >
-          <div v-if="previewGenerating" class="rom-preview-panel__loading">
-            <span class="ml-spinner ml-spinner--sm" />
-          </div>
-          <TributeLivePreview
-            v-else
-            :tribute-id="tributeId"
+    <div v-else class="romance-wizard__editor-main">
+      <Transition name="wiz-step" mode="out-in">
+        <div :key="currentStep" class="romance-wizard__panel">
+          <RomanceRecipientStep
+            v-if="currentStep === 'recipient'"
             :form="form"
-            :tribute="tribute"
-            :refresh-token="previewRefreshToken"
-            faithful
-            compact
+            :experience-id="experienceId"
           />
-        </RomancePhonePreview>
-      </aside>
+          <RomancePhotosStep
+            v-else-if="currentStep === 'photos'"
+            :form="form"
+            :tribute-id="tributeId"
+            :tribute-type-id="tribute?.tribute_type.id"
+            :photos="photos"
+            :definition="definition"
+            :experience-id="experienceId"
+            @media-changed="onMediaChanged"
+          />
+          <RomanceMessageStep
+            v-else-if="currentStep === 'message'"
+            :form="form"
+            :experience-id="experienceId"
+          />
+          <RomanceMusicStep
+            v-else-if="currentStep === 'music'"
+            :form="form"
+            :tribute-id="tributeId"
+            :experience-id="experienceId"
+            @media-changed="onMediaChanged"
+          />
+          <RomanceSpecialDateStep
+            v-else-if="currentStep === 'special-date'"
+            :form="form"
+            :experience-id="experienceId"
+          />
+          <RomanceVideoStep
+            v-else-if="currentStep === 'video'"
+            :form="form"
+            :experience-id="experienceId"
+          />
+          <RomanceChaptersStep
+            v-else-if="currentStep === 'chapters'"
+            :form="form"
+            :photos="photos"
+            :experience-id="experienceId"
+          />
+          <RomanceEffectsStep
+            v-else-if="currentStep === 'effects'"
+            :form="form"
+            :experience-id="experienceId"
+          />
+        </div>
+      </Transition>
+
+      <p v-if="stepError" class="ml-alert ml-alert--danger rom-step-error">{{ stepError }}</p>
     </div>
 
-    <WizardFooter
-      v-if="isEditable && currentStep !== 'preview'"
-      :has-previous="hasPrevious"
-      :has-next="hasNext"
-      :loading="navigating"
-      @previous="previousStep"
-      @next="nextStep"
-    />
-  </div>
+    <template v-if="showPreviewColumn" #preview>
+      <RomancePhonePreview
+        :experience-label="experience ? `${experience.icon} ${experience.label}` : ''"
+        :hint="experience?.opening"
+      >
+        <div v-if="previewGenerating" class="rom-preview-panel__loading">
+          <span class="ml-spinner ml-spinner--sm" />
+        </div>
+        <TributeLivePreview
+          v-else
+          :tribute-id="tributeId"
+          :form="form"
+          :tribute="tribute"
+          :refresh-token="previewRefreshToken"
+          faithful
+          compact
+        />
+      </RomancePhonePreview>
+    </template>
+
+    <template v-if="isEditable && currentStep !== 'preview' && !loading && !error" #footer>
+      <RomanceWizardFooter
+        :has-previous="hasPrevious"
+        :has-next="hasNext"
+        :loading="navigating"
+        @previous="previousStep"
+        @next="nextStep"
+      />
+    </template>
+  </RomanceBuildShell>
 </template>
 
 <script setup lang="ts">
@@ -158,8 +165,11 @@ import {
 } from '@/modules/romance-wizard/romanceExperiences'
 import { validateExperienceStep } from '@/modules/romance-wizard/useRomanceWizardValidation'
 import { applyRomanceTitleDefaults, romanceDisplayTitle } from '@/modules/romance-wizard/romanceCopy'
+import { ROMANCE_BUILD_HEADLINE, ROMANCE_LOVE_CARDS_TAGLINE } from '@/modules/romance-wizard/romanceBuildCopy'
 import RomanceBuildProgress from '@/modules/romance-wizard/components/RomanceBuildProgress.vue'
+import RomanceBuildShell from '@/modules/romance-wizard/components/RomanceBuildShell.vue'
 import RomancePhonePreview from '@/modules/romance-wizard/components/RomancePhonePreview.vue'
+import RomanceWizardFooter from '@/modules/romance-wizard/components/RomanceWizardFooter.vue'
 import RomanceRecipientStep from '@/modules/romance-wizard/steps/RomanceRecipientStep.vue'
 import RomancePhotosStep from '@/modules/romance-wizard/steps/RomancePhotosStep.vue'
 import RomanceMessageStep from '@/modules/romance-wizard/steps/RomanceMessageStep.vue'
@@ -169,8 +179,6 @@ import RomanceVideoStep from '@/modules/romance-wizard/steps/RomanceVideoStep.vu
 import RomanceChaptersStep from '@/modules/romance-wizard/steps/RomanceChaptersStep.vue'
 import RomanceEffectsStep from '@/modules/romance-wizard/steps/RomanceEffectsStep.vue'
 import RomanceFinishStep from '@/modules/romance-wizard/steps/RomanceFinishStep.vue'
-import WizardHeader from '@/components/wizard/WizardHeader.vue'
-import WizardFooter from '@/components/wizard/WizardFooter.vue'
 import TributeLivePreview from '@/components/wizard/TributeLivePreview.vue'
 import '@/modules/romance-wizard/styles/romance-wizard.css'
 
@@ -191,7 +199,6 @@ const {
   error,
   saving,
   savedAt,
-  saveError,
   isEditable,
   photos,
   load,
@@ -211,9 +218,33 @@ const experienceId = computed((): RomanceExperienceId | null =>
 const experience = computed(() => getRomanceExperience(experienceId.value))
 const experienceSteps = computed(() => getExperienceSteps(experienceId.value))
 
-const headerTitle = computed(() => romanceDisplayTitle(form) || experience.value?.label || 'Nova experiência')
+const shellTitle = computed(() => romanceDisplayTitle(form) || experience.value?.label || 'Nova experiência')
+const shellSubtitle = computed(() =>
+  route.query.build === '1' ? `${ROMANCE_LOVE_CARDS_TAGLINE} · ${ROMANCE_BUILD_HEADLINE}` : ROMANCE_LOVE_CARDS_TAGLINE,
+)
 
-const buildMode = computed(() => route.query.build === '1')
+const showPreviewColumn = computed(
+  () =>
+    !loading.value &&
+    !error.value &&
+    (isEditable.value || tribute.value?.status !== 'published') &&
+    currentStep.value !== 'preview',
+)
+
+const statusLabel = computed(
+  () =>
+    ({
+      draft: 'Rascunho',
+      awaiting_payment: 'Aguardando pagamento',
+      published: 'Publicada',
+    })[tribute.value?.status ?? 'draft'] ?? tribute.value?.status,
+)
+
+const statusBadgeClass = computed(() => {
+  if (tribute.value?.status === 'published') return 'ml-badge--success'
+  if (tribute.value?.status === 'awaiting_payment') return 'ml-badge--warning'
+  return 'ml-badge--info'
+})
 
 const stepIndex = computed(() => experienceSteps.value.indexOf(currentStep.value))
 const hasPrevious = computed(() => stepIndex.value > 0)
@@ -323,6 +354,10 @@ async function onPublished() {
 </script>
 
 <style scoped>
+.romance-wizard__editor-main {
+  width: 100%;
+  min-width: 0;
+}
 .rom-step-error {
   margin-top: 16px;
 }
@@ -335,5 +370,29 @@ async function onPublished() {
   flex-wrap: wrap;
   gap: 12px;
   margin-top: 18px;
+}
+.rom-save-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.84rem;
+  color: var(--muted);
+}
+.rom-save-meta__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+}
+.rom-save-meta__dot--saving {
+  background: var(--warning);
+  animation: pulse 1s ease infinite;
+}
+.rom-save-meta__dot--saved {
+  background: var(--success);
+}
+@keyframes pulse {
+  50% {
+    opacity: 0.35;
+  }
 }
 </style>

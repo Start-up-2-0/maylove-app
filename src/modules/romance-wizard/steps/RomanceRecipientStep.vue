@@ -1,8 +1,7 @@
 <template>
   <RomanceFormShell
-    :icon="experience?.icon ?? '💕'"
-    :title="experience?.label"
-    prompt="Me conta: quem são os apaixonados? Você também escolhe o título que aparece na página."
+    :title="stepTitle"
+    :prompt="stepPrompt"
   >
     <div class="rom-form-stack">
       <label class="rom-field">
@@ -46,6 +45,7 @@
 import { computed, onMounted } from 'vue'
 import type { useTributeWizard } from '@/composables/useTributeWizard'
 import { defaultRomanceTitle, isLegacyGenericTitle } from '@/modules/romance-wizard/romanceCopy'
+import { getCoachPrompt, getCoachStepTitle } from '@/modules/romance-wizard/romanceBuildCopy'
 import RomanceFormShell from '@/modules/romance-wizard/components/RomanceFormShell.vue'
 import { getRomanceExperience, type RomanceExperienceId } from '@/modules/romance-wizard/romanceExperiences'
 
@@ -55,6 +55,9 @@ const props = defineProps<{
 }>()
 
 const experience = computed(() => getRomanceExperience(props.experienceId))
+
+const stepTitle = computed(() => getCoachStepTitle('recipient', experience.value?.label))
+const stepPrompt = computed(() => getCoachPrompt('recipient', props.experienceId))
 
 const titlePlaceholder = computed(() =>
   defaultRomanceTitle(props.form.wizard_type_id, props.experienceId),

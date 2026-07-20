@@ -67,17 +67,25 @@ export function validateExperienceStep(
       }
       return { valid: true }
 
-    case 'special-date':
+    case 'special-date': {
+      const optional = experience?.specialDateOptional ?? false
       if (!form.special_date_config.enabled) {
+        if (optional) return { valid: true }
         form.special_date_config.enabled = true
       }
       if (!form.special_date_config.date?.trim()) {
-        return { valid: false, message: 'Informe a data especial.' }
+        return {
+          valid: false,
+          message: optional
+            ? 'Informe a data ou desmarque "Incluir data especial" para pular.'
+            : 'Informe a data especial.',
+        }
       }
       if (!form.special_date_config.title?.trim()) {
         return { valid: false, message: 'Dê um título à data especial.' }
       }
       return { valid: true }
+    }
 
     case 'video':
       return { valid: true }

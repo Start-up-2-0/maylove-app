@@ -1,10 +1,5 @@
 <template>
-  <RomanceFormShell
-    :icon="experience?.icon ?? '🎵'"
-    title="Trilha sonora"
-    prompt="Escolha a música que embala a experiência — ela entra na abertura automaticamente."
-    flat
-  >
+  <RomanceFormShell :title="stepTitle" :prompt="stepPrompt" flat>
     <MusicStep
       :form="form"
       :supports-music="true"
@@ -20,10 +15,8 @@ import { computed } from 'vue'
 import type { useTributeWizard } from '@/composables/useTributeWizard'
 import MusicStep from '@/modules/tribute-wizard/steps/MusicStep.vue'
 import RomanceFormShell from '@/modules/romance-wizard/components/RomanceFormShell.vue'
-import {
-  getRomanceExperience,
-  type RomanceExperienceId,
-} from '@/modules/romance-wizard/romanceExperiences'
+import { getCoachPrompt, getCoachStepTitle } from '@/modules/romance-wizard/romanceBuildCopy'
+import type { RomanceExperienceId } from '@/modules/romance-wizard/romanceExperiences'
 
 const props = defineProps<{
   form: ReturnType<typeof useTributeWizard>['form']
@@ -33,5 +26,6 @@ const props = defineProps<{
 
 defineEmits<{ 'media-changed': [] }>()
 
-const experience = computed(() => getRomanceExperience(props.experienceId))
+const stepTitle = computed(() => getCoachStepTitle('music', 'Trilha sonora'))
+const stepPrompt = computed(() => getCoachPrompt('music', props.experienceId))
 </script>

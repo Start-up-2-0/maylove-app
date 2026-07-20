@@ -41,6 +41,8 @@ export interface RomanceExperienceDefinition {
   photosMode?: 'cover' | 'gallery'
   /** Data especial habilitada por padrão (pedidos). */
   enableSpecialDateByDefault?: boolean
+  /** Se true, o passo de data pode ser pulado sem preencher. */
+  specialDateOptional?: boolean
   /** Contagem regressiva opcional no pedido de casamento. */
   allowCountdown?: boolean
   /** Efeitos sugeridos ao criar — o usuário pode adicionar mais no passo Efeitos. */
@@ -72,8 +74,9 @@ export const ROMANCE_EXPERIENCES: RomanceExperienceDefinition[] = [
     categorySlug: 'amor',
     defaultTemplateSlug: 'namorados',
     lockedPresentationId: 'slider-musica',
-    steps: ['recipient', 'photos', 'message', 'music', 'effects', 'preview'],
+    steps: ['recipient', 'photos', 'message', 'music', 'special-date', 'effects', 'preview'],
     photosMode: 'cover',
+    specialDateOptional: true,
     defaultEffects: ['hearts'],
   },
   {
@@ -143,7 +146,8 @@ export const ROMANCE_EXPERIENCES: RomanceExperienceDefinition[] = [
     categorySlug: 'amor',
     defaultTemplateSlug: 'carta-digital',
     lockedPresentationId: 'carta-animada',
-    steps: ['recipient', 'message', 'music', 'effects', 'preview'],
+    steps: ['recipient', 'message', 'music', 'special-date', 'effects', 'preview'],
+    specialDateOptional: true,
     defaultEffects: ['hearts', 'petals'],
   },
   {

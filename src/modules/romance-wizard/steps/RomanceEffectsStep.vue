@@ -1,10 +1,5 @@
 <template>
-  <RomanceFormShell
-    icon="✨"
-    title="Toque especial"
-    prompt="Já aplicamos o visual ideal para esta experiência. Quer adicionar mais animações?"
-    flat
-  >
+  <RomanceFormShell :title="stepTitle" :prompt="stepPrompt" flat>
     <EffectsStep :form="form" embedded />
     <p v-if="!form.effects.length" class="rom-field__hint">
       Nenhum efeito selecionado — a experiência ainda funciona, mas fica mais simples.
@@ -22,10 +17,16 @@ import type { TributeEffect } from '@/api/types'
 import type { useTributeWizard } from '@/composables/useTributeWizard'
 import EffectsStep from '@/modules/tribute-wizard/steps/EffectsStep.vue'
 import RomanceFormShell from '@/modules/romance-wizard/components/RomanceFormShell.vue'
+import { getCoachPrompt, getCoachStepTitle } from '@/modules/romance-wizard/romanceBuildCopy'
+import type { RomanceExperienceId } from '@/modules/romance-wizard/romanceExperiences'
 
 const props = defineProps<{
   form: ReturnType<typeof useTributeWizard>['form']
+  experienceId?: RomanceExperienceId | null
 }>()
+
+const stepTitle = computed(() => getCoachStepTitle('effects', 'Toque especial'))
+const stepPrompt = computed(() => getCoachPrompt('effects', props.experienceId))
 
 const effectLabels: Record<TributeEffect, string> = {
   confetti: 'Confete',

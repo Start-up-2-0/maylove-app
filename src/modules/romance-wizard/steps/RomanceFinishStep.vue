@@ -1,9 +1,8 @@
 <template>
   <div class="rom-finish">
     <RomanceFormShell
-      :icon="experience?.icon ?? '💕'"
-      title="Publicar"
-      prompt="Última conferida — veja a prévia, valide e publique o presente digital."
+      :title="stepTitle"
+      :prompt="stepPrompt"
     />
 
     <div v-if="summaryItems.length" class="rom-finish__summary">
@@ -59,7 +58,8 @@ import { computed } from 'vue'
 import type { TributeDetail } from '@/api/types'
 import type { useTributeWizard } from '@/composables/useTributeWizard'
 import type { TemplateDefinition } from '@/templates/types'
-import { getRomanceExperience, type RomanceExperienceId } from '@/modules/romance-wizard/romanceExperiences'
+import { type RomanceExperienceId } from '@/modules/romance-wizard/romanceExperiences'
+import { getCoachPrompt, getCoachStepTitle } from '@/modules/romance-wizard/romanceBuildCopy'
 import { buildRomanceFinishSummary } from '@/modules/romance-wizard/romanceFinishHelpers'
 import RomanceFormShell from '@/modules/romance-wizard/components/RomanceFormShell.vue'
 import PublishStep from '@/modules/tribute-wizard/steps/PublishStep.vue'
@@ -79,7 +79,8 @@ const props = defineProps<{
 
 defineEmits<{ regenerate: []; published: [] }>()
 
-const experience = computed(() => getRomanceExperience(props.experienceId as RomanceExperienceId | null))
+const stepTitle = computed(() => getCoachStepTitle('preview', 'Publicar presente'))
+const stepPrompt = computed(() => getCoachPrompt('preview', props.experienceId as RomanceExperienceId | null))
 const summaryItems = computed(() =>
   buildRomanceFinishSummary(props.form, props.experienceId as RomanceExperienceId | null, props.photoCount ?? 0),
 )

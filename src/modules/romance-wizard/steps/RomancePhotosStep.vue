@@ -1,8 +1,7 @@
 <template>
   <RomanceFormShell
-    :icon="experience?.icon ?? '💕'"
-    :title="photosMode === 'cover' ? 'Foto de capa' : 'Fotos de vocês'"
-    :prompt="introDesc"
+    :title="stepTitle"
+    :prompt="stepPrompt"
     flat
   >
     <div class="rom-photos__meta">
@@ -31,6 +30,7 @@ import type { useTributeWizard } from '@/composables/useTributeWizard'
 import type { TemplateDefinition } from '@/templates/types'
 import PhotosStep from '@/modules/tribute-wizard/steps/PhotosStep.vue'
 import RomanceFormShell from '@/modules/romance-wizard/components/RomanceFormShell.vue'
+import { getCoachPrompt, getCoachStepTitle } from '@/modules/romance-wizard/romanceBuildCopy'
 import {
   getRomanceExperience,
   type RomanceExperienceId,
@@ -52,16 +52,14 @@ const catalogTemplates = ref<{ id: string; max_photos?: number }[]>([])
 const experience = computed(() => getRomanceExperience(props.experienceId))
 const photosMode = computed(() => experience.value?.photosMode ?? 'gallery')
 
+const stepTitle = computed(() =>
+  getCoachStepTitle('photos', photosMode.value === 'cover' ? 'Foto de capa' : 'Fotos de vocês'),
+)
+const stepPrompt = computed(() => getCoachPrompt('photos', props.experienceId))
 const maxPhotos = computed(() => {
   const tpl = catalogTemplates.value.find((item) => item.id === props.form.template_id)
   return tpl?.max_photos ?? 20
 })
-
-const introDesc = computed(() =>
-  photosMode.value === 'cover'
-    ? 'Escolha a foto que abre a surpresa — a favorita de vocês.'
-    : 'Envie as fotos que contam a história. Organizamos tudo na experiência.',
-)
 
 onMounted(async () => {
   try {

@@ -1,10 +1,5 @@
 <template>
-  <RomanceFormShell
-    :icon="experience?.icon ?? '📖'"
-    title="Capítulos da história"
-    prompt="Adicione os marcos do relacionamento — data, título, texto e foto. Montamos a linha do tempo."
-    flat
-  >
+  <RomanceFormShell :title="stepTitle" :prompt="stepPrompt" flat>
     <StoryStep :form="form" :photos="photos" />
   </RomanceFormShell>
 </template>
@@ -15,10 +10,8 @@ import type { TributeMedia } from '@/api/types'
 import type { useTributeWizard } from '@/composables/useTributeWizard'
 import StoryStep from '@/modules/tribute-wizard/steps/StoryStep.vue'
 import RomanceFormShell from '@/modules/romance-wizard/components/RomanceFormShell.vue'
-import {
-  getRomanceExperience,
-  type RomanceExperienceId,
-} from '@/modules/romance-wizard/romanceExperiences'
+import { getCoachPrompt, getCoachStepTitle } from '@/modules/romance-wizard/romanceBuildCopy'
+import type { RomanceExperienceId } from '@/modules/romance-wizard/romanceExperiences'
 
 const props = defineProps<{
   form: ReturnType<typeof useTributeWizard>['form']
@@ -26,7 +19,8 @@ const props = defineProps<{
   experienceId?: RomanceExperienceId | null
 }>()
 
-const experience = computed(() => getRomanceExperience(props.experienceId))
+const stepTitle = computed(() => getCoachStepTitle('chapters', 'Capítulos da história'))
+const stepPrompt = computed(() => getCoachPrompt('chapters', props.experienceId))
 </script>
 
 <style scoped>

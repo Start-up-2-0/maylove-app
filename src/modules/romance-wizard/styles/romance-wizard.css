@@ -65,7 +65,15 @@
   max-height: none;
   overflow: auto;
 }
-.romance-wizard__aside :deep(.preview-viewport-wrap--compact) {
+.rom-build-shell__preview :deep(.tribute-live-preview) {
+  height: 100%;
+}
+.rom-build-shell__preview :deep(.preview-viewport-wrap--faithful) {
+  min-height: auto;
+  max-height: none;
+  overflow: auto;
+}
+.rom-build-shell__preview :deep(.preview-viewport-wrap--compact) {
   max-height: none;
 }
 .romance-wizard__main {
@@ -88,7 +96,13 @@
 .rom-form-step__coach {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
+  gap: 14px;
+}
+.rom-form-step__coach-name {
+  margin: 0 0 4px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--rom-accent-strong, #be123c);
 }
 .rom-form-step__avatar {
   flex-shrink: 0;
@@ -108,13 +122,31 @@
   box-shadow: 0 10px 28px -16px color-mix(in srgb, var(--rom-accent) 50%, transparent);
 }
 .rom-form-step__bubble {
+  position: relative;
   flex: 1;
   min-width: 0;
-  padding: 12px 14px;
-  border-radius: 4px 16px 16px 16px;
-  background: var(--surface);
-  border: 1px solid color-mix(in srgb, var(--rom-accent) 12%, var(--border));
-  box-shadow: 0 14px 36px -28px color-mix(in srgb, var(--rom-accent) 40%, transparent);
+  padding: 14px 16px;
+  border-radius: 6px 18px 18px 18px;
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--rom-accent-soft, #fff1f2) 70%, var(--surface)),
+    var(--surface)
+  );
+  border: 1px solid color-mix(in srgb, var(--rom-accent, #e11d48) 16%, var(--border));
+  box-shadow: 0 16px 40px -30px color-mix(in srgb, var(--rom-accent, #e11d48) 45%, transparent);
+}
+.rom-form-step__bubble::before {
+  content: '';
+  position: absolute;
+  left: -7px;
+  top: 18px;
+  width: 14px;
+  height: 14px;
+  background: inherit;
+  border-left: 1px solid color-mix(in srgb, var(--rom-accent, #e11d48) 16%, var(--border));
+  border-bottom: 1px solid color-mix(in srgb, var(--rom-accent, #e11d48) 16%, var(--border));
+  transform: rotate(45deg);
+  border-radius: 0 0 0 4px;
 }
 .rom-form-step__title {
   margin: 0 0 4px;
@@ -373,6 +405,37 @@
 .rom-experience-card__badge--map {
   color: #0f766e;
   background: color-mix(in srgb, #14b8a6 12%, var(--surface));
+}
+.rom-experience-card--picker {
+  flex-direction: row;
+  align-items: center;
+  width: 100%;
+  min-height: auto;
+  padding: 16px 18px;
+  gap: 14px;
+  text-align: left;
+}
+.rom-experience-card--picker .rom-experience-card__icon {
+  font-size: 1.75rem;
+}
+.rom-experience-card__copy {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+.rom-experience-card__chevron {
+  flex-shrink: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--rom-accent, #e11d48);
+  opacity: 0.7;
+}
+.rom-experience-card--picker:hover:not(:disabled) .rom-experience-card__chevron,
+.rom-experience-card--active .rom-experience-card__chevron {
+  opacity: 1;
+  transform: translateX(2px);
 }
 
 .rom-preview-panel {

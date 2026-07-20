@@ -1,8 +1,9 @@
 <template>
   <div class="rom-form-step">
     <div class="rom-form-step__coach">
-      <span class="rom-form-step__avatar" aria-hidden="true">{{ icon }}</span>
+      <RomanceCoachAvatar :large="coachLarge" />
       <div class="rom-form-step__bubble">
+        <p class="rom-form-step__coach-name">{{ coachName }}</p>
         <p v-if="title" class="rom-form-step__title">{{ title }}</p>
         <p class="rom-form-step__prompt">{{ prompt }}</p>
       </div>
@@ -15,13 +16,21 @@
 </template>
 
 <script setup lang="ts">
+import RomanceCoachAvatar from '@/modules/romance-wizard/components/RomanceCoachAvatar.vue'
+import { ROMANCE_COACH_NAME } from '@/modules/romance-wizard/romanceBuildCopy'
+
 withDefaults(
   defineProps<{
-    icon?: string
     title?: string
     prompt: string
     flat?: boolean
+    coachName?: string
+    coachLarge?: boolean
   }>(),
-  { icon: '💕', flat: false },
+  {
+    flat: false,
+    coachName: ROMANCE_COACH_NAME,
+    coachLarge: false,
+  },
 )
 </script>

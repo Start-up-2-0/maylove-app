@@ -1,10 +1,5 @@
 <template>
-  <RomanceFormShell
-    :icon="experience?.icon ?? '📅'"
-    title="Data especial"
-    prompt="Marque o dia que importa — mostramos o tempo juntos ou uma contagem regressiva na experiência."
-    flat
-  >
+  <RomanceFormShell :title="stepTitle" :prompt="stepPrompt" flat>
     <SpecialDateStep :form="form" />
     <label v-if="allowCountdown" class="rom-inline-toggle">
       <input v-model="countdownMode" type="checkbox" />
@@ -18,6 +13,7 @@ import { computed, watch } from 'vue'
 import type { useTributeWizard } from '@/composables/useTributeWizard'
 import SpecialDateStep from '@/modules/tribute-wizard/steps/SpecialDateStep.vue'
 import RomanceFormShell from '@/modules/romance-wizard/components/RomanceFormShell.vue'
+import { getCoachPrompt, getCoachStepTitle } from '@/modules/romance-wizard/romanceBuildCopy'
 import {
   getRomanceExperience,
   type RomanceExperienceId,
@@ -30,6 +26,16 @@ const props = defineProps<{
 
 const experience = computed(() => getRomanceExperience(props.experienceId))
 const allowCountdown = computed(() => experience.value?.allowCountdown ?? false)
+const isOptional = computed(() => experience.value?.specialDateOptional ?? false)
+
+const stepTitle = computed(() => getCoachStepTitle('special-date', 'Data especial'))
+const stepPrompt = computed(() => {
+  const base = getCoachPrompt('special-date', props.experienceId)
+  if (isOptional.value && !experience.value?.enableSpecialDateByDefault) {
+    return `${base} Marque o toggle abaixo ou clique em Continuar para pular.`
+  }
+  return base
+})
 
 const countdownMode = computed({
   get: () => props.form.special_date_config.counter_mode === 'countdown',

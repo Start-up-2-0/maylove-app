@@ -1,10 +1,5 @@
 <template>
-  <RomanceFormShell
-    :icon="experience?.icon ?? '💌'"
-    :title="introTitle"
-    :prompt="introDesc"
-    flat
-  >
+  <RomanceFormShell :title="stepTitle" :prompt="stepPrompt" flat>
     <RichTextEditor v-model="form.message" :placeholder="placeholder" />
     <p class="rom-field__hint">A plataforma cuida da tipografia, animação e abertura.</p>
   </RomanceFormShell>
@@ -15,27 +10,18 @@ import { computed, watch } from 'vue'
 import type { useTributeWizard } from '@/composables/useTributeWizard'
 import RichTextEditor from '@/components/wizard/RichTextEditor.vue'
 import RomanceFormShell from '@/modules/romance-wizard/components/RomanceFormShell.vue'
-import {
-  getRomanceExperience,
-  type RomanceExperienceId,
-} from '@/modules/romance-wizard/romanceExperiences'
+import { getCoachPrompt, getCoachStepTitle } from '@/modules/romance-wizard/romanceBuildCopy'
+import type { RomanceExperienceId } from '@/modules/romance-wizard/romanceExperiences'
 
 const props = defineProps<{
   form: ReturnType<typeof useTributeWizard>['form']
   experienceId?: RomanceExperienceId | null
 }>()
 
-const experience = computed(() => getRomanceExperience(props.experienceId))
-
-const introTitle = computed(() =>
-  props.experienceId === 'carta-amor' ? 'Escreva a carta' : 'Sua mensagem',
+const stepTitle = computed(() =>
+  getCoachStepTitle('message', props.experienceId === 'carta-amor' ? 'Escreva a carta' : 'Sua mensagem'),
 )
-
-const introDesc = computed(() =>
-  props.experienceId === 'pedido-casamento' || props.experienceId === 'pedido-namoro'
-    ? 'Escreva a carta que prepara o momento da pergunta especial.'
-    : 'Escreva do coração — este é o texto principal da experiência.',
-)
+const stepPrompt = computed(() => getCoachPrompt('message', props.experienceId))
 
 const placeholder = computed(() =>
   props.experienceId === 'pedido-namoro'
