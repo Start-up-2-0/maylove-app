@@ -88,16 +88,17 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { listTemplates } from '@/api/catalog'
 import { updateTribute } from '@/api/tributes'
 import type { Template, TributeMedia } from '@/api/types'
 import type { useTributeWizard } from '@/composables/useTributeWizard'
+import { getWizardTypeFlowConfig, resolveDefaultPresentationId } from '@/modules/tribute-wizard/tributeTypeFlow'
+import { WIZARD_TRIBUTE_TYPE_OPTIONS } from '@/modules/tribute-wizard/tributeWizardSteps'
 import { listTemplateDefinitions } from '@/templates/registry'
 import { EXPERIENCE_LAYOUT_LABELS, type TemplateDefinition } from '@/templates/types'
 import { presentationForLayout } from '@/templates/presentations'
 import { listStyles } from '@/templates/styles'
-import { getWizardTypeFlowConfig } from '@/modules/tribute-wizard/tributeTypeFlow'
 import { syncModulesFromPresentation } from '@/utils/tributeModules'
 import WizardStepHeader from '@/components/wizard/WizardStepHeader.vue'
 import PhotosStep from './PhotosStep.vue'
@@ -106,6 +107,7 @@ import MusicStep from './MusicStep.vue'
 const props = defineProps<{
   form: ReturnType<typeof useTributeWizard>['form']
   tributeId: string
+  tributeTypeId?: string
   photos: TributeMedia[]
   definition: TemplateDefinition | null | undefined
 }>()
@@ -121,15 +123,38 @@ const recommendedSlug = computed(
   () => getWizardTypeFlowConfig(props.form.wizard_type_id).defaultTemplateSlug ?? '',
 )
 
-const templates = computed(() => {
-  if (!categorySlug.value) return allDefinitions.slice(0, 8)
-  const filtered = allDefinitions.filter((def) => def.category === categorySlug.value)
-  return filtered.length ? filtered : allDefinitions.slice(0, 8)
-})
+const compatibleSlugs = computed(
+  () => new Set(catalogTemplates.value.map((item) => item.slug)),
+)
 
 const selectedSlug = computed(() => {
   const tpl = catalogTemplates.value.find((item) => item.id === props.form.template_id)
   return tpl?.slug ?? props.definition?.slug ?? ''
+})
+
+const templates = computed(() => {
+  let defs = allDefinitions
+
+  if (categorySlug.value) {
+    const byCategory = allDefinitions.filter((def) => def.category === categorySlug.value)
+    if (byCategory.length) defs = byCategory
+  }
+
+  if (compatibleSlugs.value.size > 0) {
+    defs = defs.filter((def) => compatibleSlugs.value.has(def.slug))
+  }
+
+  const currentSlug = selectedSlug.value
+  if (currentSlug && !defs.some((def) => def.slug === currentSlug)) {
+    const current = allDefinitions.find((def) => def.slug === currentSlug)
+    if (current) defs = [current, ...defs]
+  }
+
+  if (defs.length) return defs
+  if (compatibleSlugs.value.size > 0) {
+    return allDefinitions.filter((def) => compatibleSlugs.value.has(def.slug))
+  }
+  return allDefinitions.slice(0, 8)
 })
 
 const maxPhotos = computed(() => {
@@ -142,13 +167,17 @@ const supportsMusic = computed(() => {
   return tpl?.supports_music ?? true
 })
 
-onMounted(async () => {
+async function loadCatalogTemplates() {
   try {
-    catalogTemplates.value = await listTemplates()
+    catalogTemplates.value = await listTemplates(props.tributeTypeId || undefined)
   } catch {
     catalogTemplates.value = []
   }
-})
+}
+
+onMounted(loadCatalogTemplates)
+
+watch(() => props.tributeTypeId, loadCatalogTemplates)
 
 function layoutLabel(def: TemplateDefinition): string {
   return EXPERIENCE_LAYOUT_LABELS[def.layout ?? 'scroll']
@@ -166,7 +195,10 @@ async function selectTemplate(def: TemplateDefinition) {
 
   props.form.template_id = catalog.id
   if (!props.form.presentation) {
-    props.form.presentation = presentationForLayout(def.layout)?.id ?? 'scroll-classic'
+    const typeOption = WIZARD_TRIBUTE_TYPE_OPTIONS.find((item) => item.id === props.form.wizard_type_id)
+    props.form.presentation = typeOption
+      ? resolveDefaultPresentationId(typeOption, def)
+      : presentationForLayout(def.layout)?.id ?? 'rolagem'
   }
   if (!props.form.style_id) {
     props.form.style_id = listStyles()[0]?.id ?? ''

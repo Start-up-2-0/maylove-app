@@ -54,6 +54,7 @@
                 v-else-if="currentStep === 'basics'"
                 :form="form"
                 :tribute-id="tributeId"
+                :tribute-type-id="tribute?.tribute_type.id"
                 :photos="photos"
                 :definition="definition"
                 @media-changed="onMediaChanged"
