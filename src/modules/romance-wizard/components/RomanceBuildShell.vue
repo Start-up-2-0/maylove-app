@@ -66,8 +66,9 @@ withDefaults(
 <style scoped>
 .rom-build-shell {
   position: relative;
+  width: 100%;
   min-height: calc(100vh - 64px);
-  padding: 0 clamp(12px, 2.5vw, 24px) 24px;
+  padding: 0 clamp(12px, 2.5vw, 28px) 24px;
 }
 .rom-build-shell__header {
   display: flex;
@@ -75,6 +76,7 @@ withDefaults(
   align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
+  width: 100%;
   margin-bottom: 22px;
   padding-top: 8px;
 }
@@ -127,14 +129,19 @@ withDefaults(
   display: grid;
   gap: 24px;
   align-items: start;
+  width: 100%;
 }
 .rom-build-shell__body--split {
-  gap: 28px;
+  gap: clamp(24px, 3vw, 40px);
 }
 @media (min-width: 1024px) {
   .rom-build-shell__body--split {
-    grid-template-columns: minmax(0, 520px) minmax(320px, 1fr);
-    max-width: 1180px;
+    grid-template-columns: minmax(380px, 46fr) minmax(420px, 54fr);
+  }
+}
+@media (min-width: 1440px) {
+  .rom-build-shell__body--split {
+    grid-template-columns: minmax(420px, 44fr) minmax(520px, 56fr);
   }
 }
 .rom-build-shell__main {
@@ -144,11 +151,20 @@ withDefaults(
   min-width: 0;
   position: sticky;
   top: 20px;
+  display: flex;
+  flex-direction: column;
+  padding: clamp(16px, 2vw, 24px);
+  border-radius: 22px;
+  border: 1px solid color-mix(in srgb, var(--rom-accent, #e11d48) 12%, var(--border));
+  background: color-mix(in srgb, var(--rom-accent-soft, #fff1f2) 35%, var(--surface));
+  box-shadow: 0 24px 56px -40px color-mix(in srgb, var(--rom-accent, #e11d48) 28%, transparent);
+  min-height: min(72vh, 760px);
 }
 .rom-build-shell__footer {
   position: sticky;
   bottom: 0;
   z-index: 5;
+  width: 100%;
   margin-top: 20px;
   padding-top: 8px;
 }

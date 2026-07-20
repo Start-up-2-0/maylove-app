@@ -59,20 +59,16 @@ defineEmits<{
 
 <style scoped>
 .rom-wizard-footer {
-  padding: 12px 0 calc(12px + env(safe-area-inset-bottom, 0px));
-  background: linear-gradient(
-    to top,
-    color-mix(in srgb, var(--bg) 92%, transparent),
-    transparent
-  );
-  backdrop-filter: blur(8px);
+  padding: 16px 0 0;
+  background: transparent;
+  backdrop-filter: none;
 }
 .rom-wizard-footer__inner {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  max-width: 520px;
+  width: 100%;
   padding: 12px 16px;
   border-radius: 18px;
   border: 1px solid color-mix(in srgb, var(--rom-accent, #e11d48) 14%, var(--border));

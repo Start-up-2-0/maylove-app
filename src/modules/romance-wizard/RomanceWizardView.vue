@@ -111,6 +111,15 @@
       </Transition>
 
       <p v-if="stepError" class="ml-alert ml-alert--danger rom-step-error">{{ stepError }}</p>
+
+      <RomanceWizardFooter
+        v-if="isEditable"
+        :has-previous="hasPrevious"
+        :has-next="hasNext"
+        :loading="navigating"
+        @previous="previousStep"
+        @next="nextStep"
+      />
     </div>
 
     <template v-if="showPreviewColumn" #preview>
@@ -121,26 +130,17 @@
         <div v-if="previewGenerating" class="rom-preview-panel__loading">
           <span class="ml-spinner ml-spinner--sm" />
         </div>
-        <TributeLivePreview
-          v-else
-          :tribute-id="tributeId"
-          :form="form"
-          :tribute="tribute"
-          :refresh-token="previewRefreshToken"
-          faithful
-          compact
-        />
+          <TributeLivePreview
+            v-else
+            :tribute-id="tributeId"
+            :form="form"
+            :tribute="tribute"
+            :refresh-token="previewRefreshToken"
+            faithful
+            compact
+            :show-viewport-tabs="false"
+          />
       </RomancePhonePreview>
-    </template>
-
-    <template v-if="isEditable && currentStep !== 'preview' && !loading && !error" #footer>
-      <RomanceWizardFooter
-        :has-previous="hasPrevious"
-        :has-next="hasNext"
-        :loading="navigating"
-        @previous="previousStep"
-        @next="nextStep"
-      />
     </template>
   </RomanceBuildShell>
 </template>

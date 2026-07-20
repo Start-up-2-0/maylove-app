@@ -70,7 +70,7 @@ withDefaults(
   min-height: 0;
 }
 .rom-phone-preview__bezel {
-  width: min(100%, 320px);
+  width: min(100%, clamp(320px, 32vw, 420px));
   padding: 10px;
   border-radius: 36px;
   background: linear-gradient(
@@ -98,9 +98,13 @@ withDefaults(
   background: var(--bg);
   border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
 }
-@media (min-width: 1024px) {
+@media (min-width: 1280px) {
+  .rom-phone-preview__bezel {
+    width: min(100%, clamp(340px, 24vw, 460px));
+  }
   .rom-phone-preview__screen {
-    min-height: 480px;
+    min-height: 520px;
+    max-height: min(74vh, 720px);
   }
 }
 </style>
