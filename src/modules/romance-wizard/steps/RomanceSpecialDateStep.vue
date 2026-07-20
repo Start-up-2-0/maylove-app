@@ -1,27 +1,23 @@
 <template>
-  <div class="rom-special-date">
-    <header class="rom-step-intro">
-      <p class="rom-step-intro__eyebrow">{{ experience?.label ?? 'Romance' }}</p>
-      <h2 class="rom-step-intro__title">Data especial</h2>
-      <p class="rom-step-intro__desc">
-        Marque o dia que importa — contador de tempo juntos ou contagem regressiva na experiência.
-      </p>
-    </header>
-
-    <section class="rom-panel">
-      <SpecialDateStep :form="form" />
-      <label v-if="allowCountdown" class="rom-inline-toggle">
-        <input v-model="countdownMode" type="checkbox" />
-        <span>Usar contagem regressiva (até a data)</span>
-      </label>
-    </section>
-  </div>
+  <RomanceFormShell
+    :icon="experience?.icon ?? '📅'"
+    title="Data especial"
+    prompt="Marque o dia que importa — mostramos o tempo juntos ou uma contagem regressiva na experiência."
+    flat
+  >
+    <SpecialDateStep :form="form" />
+    <label v-if="allowCountdown" class="rom-inline-toggle">
+      <input v-model="countdownMode" type="checkbox" />
+      <span>Usar contagem regressiva (até a data)</span>
+    </label>
+  </RomanceFormShell>
 </template>
 
 <script setup lang="ts">
 import { computed, watch } from 'vue'
 import type { useTributeWizard } from '@/composables/useTributeWizard'
 import SpecialDateStep from '@/modules/tribute-wizard/steps/SpecialDateStep.vue'
+import RomanceFormShell from '@/modules/romance-wizard/components/RomanceFormShell.vue'
 import {
   getRomanceExperience,
   type RomanceExperienceId,
@@ -66,5 +62,8 @@ watch(
 }
 .rom-inline-toggle input {
   accent-color: var(--rom-accent, #e11d48);
+}
+:deep(.special-date-step .wiz-step-header) {
+  display: none;
 }
 </style>

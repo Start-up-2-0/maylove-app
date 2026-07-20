@@ -319,17 +319,6 @@ async function onPublished() {
 </script>
 
 <style scoped>
-.romance-wizard__shell {
-  display: grid;
-  gap: 24px;
-  max-width: 1200px;
-}
-@media (min-width: 1024px) {
-  .romance-wizard__shell {
-    grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
-    align-items: start;
-  }
-}
 .rom-step-error {
   margin-top: 16px;
 }

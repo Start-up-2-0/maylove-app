@@ -1,22 +1,20 @@
 <template>
-  <div class="rom-message">
-    <header class="rom-step-intro">
-      <p class="rom-step-intro__eyebrow">{{ experience?.label ?? 'Romance' }}</p>
-      <h2 class="rom-step-intro__title">{{ introTitle }}</h2>
-      <p class="rom-step-intro__desc">{{ introDesc }}</p>
-    </header>
-
-    <section class="rom-panel">
-      <RichTextEditor v-model="form.message" :placeholder="placeholder" />
-      <p class="rom-field__hint">Escreva do coração — a plataforma cuida da tipografia e animação.</p>
-    </section>
-  </div>
+  <RomanceFormShell
+    :icon="experience?.icon ?? '💌'"
+    :title="introTitle"
+    :prompt="introDesc"
+    flat
+  >
+    <RichTextEditor v-model="form.message" :placeholder="placeholder" />
+    <p class="rom-field__hint">A plataforma cuida da tipografia, animação e abertura.</p>
+  </RomanceFormShell>
 </template>
 
 <script setup lang="ts">
 import { computed, watch } from 'vue'
 import type { useTributeWizard } from '@/composables/useTributeWizard'
 import RichTextEditor from '@/components/wizard/RichTextEditor.vue'
+import RomanceFormShell from '@/modules/romance-wizard/components/RomanceFormShell.vue'
 import {
   getRomanceExperience,
   type RomanceExperienceId,
@@ -35,8 +33,8 @@ const introTitle = computed(() =>
 
 const introDesc = computed(() =>
   props.experienceId === 'pedido-casamento' || props.experienceId === 'pedido-namoro'
-    ? 'A carta que prepara o momento da pergunta especial.'
-    : 'O texto principal da experiência — como uma carta de amor digital.',
+    ? 'Escreva a carta que prepara o momento da pergunta especial.'
+    : 'Escreva do coração — este é o texto principal da experiência.',
 )
 
 const placeholder = computed(() =>
@@ -55,3 +53,9 @@ watch(
   { immediate: true },
 )
 </script>
+
+<style scoped>
+.rom-field__hint {
+  margin: 12px 0 0;
+}
+</style>

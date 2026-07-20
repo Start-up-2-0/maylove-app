@@ -1,29 +1,26 @@
 <template>
-  <div class="rom-photos">
-    <header class="rom-step-intro">
-      <p class="rom-step-intro__eyebrow">{{ experience?.label ?? 'Romance' }}</p>
-      <h2 class="rom-step-intro__title">{{ photosMode === 'cover' ? 'Foto de capa' : 'Fotos de vocês' }}</h2>
-      <p class="rom-step-intro__desc">{{ introDesc }}</p>
-    </header>
-
-    <section class="rom-panel">
-      <div class="rom-couple__photo-head">
-        <span v-if="photos.length" class="rom-couple__photo-count">
-          {{ photos.length }} foto{{ photos.length === 1 ? '' : 's' }}
-        </span>
-      </div>
-      <PhotosStep
-        :tribute-id="tributeId"
-        :photos="photos"
-        :max-photos="maxPhotos"
-        :form="form"
-        :definition="definition"
-        :variant="photosMode === 'cover' ? 'cover' : 'default'"
-        compact
-        @changed="$emit('media-changed')"
-      />
-    </section>
-  </div>
+  <RomanceFormShell
+    :icon="experience?.icon ?? '💕'"
+    :title="photosMode === 'cover' ? 'Foto de capa' : 'Fotos de vocês'"
+    :prompt="introDesc"
+    flat
+  >
+    <div class="rom-photos__meta">
+      <span v-if="photos.length" class="rom-couple__photo-count">
+        {{ photos.length }} foto{{ photos.length === 1 ? '' : 's' }}
+      </span>
+    </div>
+    <PhotosStep
+      :tribute-id="tributeId"
+      :photos="photos"
+      :max-photos="maxPhotos"
+      :form="form"
+      :definition="definition"
+      :variant="photosMode === 'cover' ? 'cover' : 'default'"
+      compact
+      @changed="$emit('media-changed')"
+    />
+  </RomanceFormShell>
 </template>
 
 <script setup lang="ts">
@@ -33,6 +30,7 @@ import type { TributeMedia } from '@/api/types'
 import type { useTributeWizard } from '@/composables/useTributeWizard'
 import type { TemplateDefinition } from '@/templates/types'
 import PhotosStep from '@/modules/tribute-wizard/steps/PhotosStep.vue'
+import RomanceFormShell from '@/modules/romance-wizard/components/RomanceFormShell.vue'
 import {
   getRomanceExperience,
   type RomanceExperienceId,
@@ -61,8 +59,8 @@ const maxPhotos = computed(() => {
 
 const introDesc = computed(() =>
   photosMode.value === 'cover'
-    ? 'A primeira imagem que abre a surpresa — escolha a favorita de vocês.'
-    : 'Envie as fotos que contam a história. A plataforma organiza tudo na experiência.',
+    ? 'Escolha a foto que abre a surpresa — a favorita de vocês.'
+    : 'Envie as fotos que contam a história. Organizamos tudo na experiência.',
 )
 
 onMounted(async () => {
@@ -75,15 +73,15 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.rom-couple__photo-head {
+.rom-photos__meta {
   display: flex;
   justify-content: flex-end;
-  margin-bottom: 4px;
+  margin-bottom: 8px;
 }
 .rom-couple__photo-count {
-  padding: 6px 12px;
+  padding: 5px 10px;
   border-radius: 999px;
-  font-size: 0.78rem;
+  font-size: 0.76rem;
   font-weight: 700;
   color: var(--rom-accent, #e11d48);
   background: color-mix(in srgb, var(--rom-accent, #e11d48) 10%, var(--surface));

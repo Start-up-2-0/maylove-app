@@ -1,17 +1,12 @@
 <template>
-  <div class="rom-chapters">
-    <header class="rom-step-intro">
-      <p class="rom-step-intro__eyebrow">{{ experience?.label ?? 'Romance' }}</p>
-      <h2 class="rom-step-intro__title">Capítulos da história</h2>
-      <p class="rom-step-intro__desc">
-        Adicione os marcos do relacionamento — data, título, texto e foto. A plataforma monta a linha do tempo.
-      </p>
-    </header>
-
-    <section class="rom-panel">
-      <StoryStep :form="form" :photos="photos" />
-    </section>
-  </div>
+  <RomanceFormShell
+    :icon="experience?.icon ?? '📖'"
+    title="Capítulos da história"
+    prompt="Adicione os marcos do relacionamento — data, título, texto e foto. Montamos a linha do tempo."
+    flat
+  >
+    <StoryStep :form="form" :photos="photos" />
+  </RomanceFormShell>
 </template>
 
 <script setup lang="ts">
@@ -19,6 +14,7 @@ import { computed } from 'vue'
 import type { TributeMedia } from '@/api/types'
 import type { useTributeWizard } from '@/composables/useTributeWizard'
 import StoryStep from '@/modules/tribute-wizard/steps/StoryStep.vue'
+import RomanceFormShell from '@/modules/romance-wizard/components/RomanceFormShell.vue'
 import {
   getRomanceExperience,
   type RomanceExperienceId,

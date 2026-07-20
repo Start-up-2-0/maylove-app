@@ -1,29 +1,25 @@
 <template>
-  <div class="rom-music">
-    <header class="rom-step-intro">
-      <p class="rom-step-intro__eyebrow">{{ experience?.label ?? 'Romance' }}</p>
-      <h2 class="rom-step-intro__title">Trilha sonora</h2>
-      <p class="rom-step-intro__desc">
-        Escolha a música que embala a experiência — ela entra automaticamente na abertura.
-      </p>
-    </header>
-
-    <section class="rom-panel">
-      <MusicStep
-        :form="form"
-        :supports-music="true"
-        :tribute-id="tributeId"
-        compact
-        @changed="$emit('media-changed')"
-      />
-    </section>
-  </div>
+  <RomanceFormShell
+    :icon="experience?.icon ?? '🎵'"
+    title="Trilha sonora"
+    prompt="Escolha a música que embala a experiência — ela entra na abertura automaticamente."
+    flat
+  >
+    <MusicStep
+      :form="form"
+      :supports-music="true"
+      :tribute-id="tributeId"
+      compact
+      @changed="$emit('media-changed')"
+    />
+  </RomanceFormShell>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { useTributeWizard } from '@/composables/useTributeWizard'
 import MusicStep from '@/modules/tribute-wizard/steps/MusicStep.vue'
+import RomanceFormShell from '@/modules/romance-wizard/components/RomanceFormShell.vue'
 import {
   getRomanceExperience,
   type RomanceExperienceId,
