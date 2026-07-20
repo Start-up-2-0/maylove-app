@@ -45,19 +45,39 @@ const router = createRouter({
           component: () => import('@/modules/templates/TemplatesGalleryView.vue'),
         },
         {
+          path: 'romances/new',
+          name: 'romance-new',
+          component: () => import('@/modules/romance-wizard/NewRomanceView.vue'),
+        },
+        {
+          path: 'romances/:id/edit',
+          name: 'romance-edit',
+          component: () => import('@/modules/romance-wizard/RomanceWizardView.vue'),
+        },
+        {
+          path: 'romances/:id',
+          name: 'romance-detail',
+          component: () => import('@/modules/dashboard/TributeDetailView.vue'),
+        },
+        {
           path: 'tributes/new',
-          name: 'tribute-new',
-          component: () => import('@/modules/tribute-wizard/NewTributeView.vue'),
+          redirect: { name: 'romance-new' },
         },
         {
           path: 'tributes/:id/edit',
-          name: 'tribute-edit',
-          component: () => import('@/modules/tribute-wizard/TributeWizardView.vue'),
+          redirect: (to) => ({
+            name: 'romance-edit',
+            params: { id: to.params.id },
+            query: to.query,
+          }),
         },
         {
           path: 'tributes/:id',
-          name: 'tribute-detail',
-          component: () => import('@/modules/dashboard/TributeDetailView.vue'),
+          redirect: (to) => ({
+            name: 'romance-detail',
+            params: { id: to.params.id },
+            query: to.query,
+          }),
         },
         {
           path: 'albums',

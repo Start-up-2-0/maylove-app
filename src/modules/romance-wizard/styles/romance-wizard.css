@@ -1,0 +1,190 @@
+.romance-wizard {
+  --rom-accent: #e11d48;
+  --rom-accent-strong: #be123c;
+  --rom-accent-soft: #fff1f2;
+  --rom-muted: #9f1239;
+  --rom-bg: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--rom-accent) 4%, var(--bg)) 0%,
+    var(--bg) 220px
+  );
+  min-height: 100%;
+  background: var(--rom-bg);
+}
+.romance-wizard::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 8% 12%, color-mix(in srgb, var(--rom-accent) 8%, transparent), transparent 42%),
+    radial-gradient(circle at 92% 4%, color-mix(in srgb, #fda4af 12%, transparent), transparent 38%);
+  z-index: 0;
+}
+.romance-wizard > * {
+  position: relative;
+  z-index: 1;
+}
+.rom-step-intro {
+  margin-bottom: 24px;
+}
+.rom-step-intro__eyebrow {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--rom-accent, var(--primary));
+  margin: 0 0 8px;
+}
+.rom-step-intro__title {
+  font-size: clamp(1.55rem, 3vw, 2.15rem);
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0 0 8px;
+  line-height: 1.15;
+}
+.rom-step-intro__desc {
+  margin: 0;
+  max-width: 560px;
+  color: var(--muted);
+  font-size: 0.98rem;
+  line-height: 1.55;
+}
+.rom-panel {
+  padding: clamp(18px, 2.5vw, 24px);
+  border-radius: 20px;
+  border: 1px solid color-mix(in srgb, var(--rom-accent, var(--primary)) 12%, var(--border));
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  box-shadow: 0 20px 50px -40px color-mix(in srgb, var(--rom-accent) 35%, transparent);
+}
+.rom-panel__title {
+  margin: 0 0 6px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+.rom-panel__hint {
+  margin: 0 0 16px;
+  font-size: 0.88rem;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.rom-occasion__grid,
+.romance-launcher__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+  gap: 14px;
+}
+.rom-occasion-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 22px 18px;
+  text-align: left;
+  border-radius: 20px;
+  border: 1.5px solid color-mix(in srgb, var(--rom-accent, #e11d48) 18%, var(--border));
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--rom-accent, #e11d48) 6%, var(--surface)),
+    var(--surface)
+  );
+  overflow: hidden;
+  transition:
+    transform 0.25s ease,
+    border-color 0.25s ease,
+    box-shadow 0.25s ease;
+}
+.rom-occasion-card:hover:not(:disabled) {
+  transform: translateY(-3px);
+  border-color: var(--rom-accent, #e11d48);
+}
+.rom-occasion-card:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+.rom-occasion-card--active {
+  border-color: var(--rom-accent, #e11d48);
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--rom-accent, #e11d48) 20%, transparent),
+    0 18px 40px -24px color-mix(in srgb, var(--rom-accent, #e11d48) 45%, transparent);
+}
+.rom-occasion-card__icon {
+  font-size: 2rem;
+  line-height: 1;
+}
+.rom-occasion-card__label {
+  font-size: 1rem;
+  color: var(--ink);
+}
+.rom-occasion-card__desc {
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: var(--muted);
+}
+.rom-occasion__status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 18px;
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+
+.romance-launcher {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: clamp(24px, 4vw, 48px) clamp(16px, 3vw, 24px) 56px;
+}
+.romance-launcher__hero {
+  text-align: center;
+  margin-bottom: 36px;
+}
+.romance-launcher__eyebrow {
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--rom-accent, #e11d48);
+  margin: 0 0 10px;
+}
+.romance-launcher__title {
+  font-size: clamp(2rem, 5vw, 3rem);
+  line-height: 1.1;
+  margin: 0 0 12px;
+  color: var(--ink);
+}
+.romance-launcher__sub {
+  margin: 0 auto;
+  max-width: 560px;
+  color: var(--muted);
+  font-size: 1.02rem;
+  line-height: 1.55;
+}
+.romance-launcher__cards-title {
+  text-align: center;
+  font-size: 1.1rem;
+  margin: 0 0 18px;
+  color: var(--ink);
+}
+.romance-launcher__status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 20px;
+  color: var(--muted);
+}
+.rom-occasion-card__glow {
+  position: absolute;
+  inset: auto -20% -40% -20%;
+  height: 80px;
+  background: radial-gradient(
+    ellipse,
+    color-mix(in srgb, var(--rom-accent, #e11d48) 25%, transparent),
+    transparent 70%
+  );
+  pointer-events: none;
+}

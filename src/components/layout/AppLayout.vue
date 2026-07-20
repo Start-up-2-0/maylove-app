@@ -23,13 +23,13 @@
             <path d="M5 9.5V20h14V9.5" stroke-linecap="round" stroke-linejoin="round" />
             <path d="M9.5 20v-6h5v6" stroke-linecap="round" stroke-linejoin="round" />
           </svg>
-          <span>Homenagens</span>
+          <span>Romances</span>
         </RouterLink>
-        <RouterLink to="/dashboard/tributes/new" class="nav-item" active-class="nav-item--active">
+        <RouterLink to="/dashboard/romances/new" class="nav-item" active-class="nav-item--active">
           <svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
             <path d="M12 5v14M5 12h14" stroke-linecap="round" />
           </svg>
-          <span>Nova homenagem</span>
+          <span>Novo romance</span>
         </RouterLink>
 
         <p class="sidebar__label sidebar__label--spaced">Álbuns</p>

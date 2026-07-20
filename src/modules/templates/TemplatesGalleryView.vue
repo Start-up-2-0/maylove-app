@@ -181,7 +181,7 @@ async function use(def: TemplateDefinition) {
   try {
     const tribute = await createTribute(type.id, catalog.id)
     closePreview()
-    await router.push(`/dashboard/tributes/${tribute.id}/edit`)
+    await router.push(`/dashboard/romances/${tribute.id}/edit`)
   } catch (err) {
     createError.value = resolveApiError(err, 'Não foi possível criar a homenagem.')
     creatingSlug.value = null
