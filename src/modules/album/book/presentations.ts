@@ -1,5 +1,6 @@
 import type { BookPresentationDefinition } from './types'
-import { MEMORIAL_PRESENTATION } from '../albumModels'
+
+export const MEMORIAL_PRESENTATION = 'memorial-luz' as const
 
 /** Catálogo completo (lookups + álbuns legados). */
 export const ALL_BOOK_PRESENTATIONS: BookPresentationDefinition[] = [

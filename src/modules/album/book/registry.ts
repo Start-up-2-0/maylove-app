@@ -1,5 +1,5 @@
 import { defineAsyncComponent, type Component } from 'vue'
-import { isMemorialPresentation } from '../albumModels'
+import { isMemorialPresentation } from './presentations'
 
 const ProfessionalGalleryTemplate = defineAsyncComponent(
   () => import('./templates/ProfessionalGalleryTemplate.vue'),

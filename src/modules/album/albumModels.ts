@@ -1,6 +1,9 @@
 import type { AlbumCategory } from '@/api/types'
 import type { BookPresentationId } from './book/types'
+import { MEMORIAL_PRESENTATION } from './book/presentations'
+
 export { isMemorialPresentation } from './book/presentations'
+export { MEMORIAL_PRESENTATION }
 
 export interface AlbumModelDefinition {
   id: string
@@ -15,8 +18,6 @@ export interface AlbumModelDefinition {
   /** Capítulos sugeridos ao criar (memorial). */
   seedChapters?: string[]
 }
-
-export const MEMORIAL_PRESENTATION = 'memorial-luz' as const
 
 export const ALBUM_MODELS: AlbumModelDefinition[] = [
   {
