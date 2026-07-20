@@ -16,6 +16,12 @@
       />
     </template>
 
+    <ExperienceTimelineList
+      v-if="showInjectedTimeline"
+      :items="content.timeline"
+      root-class="scroll-timeline"
+    />
+
     <section v-if="mode === 'full' && shareUrl" class="exp-section exp-share">
       <div class="exp-container exp-share__inner">
         <p class="exp-eyebrow">Compartilhe esta homenagem</p>
@@ -33,7 +39,9 @@ import { getSectionComponent } from '@/templates/sections'
 import ShareBar from '../shared/ShareBar.vue'
 import QrCode from '../shared/QrCode.vue'
 import SpecialDateBlock from '../shared/SpecialDateBlock.vue'
+import ExperienceTimelineList from '../shared/ExperienceTimelineList.vue'
 import { buildScrollFlowItems, filterSectionsForSpecialDate } from '@/utils/specialDate'
+import { shouldShowTimelineModule } from '@/utils/tributeModules'
 
 const props = defineProps<LayoutComponentProps>()
 
@@ -49,6 +57,16 @@ const orderedSections = computed<SectionInstance[]>(() => {
 })
 
 const flowItems = computed(() => buildScrollFlowItems(orderedSections.value, props.content))
+
+const hasTimelineSection = computed(() =>
+  orderedSections.value.some((section) => section.type === 'timeline'),
+)
+
+const showInjectedTimeline = computed(
+  () =>
+    !hasTimelineSection.value &&
+    shouldShowTimelineModule(props.content.modules, props.content.timeline, 'scroll'),
+)
 </script>
 
 <style scoped>
@@ -64,5 +82,8 @@ const flowItems = computed(() => buildScrollFlowItems(orderedSections.value, pro
   flex-direction: column;
   align-items: center;
   gap: 22px;
+}
+.scroll-timeline {
+  padding-top: 0;
 }
 </style>

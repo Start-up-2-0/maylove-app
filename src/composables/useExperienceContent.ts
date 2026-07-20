@@ -20,6 +20,10 @@ import {
   timelineItemHasContent,
 } from '@/utils/timeline'
 import {
+  resolveTributeModules,
+  shouldBoostLetterContent,
+} from '@/utils/tributeModules'
+import {
   resolveSpecialDateConfig,
   specialDateIso,
 } from '@/utils/specialDate'
@@ -275,16 +279,25 @@ export function resolveContent(def: TemplateDefinition, opts: ResolveOptions): E
     def.layout ??
     'scroll'
 
-  const includeOpeningMessage = (() => {
+  const modules = resolveTributeModules(form?.modules, content.modules)
+
+  let includeOpeningMessage = (() => {
     const optional = layoutUsesOptionalTextBlocks(resolvedLayout)
     if (!optional) return true
     return resolveTextFlag(form?.include_opening_message, content.include_opening_message, message)
   })()
-  const includeClosingMessage = (() => {
+  let includeClosingMessage = (() => {
     const optional = layoutUsesOptionalTextBlocks(resolvedLayout)
     if (!optional) return true
     return resolveTextFlag(form?.include_closing_message, content.include_closing_message, closingMessage)
   })()
+
+  if (shouldBoostLetterContent(modules, resolvedLayout, Boolean(message?.trim()))) {
+    includeOpeningMessage = true
+  }
+  if (shouldBoostLetterContent(modules, resolvedLayout, Boolean(closingMessage?.trim()))) {
+    includeClosingMessage = true
+  }
 
   return {
     honoreeName,
@@ -319,6 +332,7 @@ export function resolveContent(def: TemplateDefinition, opts: ResolveOptions): E
     textStyle,
     slug: detail?.slug || publicData?.slug || tribute?.slug || '',
     viewsCount: publicData ? publicData.views_count : null,
+    modules,
   }
 }
 

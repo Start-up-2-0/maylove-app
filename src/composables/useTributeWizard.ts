@@ -139,7 +139,7 @@ export function useTributeWizard(tributeId: string) {
     closing_message: form.closing_message || null,
     special_date: form.special_date_config.enabled
       ? form.special_date_config.date || form.special_date || null
-      : form.special_date || null,
+      : null,
     color_primary: form.color_primary,
     music_source: form.music_source,
     music_track_id: form.music_source === 'library' ? form.music_track_id : null,
@@ -183,7 +183,7 @@ export function useTributeWizard(tributeId: string) {
     },
   }))
 
-  const { saving, savedAt, error: saveError } = useAutosave(autosavePayload, async (payload) => {
+  const { saving, savedAt, error: saveError, flush: flushAutosave } = useAutosave(autosavePayload, async (payload) => {
     if (!tribute.value || !isEditable.value) return
     tribute.value = await updateTribute(tributeId, payload)
   })
@@ -304,5 +304,6 @@ export function useTributeWizard(tributeId: string) {
     load,
     reload,
     syncFormFromTribute,
+    flushAutosave,
   }
 }

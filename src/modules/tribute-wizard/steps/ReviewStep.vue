@@ -25,6 +25,13 @@
         </div>
       </section>
 
+      <section v-if="previewHints.length" class="wiz-card rv-hints" aria-label="Como a prévia funciona">
+        <h3 class="wiz-card__title">Como sua homenagem será exibida</h3>
+        <ul class="rv-hints__list">
+          <li v-for="(hint, index) in previewHints" :key="index">{{ hint }}</li>
+        </ul>
+      </section>
+
       <section class="wiz-card rv-preview">
         <div class="rv-preview__head">
           <h3 class="rv-preview__title">
@@ -72,11 +79,13 @@
 import { computed } from 'vue'
 import type { TributeDetail, WizardStep } from '@/api/types'
 import type { useTributeWizard } from '@/composables/useTributeWizard'
+import type { TemplateDefinition } from '@/templates/types'
 import {
   TRIBUTE_MODULE_OPTIONS,
   TRIBUTE_WIZARD_STEP_LABELS,
   WIZARD_TRIBUTE_TYPE_OPTIONS,
 } from '@/modules/tribute-wizard/tributeWizardSteps'
+import { buildReviewPreviewHints } from '@/modules/tribute-wizard/previewHints'
 import WizardStepHeader from '@/components/wizard/WizardStepHeader.vue'
 import TributeLivePreview from '@/components/wizard/TributeLivePreview.vue'
 
@@ -84,6 +93,7 @@ const props = defineProps<{
   tributeId: string
   form: ReturnType<typeof useTributeWizard>['form']
   tribute: TributeDetail | null
+  definition?: TemplateDefinition | null
   refreshToken: number
   generating?: boolean
 }>()
@@ -103,6 +113,10 @@ const activeModules = computed(() =>
 
 const photoCount = computed(
   () => (props.tribute?.media ?? []).filter((m) => m.media_type === 'photo').length,
+)
+
+const previewHints = computed(() =>
+  buildReviewPreviewHints(props.form, props.definition?.layout),
 )
 
 const summaryItems = computed(() => [
@@ -215,5 +229,15 @@ const summaryItems = computed(() => [
 }
 .rv-actions {
   margin-top: 0;
+}
+.rv-hints__list {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 0.88rem;
+  color: var(--muted);
+  line-height: 1.45;
 }
 </style>

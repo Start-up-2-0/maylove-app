@@ -71,9 +71,10 @@
                 :tribute-id="tributeId"
                 :form="form"
                 :tribute="tribute"
+                :definition="definition"
                 :refresh-token="previewRefreshToken"
                 :generating="previewGenerating"
-                @go-publish="goToStep('publish')"
+                @go-publish="goToPublish"
                 @edit="goToStep"
                 @regenerate="refreshPreview"
               />
@@ -152,6 +153,7 @@ const {
   photos,
   load,
   reload,
+  flushAutosave,
 } = useTributeWizard(tributeId)
 
 const definition = computed(() => getTemplateDefinition(tribute.value?.template.slug))
@@ -198,11 +200,15 @@ async function nextStep() {
   navigating.value = true
   try {
     if (currentStep.value === 'review') {
+      await flushAutosave()
       goToStep('publish')
       return
     }
     const next = nextWizardStep(currentStep.value)
     if (next) {
+      if (next === 'review') {
+        await flushAutosave()
+      }
       currentStep.value = next
       if (next === 'review') await refreshPreview()
     }
@@ -214,11 +220,17 @@ async function nextStep() {
 async function refreshPreview() {
   previewGenerating.value = true
   try {
+    await flushAutosave()
     await reload()
     previewRefreshToken.value += 1
   } finally {
     previewGenerating.value = false
   }
+}
+
+async function goToPublish() {
+  await flushAutosave()
+  goToStep('publish')
 }
 
 async function onMediaChanged() {

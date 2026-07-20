@@ -1,5 +1,6 @@
 <template>
-  <div class="cin" :class="{ 'cin--preview': mode === 'preview', 'cin--dramatic': config?.dramatic }">
+  <div class="cin-root" :class="{ 'cin-root--preview': mode === 'preview' }">
+    <div class="cin" :class="{ 'cin--preview': mode === 'preview', 'cin--dramatic': config?.dramatic }">
     <div class="cin__stage">
       <transition-group name="cin-slide" tag="div" class="cin__slides">
         <div
@@ -67,6 +68,13 @@
       :url="shareUrl"
       :text="content.title"
     />
+    </div>
+
+    <ExperienceTimelineList
+      v-if="showTimeline"
+      :items="content.timeline"
+      root-class="cin__timeline-block"
+    />
   </div>
 </template>
 
@@ -77,6 +85,8 @@ import type { ExperienceMediaItem, LayoutComponentProps } from '@/templates/type
 import { useExperienceAudio } from '@/composables/experienceAudio'
 import ShareBar from '../shared/ShareBar.vue'
 import RichText from '../shared/RichText.vue'
+import ExperienceTimelineList from '../shared/ExperienceTimelineList.vue'
+import { shouldShowTimelineModule } from '@/utils/tributeModules'
 
 interface Slide {
   photo?: ExperienceMediaItem
@@ -93,6 +103,10 @@ const paused = ref(false)
 let timer: number | undefined
 
 const slideMs = computed(() => Math.round(6000 * props.theme.speedMultiplier))
+
+const showTimeline = computed(() =>
+  shouldShowTimelineModule(props.content.modules, props.content.timeline, 'cinematic'),
+)
 
 function bgStyle(url: string): CSSProperties {
   return { backgroundImage: `url("${url}")`, animationPlayState: paused.value ? 'paused' : 'running' }
@@ -155,6 +169,19 @@ onBeforeUnmount(() => window.clearTimeout(timer))
 </script>
 
 <style scoped>
+.cin-root {
+  display: flex;
+  flex-direction: column;
+  min-height: var(--exp-stage, 100svh);
+}
+.cin-root--preview {
+  min-height: auto;
+}
+.cin__timeline-block {
+  flex-shrink: 0;
+  padding: clamp(32px, 6vw, 64px) clamp(16px, 4vw, 32px);
+  background: var(--exp-bg, #fff);
+}
 .cin {
   position: relative;
   height: var(--exp-stage, 100svh);

@@ -1,4 +1,4 @@
-import type { TributeEffect } from '@/api/types'
+import type { TributeEffect, TributeModulesConfig } from '@/api/types'
 import type { ResolvedSpecialDateConfig } from '@/utils/specialDate'
 
 /**
@@ -198,6 +198,8 @@ export interface ExperienceContent {
   textStyle: TextStyle | null
   slug: string
   viewsCount: number | null
+  /** Recursos extras ativados no wizard (carta, timeline, QR…). */
+  modules: Required<TributeModulesConfig>
 }
 
 export interface ResolvedTheme {
