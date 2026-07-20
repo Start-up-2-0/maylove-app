@@ -124,22 +124,20 @@
 
     <template v-if="showPreviewColumn" #preview>
       <RomancePhonePreview
-        :experience-label="experience ? `${experience.icon} ${experience.label}` : ''"
-        :hint="experience?.opening"
+        :experience-name="experience?.label"
+        :experience-icon="experience?.icon"
+        :step-current="stepIndex + 1"
+        :step-total="experienceSteps.length"
       >
         <div v-if="previewGenerating" class="rom-preview-panel__loading">
           <span class="ml-spinner ml-spinner--sm" />
         </div>
-          <TributeLivePreview
-            v-else
-            :tribute-id="tributeId"
-            :form="form"
-            :tribute="tribute"
-            :refresh-token="previewRefreshToken"
-            faithful
-            compact
-            :show-viewport-tabs="false"
-          />
+        <RomanceCardsLivePreview
+          v-else
+          :form="form"
+          :experience-id="experienceId"
+          :photo-count="photos.length"
+        />
       </RomancePhonePreview>
     </template>
   </RomanceBuildShell>
@@ -169,6 +167,7 @@ import { ROMANCE_BUILD_HEADLINE, ROMANCE_LOVE_CARDS_TAGLINE } from '@/modules/ro
 import RomanceBuildProgress from '@/modules/romance-wizard/components/RomanceBuildProgress.vue'
 import RomanceBuildShell from '@/modules/romance-wizard/components/RomanceBuildShell.vue'
 import RomancePhonePreview from '@/modules/romance-wizard/components/RomancePhonePreview.vue'
+import RomanceCardsLivePreview from '@/modules/romance-wizard/components/RomanceCardsLivePreview.vue'
 import RomanceWizardFooter from '@/modules/romance-wizard/components/RomanceWizardFooter.vue'
 import RomanceRecipientStep from '@/modules/romance-wizard/steps/RomanceRecipientStep.vue'
 import RomancePhotosStep from '@/modules/romance-wizard/steps/RomancePhotosStep.vue'
@@ -179,7 +178,6 @@ import RomanceVideoStep from '@/modules/romance-wizard/steps/RomanceVideoStep.vu
 import RomanceChaptersStep from '@/modules/romance-wizard/steps/RomanceChaptersStep.vue'
 import RomanceEffectsStep from '@/modules/romance-wizard/steps/RomanceEffectsStep.vue'
 import RomanceFinishStep from '@/modules/romance-wizard/steps/RomanceFinishStep.vue'
-import TributeLivePreview from '@/components/wizard/TributeLivePreview.vue'
 import '@/modules/romance-wizard/styles/romance-wizard.css'
 
 const route = useRoute()

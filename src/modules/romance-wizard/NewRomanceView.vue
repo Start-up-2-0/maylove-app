@@ -51,22 +51,13 @@
 
     <template #preview>
       <RomancePhonePreview
-        :experience-label="previewExperience ? `${previewExperience.icon} ${previewExperience.label}` : ''"
-        :hint="previewExperience?.opening"
+        :experience-name="previewExperience?.label"
+        :experience-icon="previewExperience?.icon ?? '✨'"
+        :step-current="1"
+        :step-total="previewExperience?.steps.length ?? 0"
       >
-        <RomancePreviewPlaceholder
-          v-if="previewExperience"
-          :icon="previewExperience.icon"
-          :title="previewTitle"
-          :message="previewMessage"
-          :show-photo-slot="previewExperience.steps.includes('photos')"
-        />
-        <RomancePreviewPlaceholder
-          v-else
-          icon="✨"
-          title="Seu título aparecerá aqui"
-          message="Sua mensagem aparecerá aqui enquanto você escolhe a experiência."
-          :show-photo-slot="false"
+        <RomanceCardsLivePreview
+          :experience-id="hoveredExperience"
         />
       </RomancePhonePreview>
     </template>
@@ -80,7 +71,7 @@ import { resolveApiError } from '@/api/errors'
 import RomanceBuildShell from '@/modules/romance-wizard/components/RomanceBuildShell.vue'
 import RomanceFormShell from '@/modules/romance-wizard/components/RomanceFormShell.vue'
 import RomancePhonePreview from '@/modules/romance-wizard/components/RomancePhonePreview.vue'
-import RomancePreviewPlaceholder from '@/modules/romance-wizard/components/RomancePreviewPlaceholder.vue'
+import RomanceCardsLivePreview from '@/modules/romance-wizard/components/RomanceCardsLivePreview.vue'
 import {
   ROMANCE_EXPERIENCES,
   type RomanceExperienceId,
@@ -92,7 +83,6 @@ import {
   ROMANCE_LOVE_CARDS_TAGLINE,
   ROMANCE_PICKER_PROMPT,
 } from '@/modules/romance-wizard/romanceBuildCopy'
-import { defaultRomanceTitle } from '@/modules/romance-wizard/romanceCopy'
 import { startRomanceExperience } from '@/modules/romance-wizard/romanceExperienceFlow'
 import '@/modules/romance-wizard/styles/romance-wizard.css'
 
@@ -102,18 +92,6 @@ const error = ref('')
 const hoveredExperience = ref<RomanceExperienceId | null>(null)
 
 const previewExperience = computed(() => getRomanceExperience(hoveredExperience.value))
-
-const previewTitle = computed(() => {
-  const exp = previewExperience.value
-  if (!exp) return ''
-  return defaultRomanceTitle(exp.wizardTypeId, exp.id)
-})
-
-const previewMessage = computed(() => {
-  const exp = previewExperience.value
-  if (!exp) return ''
-  return exp.description
-})
 
 async function startExperience(experienceId: RomanceExperienceId) {
   if (creating.value) return
