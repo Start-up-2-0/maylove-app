@@ -172,9 +172,8 @@ function diffToUnits(diffMs: number) {
 .rom-cards-preview {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 10px 10px 16px;
-  min-height: 100%;
+  gap: 10px;
+  padding: 8px 8px 14px;
   background: #f3ece2;
 }
 .rom-cards-preview__card {
@@ -188,8 +187,8 @@ function diffToUnits(diffMs: number) {
 }
 .rom-cards-preview__hero-bg {
   position: relative;
-  min-height: 210px;
-  padding: 16px 14px 18px;
+  min-height: 168px;
+  padding: 14px 12px 16px;
   background:
     radial-gradient(circle at 50% 20%, rgb(255 180 120 / 35%), transparent 55%),
     linear-gradient(180deg, #ffd8a8 0%, #f8c38b 45%, #e8a865 100%);

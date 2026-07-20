@@ -124,6 +124,9 @@
 
     <template v-if="showPreviewColumn" #preview>
       <RomancePhonePreview
+        compact
+        :experience-label="experience ? `${experience.icon} ${experience.label}` : ''"
+        :hint="experience?.opening"
         :experience-name="experience?.label"
         :experience-icon="experience?.icon"
         :step-current="stepIndex + 1"

@@ -51,6 +51,9 @@
 
     <template #preview>
       <RomancePhonePreview
+        compact
+        :experience-label="previewExperience ? `${previewExperience.icon} ${previewExperience.label}` : ''"
+        :hint="previewExperience?.opening"
         :experience-name="previewExperience?.label"
         :experience-icon="previewExperience?.icon ?? '✨'"
         :step-current="1"

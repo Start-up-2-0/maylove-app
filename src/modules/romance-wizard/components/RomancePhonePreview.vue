@@ -1,17 +1,21 @@
 <template>
-  <div class="rom-phone-preview">
-    <p class="rom-phone-preview__eyebrow">{{ eyebrow }}</p>
+  <div class="rom-phone-preview" :class="{ 'rom-phone-preview--compact': compact }">
+    <div v-if="showHead" class="rom-phone-preview__head">
+      <p class="rom-phone-preview__eyebrow">{{ eyebrow }}</p>
+      <p v-if="experienceLabel" class="rom-phone-preview__experience">{{ experienceLabel }}</p>
+      <p v-if="hint" class="rom-phone-preview__hint">{{ hint }}</p>
+    </div>
 
     <div class="rom-phone-preview__device">
       <div class="rom-phone-preview__bezel">
         <div class="rom-phone-preview__screen">
-          <header class="rom-phone-preview__inbar">
+          <header v-if="!compact" class="rom-phone-preview__inbar">
             <span class="rom-phone-preview__inbar-back" aria-hidden="true">‹</span>
             <span class="rom-phone-preview__inbar-title">{{ experienceName || 'MayLov' }}</span>
             <span class="rom-phone-preview__inbar-spacer" />
           </header>
 
-          <div v-if="experienceName" class="rom-phone-preview__selector">
+          <div v-if="!compact && experienceName" class="rom-phone-preview__selector">
             <span>{{ experienceName }}</span>
             <span v-if="stepTotal" class="rom-phone-preview__selector-meta">{{ stepCurrent }} / {{ stepTotal }}</span>
           </div>
@@ -23,7 +27,7 @@
       </div>
     </div>
 
-    <div v-if="experienceName && stepTotal" class="rom-phone-preview__dock">
+    <div v-if="!compact && experienceName && stepTotal" class="rom-phone-preview__dock">
       <button type="button" class="rom-phone-preview__dock-btn" disabled aria-hidden="true">‹</button>
       <div class="rom-phone-preview__dock-pill">
         <span v-if="experienceIcon" class="rom-phone-preview__dock-icon">{{ experienceIcon }}</span>
@@ -35,22 +39,32 @@
 </template>
 
 <script setup lang="ts">
-withDefaults(
+import { computed } from 'vue'
+
+const props = withDefaults(
   defineProps<{
     eyebrow?: string
+    experienceLabel?: string
+    hint?: string
     experienceName?: string
     experienceIcon?: string
     stepCurrent?: number
     stepTotal?: number
+    compact?: boolean
   }>(),
   {
-    eyebrow: 'Prévia ao vivo',
+    eyebrow: 'Veja como ficará',
+    experienceLabel: '',
+    hint: '',
     experienceName: '',
     experienceIcon: '',
     stepCurrent: 0,
     stepTotal: 0,
+    compact: true,
   },
 )
+
+const showHead = computed(() => Boolean(props.experienceLabel || props.hint))
 </script>
 
 <style scoped>
@@ -58,42 +72,55 @@ withDefaults(
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 14px;
-  height: 100%;
+  gap: 12px;
   width: 100%;
 }
+.rom-phone-preview__head {
+  width: 100%;
+  max-width: 280px;
+  text-align: center;
+}
 .rom-phone-preview__eyebrow {
-  margin: 0;
-  font-size: 0.72rem;
+  margin: 0 0 4px;
+  font-size: 0.68rem;
   font-weight: 800;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--rom-muted, #9f1239);
-  text-align: center;
+}
+.rom-phone-preview__experience {
+  margin: 0 0 4px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+.rom-phone-preview__hint {
+  margin: 0;
+  font-size: 0.76rem;
+  line-height: 1.4;
+  color: var(--muted);
 }
 .rom-phone-preview__device {
   display: flex;
   justify-content: center;
   width: 100%;
-  flex: 1;
-  min-height: 0;
 }
 .rom-phone-preview__bezel {
-  width: min(100%, clamp(300px, 30vw, 390px));
-  padding: 12px 10px;
-  border-radius: 34px;
+  width: min(100%, 272px);
+  padding: 10px 8px;
+  border-radius: 28px;
   background: linear-gradient(180deg, #243049 0%, #121a2b 100%);
-  border: 3px solid #0b1020;
+  border: 2px solid #0b1020;
   box-shadow:
-    0 28px 60px -28px rgb(15 23 42 / 55%),
+    0 20px 44px -24px rgb(15 23 42 / 50%),
     inset 0 0 0 1px rgb(255 255 255 / 8%);
 }
 .rom-phone-preview__screen {
   display: flex;
   flex-direction: column;
-  min-height: 520px;
-  max-height: min(74vh, 700px);
-  border-radius: 24px;
+  height: min(52vh, 460px);
+  min-height: 320px;
+  border-radius: 20px;
   overflow: hidden;
   background: #f3ece2;
   border: 2px solid #0b1020;
@@ -139,10 +166,12 @@ withDefaults(
   opacity: 0.72;
 }
 .rom-phone-preview__content {
-  flex: 1;
+  flex: 1 1 auto;
   min-height: 0;
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
   overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 .rom-phone-preview__dock {
   display: flex;
@@ -189,12 +218,11 @@ withDefaults(
   font-size: 0.72rem;
   line-height: 1;
 }
-@media (min-width: 1280px) {
-  .rom-phone-preview__bezel {
-    width: min(100%, clamp(320px, 22vw, 400px));
-  }
-  .rom-phone-preview__screen {
-    min-height: 560px;
-  }
+.rom-phone-preview--compact .rom-phone-preview__bezel {
+  width: min(100%, 260px);
+}
+.rom-phone-preview--compact .rom-phone-preview__screen {
+  height: min(48vh, 420px);
+  min-height: 300px;
 }
 </style>

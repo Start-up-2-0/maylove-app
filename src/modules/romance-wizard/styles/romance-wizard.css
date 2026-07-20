@@ -73,6 +73,30 @@
 .rom-build-shell__preview :deep(.rom-preview-panel__loading) {
   display: grid;
   place-items: center;
+  min-height: 200px;
+}
+.rom-build-shell__preview :deep(.rom-phone-preview) {
+  width: 100%;
+}
+.rom-build-shell__preview :deep(.rom-phone-preview__content) {
+  display: block;
+}
+.rom-build-shell__preview :deep(.rom-cards-preview) {
+  width: 100%;
+}
+.rom-build-shell__preview :deep(.tribute-live-preview) {
+  height: 100%;
+}
+.rom-build-shell__preview :deep(.preview-viewport-wrap) {
+  min-height: 280px;
+  max-height: none;
+}
+.rom-build-shell__preview :deep(.preview-viewport-wrap--faithful) {
+  min-height: auto;
+  max-height: none;
+  overflow: auto;
+}
+.rom-build-shell__preview :deep(.preview-viewport-frame) {
   min-height: 280px;
 }
 .romance-wizard__main {

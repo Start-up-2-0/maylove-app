@@ -136,12 +136,12 @@ withDefaults(
 }
 @media (min-width: 1024px) {
   .rom-build-shell__body--split {
-    grid-template-columns: minmax(380px, 46fr) minmax(420px, 54fr);
+    grid-template-columns: minmax(420px, 1fr) minmax(260px, 340px);
   }
 }
 @media (min-width: 1440px) {
   .rom-build-shell__body--split {
-    grid-template-columns: minmax(420px, 44fr) minmax(520px, 56fr);
+    grid-template-columns: minmax(480px, 1fr) minmax(280px, 360px);
   }
 }
 .rom-build-shell__main {
@@ -158,7 +158,8 @@ withDefaults(
   border: 1px solid color-mix(in srgb, var(--rom-accent, #e11d48) 12%, var(--border));
   background: color-mix(in srgb, var(--rom-accent-soft, #fff1f2) 35%, var(--surface));
   box-shadow: 0 24px 56px -40px color-mix(in srgb, var(--rom-accent, #e11d48) 28%, transparent);
-  min-height: min(72vh, 760px);
+  align-items: center;
+  min-height: 0;
 }
 .rom-build-shell__footer {
   position: sticky;
