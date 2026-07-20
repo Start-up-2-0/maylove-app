@@ -94,7 +94,8 @@
 import { computed } from 'vue'
 import type { AlbumMedia } from '@/api/types'
 import type { useAlbumWizard } from '@/composables/useAlbumWizard'
-import { isMemorialCategory, isMemorialPresentation } from '../albumModels'
+import { isMemorialCategory } from '../albumModels'
+import { isMemorialPresentation } from '../book/presentations'
 import WizardStepHeader from '@/components/wizard/WizardStepHeader.vue'
 
 const props = defineProps<{

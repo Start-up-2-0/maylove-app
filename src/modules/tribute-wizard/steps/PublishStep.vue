@@ -1,5 +1,5 @@
 <template>
-  <div class="publish-step">
+  <div class="publish-step wiz-step-content">
     <WizardStepHeader
       title="Publicar"
       :description="billingEnabled
@@ -7,77 +7,88 @@
         : 'Valide os requisitos e publique a homenagem.'"
     />
 
-    <div v-if="paymentMessage" class="ml-alert mb-4" :class="paymentAlertClass">
-      {{ paymentMessage }}
+    <div class="wiz-card-stack">
+      <div v-if="paymentMessage" class="ml-alert" :class="paymentAlertClass">
+        {{ paymentMessage }}
+      </div>
+
+      <section class="wiz-card">
+        <h3 class="wiz-card__title">Validação</h3>
+
+        <div v-if="loadingValidation" class="validation-loading">
+          <span class="ml-spinner" />
+          Validando homenagem...
+        </div>
+
+        <div v-else class="validation">
+          <div v-if="!publishBlocked" class="ml-alert ml-alert--success">
+            <svg class="ml-alert__icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 6 9 17l-5-5" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            <span>Tudo certo para publicar.</span>
+          </div>
+          <div v-if="validation?.errors.length || schemaIssues.length" class="ml-alert ml-alert--danger">
+            <ul class="issue-list">
+              <li v-for="issue in schemaIssues" :key="issue.field + issue.code">{{ issue.message }}</li>
+              <li v-for="issue in validation?.errors ?? []" :key="issue.field + issue.code">{{ issue.message }}</li>
+            </ul>
+          </div>
+          <div v-if="validation?.warnings.length" class="ml-alert ml-alert--warning">
+            <ul class="issue-list">
+              <li v-for="issue in validation.warnings" :key="issue.field + issue.code">{{ issue.message }}</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section v-if="tribute?.status === 'published'" class="wiz-card published-card">
+        <h3 class="published-card__title">Homenagem publicada!</h3>
+        <p class="text-muted published-card__sub">Compartilhe o link com quem você ama.</p>
+        <div class="published-card__row">
+          <input :value="publicUrl" readonly class="ml-input" />
+          <button class="ml-btn ml-btn--primary" @click="copyLink">
+            {{ copied ? 'Copiado!' : 'Copiar link' }}
+          </button>
+        </div>
+        <a :href="publicUrl" target="_blank" class="ml-btn ml-btn--secondary">Abrir página publicada</a>
+
+        <div v-if="showQrCode" class="published-card__qr">
+          <h4>QR Code</h4>
+          <img :src="qrCodeUrl" width="180" height="180" alt="QR Code da homenagem" />
+          <p class="text-muted">Escaneie para abrir a homenagem no celular.</p>
+        </div>
+      </section>
+
+      <section v-else class="wiz-card">
+        <h3 class="wiz-card__title">Publicação</h3>
+        <p class="wiz-card__hint">Quando estiver pronto, publique ou pague para colocar no ar.</p>
+
+        <div class="publish-actions">
+          <button
+            v-if="canPublishDirectly"
+            class="ml-btn ml-btn--primary ml-btn--lg"
+            :disabled="publishBlocked || publishing"
+            @click="publish"
+          >
+            <span v-if="publishing" class="ml-spinner ml-spinner--sm" />
+            {{ publishButtonLabel }}
+          </button>
+          <button
+            v-if="billingEnabled && !hasSubscription"
+            class="ml-btn ml-btn--primary ml-btn--lg"
+            :disabled="publishBlocked || checkingOut"
+            @click="startCheckout"
+          >
+            <span v-if="checkingOut" class="ml-spinner ml-spinner--sm" />
+            Pagar R$ {{ priceLabel }} com PIX
+          </button>
+        </div>
+
+        <PixCheckoutPanel :checkout="checkout" @paid="onPixPaid" />
+
+        <p v-if="actionError" class="ml-alert ml-alert--danger publish-error">{{ actionError }}</p>
+      </section>
     </div>
-
-    <div v-if="loadingValidation" class="validation-loading">
-      <span class="ml-spinner" />
-      Validando homenagem...
-    </div>
-
-    <section v-else class="validation">
-      <div v-if="!publishBlocked" class="ml-alert ml-alert--success">
-        <svg class="ml-alert__icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M20 6 9 17l-5-5" stroke-linecap="round" stroke-linejoin="round" />
-        </svg>
-        <span>Tudo certo para publicar.</span>
-      </div>
-      <div v-if="validation?.errors.length || schemaIssues.length" class="ml-alert ml-alert--danger">
-        <ul class="issue-list">
-          <li v-for="issue in schemaIssues" :key="issue.field + issue.code">{{ issue.message }}</li>
-          <li v-for="issue in validation?.errors ?? []" :key="issue.field + issue.code">{{ issue.message }}</li>
-        </ul>
-      </div>
-      <div v-if="validation?.warnings.length" class="ml-alert ml-alert--warning mt-3">
-        <ul class="issue-list">
-          <li v-for="issue in validation.warnings" :key="issue.field + issue.code">{{ issue.message }}</li>
-        </ul>
-      </div>
-    </section>
-
-    <div v-if="tribute?.status === 'published'" class="ml-card published-card">
-      <h3 class="published-card__title">Homenagem publicada!</h3>
-      <p class="text-muted published-card__sub">Compartilhe o link com quem você ama.</p>
-      <div class="published-card__row">
-        <input :value="publicUrl" readonly class="ml-input" />
-        <button class="ml-btn ml-btn--primary" @click="copyLink">
-          {{ copied ? 'Copiado!' : 'Copiar link' }}
-        </button>
-      </div>
-      <a :href="publicUrl" target="_blank" class="ml-btn ml-btn--secondary">Abrir página publicada</a>
-
-      <div v-if="showQrCode" class="published-card__qr">
-        <h4>QR Code</h4>
-        <img :src="qrCodeUrl" width="180" height="180" alt="QR Code da homenagem" />
-        <p class="text-muted">Escaneie para abrir a homenagem no celular.</p>
-      </div>
-    </div>
-
-    <div v-else class="publish-actions">
-      <button
-        v-if="canPublishDirectly"
-        class="ml-btn ml-btn--primary ml-btn--lg"
-        :disabled="publishBlocked || publishing"
-        @click="publish"
-      >
-        <span v-if="publishing" class="ml-spinner ml-spinner--sm" />
-        {{ publishButtonLabel }}
-      </button>
-      <button
-        v-if="billingEnabled && !hasSubscription"
-        class="ml-btn ml-btn--primary ml-btn--lg"
-        :disabled="publishBlocked || checkingOut"
-        @click="startCheckout"
-      >
-        <span v-if="checkingOut" class="ml-spinner ml-spinner--sm" />
-        Pagar R$ {{ priceLabel }} com PIX
-      </button>
-    </div>
-
-    <PixCheckoutPanel :checkout="checkout" @paid="onPixPaid" />
-
-    <p v-if="actionError" class="ml-alert ml-alert--danger mt-3">{{ actionError }}</p>
   </div>
 </template>
 
@@ -268,24 +279,17 @@ async function copyLink() {
 </script>
 
 <style scoped>
-.mb-4 {
-  margin-bottom: 16px;
-}
-.mt-3 {
-  margin-top: 12px;
-}
 .validation-loading {
   display: flex;
   align-items: center;
   gap: 10px;
   color: var(--muted);
-  padding: 16px 0;
+  padding: 8px 0;
 }
 .validation {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  margin-bottom: 20px;
 }
 .issue-list {
   list-style: disc;
@@ -295,12 +299,9 @@ async function copyLink() {
   flex-direction: column;
   gap: 4px;
 }
-
-.published-card {
-  padding: 24px;
-}
 .published-card__title {
   font-size: 1.25rem;
+  font-weight: 600;
 }
 .published-card__sub {
   margin: 6px 0 16px;
@@ -326,13 +327,14 @@ async function copyLink() {
   border: 1px solid var(--border);
   background: #fff;
 }
-
 .publish-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
 }
-
+.publish-error {
+  margin-top: 12px;
+}
 @media (max-width: 560px) {
   .published-card__row {
     grid-template-columns: 1fr;

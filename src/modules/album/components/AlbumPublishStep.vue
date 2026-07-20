@@ -82,7 +82,8 @@ import { resolveApiError } from '@/api/errors'
 import WizardStepHeader from '@/components/wizard/WizardStepHeader.vue'
 import PixCheckoutPanel from '@/components/billing/PixCheckoutPanel.vue'
 import AlbumQrCard from './AlbumQrCard.vue'
-import { isMemorialCategory, isMemorialPresentation } from '../albumModels'
+import { isMemorialCategory } from '../albumModels'
+import { isMemorialPresentation } from '../book/presentations'
 
 const props = defineProps<{
   albumId: string

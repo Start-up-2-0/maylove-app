@@ -2,9 +2,6 @@ import type { AlbumCategory } from '@/api/types'
 import type { BookPresentationId } from './book/types'
 import { MEMORIAL_PRESENTATION } from './book/presentations'
 
-export { isMemorialPresentation } from './book/presentations'
-export { MEMORIAL_PRESENTATION }
-
 export interface AlbumModelDefinition {
   id: string
   category: AlbumCategory

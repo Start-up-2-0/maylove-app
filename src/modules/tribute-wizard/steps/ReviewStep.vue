@@ -2,10 +2,15 @@
   <div class="review-step">
     <WizardStepHeader
       title="Revisão"
-      description="Confira o resumo completo antes de publicar. Toque em qualquer seção para editar."
+      description="Confira o resumo e veja como a homenagem ficará antes de publicar."
     />
 
-    <div class="rv-summary">
+    <div class="wiz-card-stack">
+      <section class="wiz-card">
+        <h3 class="wiz-card__title">Resumo</h3>
+        <p class="wiz-card__hint">Clique em uma seção para editar.</p>
+
+        <div class="rv-summary">
       <button
         v-for="item in summaryItems"
         :key="item.step"
@@ -17,29 +22,48 @@
         <span class="rv-item__value">{{ item.value }}</span>
         <span class="rv-item__edit">Editar →</span>
       </button>
-    </div>
+        </div>
+      </section>
 
-    <section class="rv-preview">
-      <h3 class="rv-preview__title">
-        <span class="rv-preview__dot" />
-        Prévia da homenagem
-      </h3>
-      <TributeLivePreview
-        :tribute-id="tributeId"
-        :form="form"
-        :tribute="tribute"
-        :refresh-token="refreshToken"
-        faithful
-      />
-    </section>
+      <section class="wiz-card rv-preview">
+        <div class="rv-preview__head">
+          <h3 class="rv-preview__title">
+            <span class="rv-preview__dot" />
+            Prévia da homenagem
+          </h3>
+          <button
+            type="button"
+            class="ml-btn ml-btn--secondary ml-btn--sm"
+            :disabled="generating"
+            @click="$emit('regenerate')"
+          >
+            {{ generating ? 'Gerando…' : 'Atualizar prévia' }}
+          </button>
+        </div>
 
-    <div class="rv-actions">
+        <section v-if="generating" class="preview-loading" aria-live="polite">
+          <span class="ml-spinner" />
+          <p>Gerando prévia da homenagem…</p>
+        </section>
+
+        <TributeLivePreview
+          v-else
+          :tribute-id="tributeId"
+          :form="form"
+          :tribute="tribute"
+          :refresh-token="refreshToken"
+          faithful
+        />
+      </section>
+
+      <div class="rv-actions">
       <button type="button" class="ml-btn ml-btn--primary ml-btn--lg" @click="$emit('go-publish')">
         Tudo certo — ir para publicar
         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M5 12h14M13 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round" />
         </svg>
       </button>
+      </div>
     </div>
   </div>
 </template>
@@ -61,9 +85,10 @@ const props = defineProps<{
   form: ReturnType<typeof useTributeWizard>['form']
   tribute: TributeDetail | null
   refreshToken: number
+  generating?: boolean
 }>()
 
-defineEmits<{ 'go-publish': []; edit: [step: WizardStep] }>()
+defineEmits<{ 'go-publish': []; edit: [step: WizardStep]; regenerate: [] }>()
 
 const typeLabel = computed(() => {
   const option = WIZARD_TRIBUTE_TYPE_OPTIONS.find((item) => item.id === props.form.wizard_type_id)
@@ -121,7 +146,6 @@ const summaryItems = computed(() => [
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 10px;
-  margin-bottom: 24px;
 }
 .rv-item {
   display: flex;
@@ -156,13 +180,32 @@ const summaryItems = computed(() => [
   color: var(--primary-strong);
   margin-top: 4px;
 }
+.rv-preview__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.preview-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 48px 20px;
+  color: var(--muted);
+  border-radius: var(--radius-md);
+  border: 1px dashed var(--border);
+  background: var(--surface-3);
+}
 .rv-preview__title {
   display: flex;
   align-items: center;
   gap: 8px;
   font-size: 1rem;
   font-weight: 600;
-  margin-bottom: 14px;
+  margin: 0;
 }
 .rv-preview__dot {
   width: 8px;
@@ -171,6 +214,6 @@ const summaryItems = computed(() => [
   background: var(--success);
 }
 .rv-actions {
-  margin-top: 24px;
+  margin-top: 0;
 }
 </style>

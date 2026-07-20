@@ -1,93 +1,98 @@
 <template>
-  <div class="basics-step">
+  <div class="basics-step wiz-step-content">
     <WizardStepHeader
       title="Informações principais"
       description="Dê um nome e uma mensagem de coração à sua homenagem. Quem receber sentirá logo o carinho que você guarda."
     />
 
-    <section class="bs-section">
-      <h3 class="bs-section__title">Identidade</h3>
-      <div class="bs-grid">
-        <label class="ml-field span-2">
-          <span class="ml-label">Nome da homenagem</span>
-          <input
-            v-model="form.title"
-            class="ml-input"
-            maxlength="120"
-            placeholder="Ex.: Para o amor da minha vida"
-          />
-        </label>
-        <label class="ml-field span-2">
-          <span class="ml-label">Pessoa homenageada *</span>
-          <input
-            v-model="form.honoree_name"
-            class="ml-input"
-            maxlength="120"
-            placeholder="Para quem é essa homenagem?"
-            required
-          />
-        </label>
-      </div>
-    </section>
+    <div class="wiz-card-stack">
+      <section class="wiz-card">
+        <h3 class="wiz-card__title">Identidade</h3>
+        <p class="wiz-card__hint">Como essa homenagem será identificada.</p>
+        <div class="wiz-field-grid">
+          <label class="ml-field span-2">
+            <span class="ml-label">Nome da homenagem</span>
+            <input
+              v-model="form.title"
+              class="ml-input"
+              maxlength="120"
+              placeholder="Ex.: Para o amor da minha vida"
+            />
+          </label>
+          <label class="ml-field span-2">
+            <span class="ml-label">Pessoa homenageada *</span>
+            <input
+              v-model="form.honoree_name"
+              class="ml-input"
+              maxlength="120"
+              placeholder="Para quem é essa homenagem?"
+              required
+            />
+          </label>
+        </div>
+      </section>
 
-    <section class="bs-section">
-      <h3 class="bs-section__title">Modelo visual *</h3>
-      <p class="bs-section__hint">Escolha o estilo que mais combina com a ocasião.</p>
-      <div class="tpl-grid">
-        <button
-          v-for="def in templates"
-          :key="def.slug"
-          type="button"
-          class="tpl-card"
-          :class="{ 'tpl-card--active': selectedSlug === def.slug }"
-          :style="tplVars(def)"
-          @click="selectTemplate(def)"
-        >
-          <span class="tpl-card__swatch" aria-hidden="true" />
-          <strong class="tpl-card__name">{{ def.name }}</strong>
-          <span class="tpl-card__flow">{{ layoutLabel(def) }}</span>
-        </button>
-      </div>
-    </section>
+      <section class="wiz-card">
+        <h3 class="wiz-card__title">Modelo visual *</h3>
+        <p class="wiz-card__hint">Escolha o estilo que mais combina com a ocasião.</p>
+        <div class="tpl-grid">
+          <button
+            v-for="def in templates"
+            :key="def.slug"
+            type="button"
+            class="tpl-card"
+            :class="{ 'tpl-card--active': selectedSlug === def.slug }"
+            :style="tplVars(def)"
+            @click="selectTemplate(def)"
+          >
+            <span class="tpl-card__swatch" aria-hidden="true" />
+            <strong class="tpl-card__name">{{ def.name }}</strong>
+            <span class="tpl-card__flow">{{ layoutLabel(def) }}</span>
+          </button>
+        </div>
+      </section>
 
-    <section class="bs-section">
-      <h3 class="bs-section__title">Foto de capa *</h3>
-      <PhotosStep
-        :tribute-id="tributeId"
-        :photos="photos"
-        :max-photos="maxPhotos"
-        :form="form"
-        :definition="definition"
-        compact
-        @changed="$emit('media-changed')"
-      />
-    </section>
-
-    <section class="bs-section">
-      <h3 class="bs-section__title">Mensagem inicial *</h3>
-      <label class="ml-field">
-        <span class="ml-label">Que palavras você quer que abram essa homenagem?</span>
-        <textarea
-          v-model="form.message"
-          class="ml-input ml-textarea"
-          rows="5"
-          maxlength="2048"
-          placeholder="Escreva com o coração..."
+      <section class="wiz-card">
+        <h3 class="wiz-card__title">Foto de capa *</h3>
+        <p class="wiz-card__hint">A imagem principal que abre a homenagem.</p>
+        <PhotosStep
+          :tribute-id="tributeId"
+          :photos="photos"
+          :max-photos="maxPhotos"
+          :form="form"
+          :definition="definition"
+          compact
+          @changed="$emit('media-changed')"
         />
-        <span class="ml-hint">{{ (form.message ?? '').length }}/2048</span>
-      </label>
-    </section>
+      </section>
 
-    <section v-if="supportsMusic" class="bs-section">
-      <h3 class="bs-section__title">Música principal</h3>
-      <MusicStep
-        :form="form"
-        :supports-music="supportsMusic"
-        :tribute-id="tributeId"
-        compact
-        @changed="$emit('media-changed')"
-      />
-    </section>
+      <section class="wiz-card">
+        <h3 class="wiz-card__title">Mensagem inicial *</h3>
+        <p class="wiz-card__hint">As palavras que abrem essa homenagem.</p>
+        <label class="ml-field">
+          <textarea
+            v-model="form.message"
+            class="ml-input ml-textarea"
+            rows="5"
+            maxlength="2048"
+            placeholder="Escreva com o coração..."
+          />
+          <span class="ml-hint">{{ (form.message ?? '').length }}/2048</span>
+        </label>
+      </section>
+
+      <section v-if="supportsMusic" class="wiz-card">
+        <h3 class="wiz-card__title">Música principal</h3>
+        <p class="wiz-card__hint">Opcional — trilha sonora da homenagem.</p>
+        <MusicStep
+          :form="form"
+          :supports-music="supportsMusic"
+          :tribute-id="tributeId"
+          compact
+          @changed="$emit('media-changed')"
+        />
+      </section>
+    </div>
   </div>
 </template>
 
@@ -183,27 +188,6 @@ async function selectTemplate(def: TemplateDefinition) {
 </script>
 
 <style scoped>
-.bs-section {
-  margin-bottom: 28px;
-}
-.bs-section__title {
-  font-size: 1rem;
-  font-weight: 600;
-  margin-bottom: 6px;
-}
-.bs-section__hint {
-  font-size: 0.86rem;
-  color: var(--muted);
-  margin-bottom: 12px;
-}
-.bs-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
-}
-.span-2 {
-  grid-column: span 2;
-}
 .tpl-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
@@ -212,21 +196,29 @@ async function selectTemplate(def: TemplateDefinition) {
 .tpl-card {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
   padding: 12px;
   text-align: left;
   border-radius: var(--radius-md);
   border: 1.5px solid var(--border-strong);
-  background: var(--surface);
-  transition: border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+  background: var(--surface-3);
+  transition:
+    border-color var(--dur) var(--ease),
+    background var(--dur) var(--ease),
+    transform var(--dur) var(--ease);
+}
+.tpl-card:hover {
+  transform: translateY(-1px);
+  border-color: var(--primary);
 }
 .tpl-card--active {
   border-color: var(--primary);
+  background: var(--primary-softer);
   box-shadow: 0 0 0 3px var(--primary-ring);
 }
 .tpl-card__swatch {
   width: 100%;
-  height: 36px;
+  height: 40px;
   border-radius: 8px;
   background: var(--tpl-c1, var(--primary));
 }
@@ -237,13 +229,5 @@ async function selectTemplate(def: TemplateDefinition) {
 .tpl-card__flow {
   font-size: 0.74rem;
   color: var(--muted);
-}
-@media (max-width: 640px) {
-  .bs-grid {
-    grid-template-columns: 1fr;
-  }
-  .span-2 {
-    grid-column: span 1;
-  }
 }
 </style>

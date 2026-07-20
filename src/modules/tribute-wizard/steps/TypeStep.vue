@@ -1,34 +1,39 @@
 <template>
-  <div class="type-step">
+  <div class="type-step wiz-step-content">
     <WizardStepHeader
       title="Tipo de homenagem"
       description="A escolha define sugestões de conteúdo, templates e personalizações para a sua memória."
     />
 
-    <div class="type-grid">
-      <button
-        v-for="option in options"
-        :key="option.id"
-        type="button"
-        class="type-card"
-        :class="{ 'type-card--active': form.wizard_type_id === option.id }"
-        @click="select(option)"
-      >
-        <span class="type-card__icon" aria-hidden="true">{{ option.icon }}</span>
-        <strong class="type-card__label">{{ option.label }}</strong>
-        <span class="type-card__desc">{{ option.description }}</span>
-        <span v-if="form.wizard_type_id === option.id" class="type-card__check" aria-hidden="true">
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.6">
-            <path d="M20 6 9 17l-5-5" stroke-linecap="round" stroke-linejoin="round" />
-          </svg>
-        </span>
-      </button>
-    </div>
+    <section class="wiz-card">
+      <h3 class="wiz-card__title">Para quem é essa homenagem?</h3>
+      <p class="wiz-card__hint">Selecione o tipo que melhor representa o momento.</p>
 
-    <p v-if="applying" class="type-step__status">
-      <span class="ml-spinner ml-spinner--sm" />
-      Aplicando sugestões...
-    </p>
+      <div class="type-grid">
+        <button
+          v-for="option in options"
+          :key="option.id"
+          type="button"
+          class="type-card"
+          :class="{ 'type-card--active': form.wizard_type_id === option.id }"
+          @click="select(option)"
+        >
+          <span class="type-card__icon" aria-hidden="true">{{ option.icon }}</span>
+          <strong class="type-card__label">{{ option.label }}</strong>
+          <span class="type-card__desc">{{ option.description }}</span>
+          <span v-if="form.wizard_type_id === option.id" class="type-card__check" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.6">
+              <path d="M20 6 9 17l-5-5" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </span>
+        </button>
+      </div>
+
+      <p v-if="applying" class="type-step__status">
+        <span class="ml-spinner ml-spinner--sm" />
+        Aplicando sugestões...
+      </p>
+    </section>
   </div>
 </template>
 
@@ -103,19 +108,19 @@ async function select(option: WizardTributeTypeOption) {
 <style scoped>
 .type-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+  gap: 10px;
 }
 .type-card {
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 18px 16px;
+  gap: 8px;
+  padding: 16px 14px;
   text-align: left;
   border-radius: var(--radius-md);
   border: 1.5px solid var(--border-strong);
-  background: var(--surface);
+  background: var(--surface-3);
   transition:
     border-color var(--dur) var(--ease),
     background var(--dur) var(--ease),
@@ -123,9 +128,8 @@ async function select(option: WizardTributeTypeOption) {
     box-shadow var(--dur) var(--ease);
 }
 .type-card:hover {
-  transform: translateY(-2px);
+  transform: translateY(-1px);
   border-color: var(--primary);
-  box-shadow: var(--shadow-md);
 }
 .type-card--active {
   border-color: var(--primary);
@@ -133,13 +137,14 @@ async function select(option: WizardTributeTypeOption) {
   box-shadow: 0 0 0 3px var(--primary-ring);
 }
 .type-card__icon {
-  font-size: 1.7rem;
+  font-size: 1.5rem;
   line-height: 1;
 }
 .type-card__label {
-  font-size: 0.96rem;
+  font-size: 0.92rem;
   font-weight: 600;
   color: var(--ink);
+  line-height: 1.3;
 }
 .type-card__desc {
   font-size: 0.78rem;
@@ -148,12 +153,12 @@ async function select(option: WizardTributeTypeOption) {
 }
 .type-card__check {
   position: absolute;
-  top: 12px;
-  right: 12px;
+  top: 10px;
+  right: 10px;
   display: grid;
   place-items: center;
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
   border-radius: 999px;
   color: #fff;
   background: var(--primary);

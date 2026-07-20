@@ -1,66 +1,77 @@
 <template>
-  <div class="special-date-step">
+  <div class="special-date-step wiz-step-content">
     <WizardStepHeader
       title="Data especial"
       description="Destaque um momento importante com contador regressivo ou contador desde o evento."
     />
 
-    <label class="sd-toggle ml-field">
+    <label class="sd-toggle">
       <input v-model="form.special_date_config.enabled" type="checkbox" class="sd-toggle__input" />
-      <span class="sd-toggle__box" />
-      <span>
+      <span class="sd-toggle__box" aria-hidden="true">
+        <svg v-if="form.special_date_config.enabled" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3">
+          <path d="M20 6 9 17l-5-5" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </span>
+      <span class="sd-toggle__copy">
         <strong>Incluir data especial</strong>
         <span class="sd-toggle__hint">Essa data poderá aparecer em diferentes áreas da homenagem.</span>
       </span>
     </label>
 
-    <div v-if="form.special_date_config.enabled" class="sd-body ml-fade-up">
-      <div class="sd-kinds">
-        <button
-          v-for="kind in kindOptions"
-          :key="kind.id"
-          type="button"
-          class="sd-kind"
-          :class="{ 'sd-kind--active': form.special_date_config.kind === kind.id }"
-          @click="form.special_date_config.kind = kind.id"
-        >
-          <span aria-hidden="true">{{ kind.icon }}</span>
-          {{ kind.label }}
-        </button>
-      </div>
+    <div v-if="form.special_date_config.enabled" class="wiz-card-stack ml-fade-up">
+      <section class="wiz-card">
+        <h3 class="wiz-card__title">Tipo de momento</h3>
+        <p class="wiz-card__hint">Escolha o que melhor representa essa data.</p>
+        <div class="sd-kinds">
+          <button
+            v-for="kind in kindOptions"
+            :key="kind.id"
+            type="button"
+            class="sd-kind"
+            :class="{ 'sd-kind--active': form.special_date_config.kind === kind.id }"
+            @click="form.special_date_config.kind = kind.id"
+          >
+            <span class="sd-kind__icon" aria-hidden="true">{{ kind.icon }}</span>
+            <span class="sd-kind__label">{{ kind.label }}</span>
+          </button>
+        </div>
+      </section>
 
-      <div class="sd-grid">
-        <label class="ml-field">
-          <span class="ml-label">Data *</span>
-          <input v-model="form.special_date_config.date" type="date" class="ml-input" />
-        </label>
-        <label class="ml-field">
-          <span class="ml-label">Hora (opcional)</span>
-          <input v-model="form.special_date_config.time" type="time" class="ml-input" />
-        </label>
-        <label class="ml-field span-2">
-          <span class="ml-label">Título *</span>
-          <input
-            v-model="form.special_date_config.title"
-            class="ml-input"
-            maxlength="120"
-            placeholder="Ex.: Nosso primeiro beijo"
-          />
-        </label>
-        <label class="ml-field span-2">
-          <span class="ml-label">Descrição</span>
-          <textarea
-            v-model="form.special_date_config.description"
-            class="ml-input ml-textarea"
-            rows="3"
-            maxlength="500"
-            placeholder="Conte um pouco sobre esse momento..."
-          />
-        </label>
-      </div>
+      <section class="wiz-card">
+        <h3 class="wiz-card__title">Detalhes</h3>
+        <div class="wiz-field-grid">
+          <label class="ml-field">
+            <span class="ml-label">Data *</span>
+            <input v-model="form.special_date_config.date" type="date" class="ml-input" />
+          </label>
+          <label class="ml-field">
+            <span class="ml-label">Hora (opcional)</span>
+            <input v-model="form.special_date_config.time" type="time" class="ml-input" />
+          </label>
+          <label class="ml-field span-2">
+            <span class="ml-label">Título *</span>
+            <input
+              v-model="form.special_date_config.title"
+              class="ml-input"
+              maxlength="120"
+              placeholder="Ex.: Nosso primeiro beijo"
+            />
+          </label>
+          <label class="ml-field span-2">
+            <span class="ml-label">Descrição</span>
+            <textarea
+              v-model="form.special_date_config.description"
+              class="ml-input ml-textarea"
+              rows="4"
+              maxlength="500"
+              placeholder="Conte um pouco sobre esse momento..."
+            />
+          </label>
+        </div>
+      </section>
 
-      <section class="sd-section">
-        <h3 class="sd-section__title">Exibição do contador</h3>
+      <section class="wiz-card">
+        <h3 class="wiz-card__title">Exibição do contador</h3>
         <div class="sd-counter-modes">
           <button
             v-for="mode in counterModes"
@@ -76,8 +87,9 @@
         </div>
       </section>
 
-      <section class="sd-section">
-        <h3 class="sd-section__title">Formato de exibição</h3>
+      <section class="wiz-card">
+        <h3 class="wiz-card__title">Formato na página</h3>
+        <p class="wiz-card__hint">A prévia completa fica na etapa Revisão.</p>
         <div class="sd-formats">
           <button
             v-for="fmt in displayFormats"
@@ -91,23 +103,17 @@
           </button>
         </div>
       </section>
-
-      <div v-if="previewLabel" class="sd-preview">
-        <span class="sd-preview__label">Prévia</span>
-        <p class="sd-preview__text">{{ previewLabel }}</p>
-      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
 import type { SpecialDateCounterMode, SpecialDateDisplayFormat } from '@/api/types'
 import type { useTributeWizard } from '@/composables/useTributeWizard'
 import { SPECIAL_DATE_KIND_OPTIONS } from '@/modules/tribute-wizard/tributeWizardSteps'
 import WizardStepHeader from '@/components/wizard/WizardStepHeader.vue'
 
-const props = defineProps<{
+defineProps<{
   form: ReturnType<typeof useTributeWizard>['form']
 }>()
 
@@ -129,33 +135,23 @@ const displayFormats: Array<{ id: SpecialDateDisplayFormat; label: string }> = [
   { id: 'compact', label: 'Compacto' },
   { id: 'inline', label: 'Inline' },
 ]
-
-const previewLabel = computed(() => {
-  const cfg = props.form.special_date_config
-  if (!cfg.enabled || !cfg.title?.trim()) return ''
-  const kind = kindOptions.find((item) => item.id === cfg.kind)?.label ?? 'Data especial'
-  const date = cfg.date ? new Date(`${cfg.date}T12:00:00`).toLocaleDateString('pt-BR') : ''
-  const mode =
-    cfg.counter_mode === 'countdown'
-      ? ' — contagem regressiva'
-      : cfg.counter_mode === 'since'
-        ? ' — desde o evento'
-        : ''
-  return `${cfg.title.trim()} · ${kind}${date ? ` · ${date}` : ''}${mode}`
-})
 </script>
 
 <style scoped>
 .sd-toggle {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
-  padding: 16px;
+  gap: 14px;
+  padding: 18px 20px;
   border-radius: var(--radius-md);
-  border: 1px solid var(--border);
-  background: var(--surface-3);
+  border: 1.5px solid var(--border-strong);
+  background: var(--primary-softer);
   cursor: pointer;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
+  transition: border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+}
+.sd-toggle:hover {
+  border-color: color-mix(in srgb, var(--primary) 40%, var(--border));
 }
 .sd-toggle__input {
   position: absolute;
@@ -163,83 +159,94 @@ const previewLabel = computed(() => {
   pointer-events: none;
 }
 .sd-toggle__box {
-  width: 20px;
-  height: 20px;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
   flex-shrink: 0;
   margin-top: 2px;
-  border-radius: 6px;
+  border-radius: 7px;
   border: 2px solid var(--border-strong);
   background: var(--surface);
+  color: #fff;
+  transition: background var(--dur) var(--ease), border-color var(--dur) var(--ease);
 }
 .sd-toggle__input:checked + .sd-toggle__box {
   background: var(--primary);
   border-color: var(--primary);
 }
+.sd-toggle__copy strong {
+  display: block;
+  font-size: 0.98rem;
+  color: var(--ink);
+}
 .sd-toggle__hint {
   display: block;
-  font-size: 0.82rem;
+  font-size: 0.86rem;
   color: var(--muted);
-  margin-top: 2px;
-}
-.sd-body {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
+  margin-top: 4px;
+  line-height: 1.4;
 }
 .sd-kinds {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-.sd-kind {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 14px;
-  border-radius: 999px;
-  border: 1px solid var(--border-strong);
-  background: var(--surface);
-  font-size: 0.86rem;
-  font-weight: 600;
-  transition: border-color var(--dur) var(--ease), background var(--dur) var(--ease);
-}
-.sd-kind--active {
-  border-color: var(--primary);
-  background: var(--primary-softer);
-  color: var(--primary-strong);
-}
-.sd-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
-}
-.span-2 {
-  grid-column: span 2;
-}
-.sd-section__title {
-  font-size: 0.94rem;
-  font-weight: 600;
-  margin-bottom: 10px;
-}
-.sd-counter-modes {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
   gap: 10px;
 }
-.sd-mode {
+.sd-kind {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  align-items: flex-start;
+  gap: 8px;
   padding: 14px;
   text-align: left;
   border-radius: var(--radius-md);
   border: 1.5px solid var(--border-strong);
-  background: var(--surface);
-  font-size: 0.82rem;
+  background: var(--surface-3);
+  transition:
+    border-color var(--dur) var(--ease),
+    background var(--dur) var(--ease),
+    transform var(--dur) var(--ease);
+}
+.sd-kind:hover {
+  transform: translateY(-1px);
+  border-color: var(--primary);
+}
+.sd-kind--active {
+  border-color: var(--primary);
+  background: var(--primary-softer);
+  box-shadow: 0 0 0 3px var(--primary-ring);
+}
+.sd-kind__icon {
+  font-size: 1.35rem;
+  line-height: 1;
+}
+.sd-kind__label {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.3;
+}
+.sd-counter-modes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.sd-mode {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px;
+  text-align: left;
+  border-radius: var(--radius-md);
+  border: 1.5px solid var(--border-strong);
+  background: var(--surface-3);
+  font-size: 0.84rem;
   color: var(--muted);
+  line-height: 1.4;
+  transition: border-color var(--dur) var(--ease), background var(--dur) var(--ease);
 }
 .sd-mode strong {
-  font-size: 0.9rem;
+  font-size: 0.94rem;
   color: var(--ink);
 }
 .sd-mode--active {
@@ -249,46 +256,30 @@ const previewLabel = computed(() => {
 .sd-formats {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 10px;
 }
 .sd-format {
-  padding: 8px 16px;
+  padding: 10px 18px;
   border-radius: 999px;
-  border: 1px solid var(--border-strong);
-  background: var(--surface);
-  font-size: 0.86rem;
+  border: 1.5px solid var(--border-strong);
+  background: var(--surface-3);
+  font-size: 0.88rem;
   font-weight: 600;
+  transition: border-color var(--dur) var(--ease), background var(--dur) var(--ease), color var(--dur) var(--ease);
 }
 .sd-format--active {
   border-color: var(--primary);
   background: var(--primary);
   color: #fff;
 }
-.sd-preview {
-  padding: 16px;
-  border-radius: var(--radius-md);
-  background: linear-gradient(135deg, var(--primary-softer), var(--surface));
-  border: 1px solid color-mix(in srgb, var(--primary) 20%, var(--border));
-}
-.sd-preview__label {
-  font-size: 0.76rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-.sd-preview__text {
-  margin-top: 6px;
-  font-family: var(--font-display);
-  font-size: 1.1rem;
-  color: var(--ink);
-}
-@media (max-width: 640px) {
-  .sd-grid {
+@media (max-width: 720px) {
+  .sd-counter-modes {
     grid-template-columns: 1fr;
   }
-  .span-2 {
-    grid-column: span 1;
+}
+@media (max-width: 640px) {
+  .sd-kinds {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 </style>

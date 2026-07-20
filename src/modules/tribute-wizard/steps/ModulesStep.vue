@@ -1,38 +1,43 @@
 <template>
-  <div class="modules-step">
+  <div class="modules-step wiz-step-content">
     <WizardStepHeader
       title="Recursos extras"
       description="Selecione quais módulos ficarão ativos na sua homenagem."
     />
 
-    <div class="mod-grid">
-      <button
-        v-for="mod in moduleOptions"
-        :key="mod.id"
-        type="button"
-        class="mod-card"
-        :class="{
-          'mod-card--active': form.modules[mod.id],
-          'mod-card--disabled': Boolean(mod.badge),
-        }"
-        :disabled="Boolean(mod.badge)"
-        @click="toggle(mod.id)"
-      >
-        <span class="mod-card__icon" aria-hidden="true">{{ mod.icon }}</span>
-        <div class="mod-card__body">
-          <strong class="mod-card__label">
-            {{ mod.label }}
-            <span v-if="mod.badge" class="mod-card__badge">{{ mod.badge }}</span>
-          </strong>
-          <span class="mod-card__desc">{{ mod.description }}</span>
-        </div>
-        <span class="mod-card__switch" :class="{ 'mod-card__switch--on': form.modules[mod.id] }" />
-      </button>
-    </div>
+    <section class="wiz-card">
+      <h3 class="wiz-card__title">Módulos disponíveis</h3>
+      <p class="wiz-card__hint">Ative os recursos que deseja incluir na homenagem.</p>
 
-    <p class="mod-hint">
-      Módulos marcados como "Em breve" estarão disponíveis em atualizações futuras.
-    </p>
+      <div class="mod-grid">
+        <button
+          v-for="mod in moduleOptions"
+          :key="mod.id"
+          type="button"
+          class="mod-card"
+          :class="{
+            'mod-card--active': form.modules[mod.id],
+            'mod-card--disabled': Boolean(mod.badge),
+          }"
+          :disabled="Boolean(mod.badge)"
+          @click="toggle(mod.id)"
+        >
+          <span class="mod-card__icon" aria-hidden="true">{{ mod.icon }}</span>
+          <div class="mod-card__body">
+            <strong class="mod-card__label">
+              {{ mod.label }}
+              <span v-if="mod.badge" class="mod-card__badge">{{ mod.badge }}</span>
+            </strong>
+            <span class="mod-card__desc">{{ mod.description }}</span>
+          </div>
+          <span class="mod-card__switch" :class="{ 'mod-card__switch--on': form.modules[mod.id] }" />
+        </button>
+      </div>
+
+      <p class="mod-hint">
+        Módulos marcados como "Em breve" estarão disponíveis em atualizações futuras.
+      </p>
+    </section>
   </div>
 </template>
 
@@ -57,7 +62,7 @@ function toggle(id: keyof TributeModulesConfig) {
 .mod-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 12px;
+  gap: 10px;
 }
 .mod-card {
   display: flex;
@@ -67,12 +72,17 @@ function toggle(id: keyof TributeModulesConfig) {
   text-align: left;
   border-radius: var(--radius-md);
   border: 1.5px solid var(--border-strong);
-  background: var(--surface);
-  transition: border-color var(--dur) var(--ease), background var(--dur) var(--ease);
+  background: var(--surface-3);
+  transition: border-color var(--dur) var(--ease), background var(--dur) var(--ease), transform var(--dur) var(--ease);
+}
+.mod-card:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: var(--primary);
 }
 .mod-card--active {
   border-color: var(--primary);
   background: var(--primary-softer);
+  box-shadow: 0 0 0 3px var(--primary-ring);
 }
 .mod-card--disabled {
   opacity: 0.55;
@@ -101,7 +111,7 @@ function toggle(id: keyof TributeModulesConfig) {
   text-transform: uppercase;
   padding: 2px 8px;
   border-radius: 999px;
-  background: var(--surface-3);
+  background: var(--surface);
   color: var(--muted);
 }
 .mod-card__desc {

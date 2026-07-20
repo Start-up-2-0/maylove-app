@@ -53,7 +53,7 @@ import MusicPlayerFloat from '@/components/experience/shared/MusicPlayerFloat.vu
 import LogoMark from '@/components/brand/LogoMark.vue'
 import { buildMemoryBookModelFromDetail } from '@/modules/album/book/buildModel'
 import BookRenderer from '@/modules/album/book/BookRenderer.vue'
-import { isMemorialPresentation } from '@/modules/album/albumModels'
+import { isMemorialPresentation } from '@/modules/album/book/presentations'
 
 const route = useRoute()
 const album = ref<PublicAlbum | null>(null)

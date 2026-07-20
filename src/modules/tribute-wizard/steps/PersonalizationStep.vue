@@ -1,24 +1,29 @@
 <template>
-  <div class="personalization-step">
+  <div class="personalization-step wiz-step-content">
     <WizardStepHeader
       title="Personalização"
       description="Configure paleta, fontes, fundo, animações, efeitos visuais e estilo da página."
     />
 
-    <section class="ps-section">
-      <h3 class="ps-section__title">Apresentação</h3>
-      <PresentationStep :form="form" :definition="definition" embedded />
-    </section>
+    <div class="wiz-card-stack">
+      <section class="wiz-card">
+        <h3 class="wiz-card__title">Apresentação</h3>
+        <p class="wiz-card__hint">Como a homenagem será exibida e navegada.</p>
+        <PresentationStep :form="form" :definition="definition" embedded />
+      </section>
 
-    <section class="ps-section">
-      <h3 class="ps-section__title">Visual e efeitos</h3>
-      <AppearanceStep :form="form" :definition="definition" embedded />
-    </section>
+      <section class="wiz-card">
+        <h3 class="wiz-card__title">Visual e efeitos</h3>
+        <p class="wiz-card__hint">Estilo, cores, fontes e animações da página.</p>
+        <AppearanceStep :form="form" :definition="definition" embedded />
+      </section>
 
-    <section class="ps-section">
-      <h3 class="ps-section__title">Efeitos especiais</h3>
-      <EffectsStep :form="form" embedded />
-    </section>
+      <section class="wiz-card">
+        <h3 class="wiz-card__title">Efeitos especiais</h3>
+        <p class="wiz-card__hint">Animações que aparecem na página pública.</p>
+        <EffectsStep :form="form" embedded />
+      </section>
+    </div>
   </div>
 </template>
 
@@ -35,22 +40,3 @@ defineProps<{
   definition: TemplateDefinition | null | undefined
 }>()
 </script>
-
-<style scoped>
-.ps-section {
-  margin-bottom: 28px;
-  padding-bottom: 24px;
-  border-bottom: 1px solid var(--border);
-}
-.ps-section:last-child {
-  border-bottom: none;
-  margin-bottom: 0;
-  padding-bottom: 0;
-}
-.ps-section__title {
-  font-size: 0.94rem;
-  font-weight: 600;
-  margin-bottom: 14px;
-  color: var(--ink);
-}
-</style>

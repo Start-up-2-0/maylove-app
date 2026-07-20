@@ -117,7 +117,8 @@ import { useRoute, useRouter, RouterLink } from 'vue-router'
 import { deleteAlbum, fetchAlbum } from '@/api/albums'
 import type { AlbumDetail } from '@/api/types'
 import { getBookPresentation } from '@/modules/album/book/presentations'
-import { isMemorialCategory, isMemorialPresentation } from '@/modules/album/albumModels'
+import { isMemorialCategory } from '@/modules/album/albumModels'
+import { isMemorialPresentation } from '@/modules/album/book/presentations'
 import AlbumQrCard from '@/modules/album/components/AlbumQrCard.vue'
 
 const route = useRoute()
