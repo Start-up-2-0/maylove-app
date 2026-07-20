@@ -104,6 +104,7 @@ import {
   type RomanceStep,
 } from '@/modules/romance-wizard/romanceWizardSteps'
 import { validateRomanceStep } from '@/modules/romance-wizard/useRomanceWizardValidation'
+import { applyRomanceTitleDefaults, romanceDisplayTitle } from '@/modules/romance-wizard/romanceCopy'
 import RomanceStepper from '@/modules/romance-wizard/components/RomanceStepper.vue'
 import RomanceOccasionStep from '@/modules/romance-wizard/steps/RomanceOccasionStep.vue'
 import RomanceCoupleStep from '@/modules/romance-wizard/steps/RomanceCoupleStep.vue'
@@ -141,9 +142,7 @@ const {
 
 const definition = computed(() => getTemplateDefinition(tribute.value?.template.slug))
 
-const headerTitle = computed(
-  () => form.title || form.honoree_name || tribute.value?.title || 'Criar romance',
-)
+const headerTitle = computed(() => romanceDisplayTitle(form) || 'Novo romance')
 
 const stepIndex = computed(() =>
   ['occasion', 'couple', 'story', 'style', 'finish'].indexOf(currentStep.value),
@@ -153,6 +152,7 @@ const hasNext = computed(() => stepIndex.value < 4)
 
 onMounted(async () => {
   await load()
+  applyRomanceTitleDefaults(form)
   currentStep.value = resolveRomanceStep(
     typeof route.query.step === 'string' ? route.query.step : null,
   )

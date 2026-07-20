@@ -188,3 +188,39 @@
   );
   pointer-events: none;
 }
+
+.rom-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.rom-field__label {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+.rom-field__input {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1.5px solid color-mix(in srgb, var(--rom-accent, #e11d48) 14%, var(--border));
+  background: var(--surface);
+  font-size: 1rem;
+  color: var(--ink);
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+.rom-field__input::placeholder {
+  color: color-mix(in srgb, var(--muted) 75%, transparent);
+}
+.rom-field__input:focus {
+  outline: none;
+  border-color: var(--rom-accent, #e11d48);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--rom-accent, #e11d48) 18%, transparent);
+}
+.rom-field__hint {
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: var(--muted);
+}

@@ -15,6 +15,11 @@ import {
   type SpecialDateKind,
   type WizardTributeTypeOption,
 } from './tributeWizardSteps'
+import {
+  defaultRomanceTitle,
+  isLegacyGenericTitle,
+} from '@/modules/romance-wizard/romanceCopy'
+import { isRomanceTypeId } from '@/modules/romance-wizard/romanceWizardSteps'
 
 export interface WizardTypeFlowConfig {
   skipSteps: WizardStep[]
@@ -194,7 +199,13 @@ export async function applyTypeDefaults(params: ApplyTypeDefaultsParams): Promis
   form.style_id = styleId
   form.color_primary = definition.theme.primaryColor
 
-  if (!form.title?.trim() && defaults.title) form.title = defaults.title
+  if (isRomanceTypeId(option.id)) {
+    if (!form.title?.trim() || isLegacyGenericTitle(form.title)) {
+      form.title = defaultRomanceTitle(option.id)
+    }
+  } else if (!form.title?.trim() && defaults.title) {
+    form.title = defaults.title
+  }
   if (!form.message?.trim() && defaults.message) form.message = defaults.message
   if (apiType.default_palette?.[0]) form.color_primary = apiType.default_palette[0]
 
