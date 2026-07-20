@@ -4,6 +4,7 @@
     :book="book"
     :mode="mode"
     :share-url="shareUrl"
+    :album-slug="albumSlug"
     :editable="editable"
     @update:board="onBoardUpdate"
   />
@@ -21,6 +22,7 @@ const props = withDefaults(
     mode?: BookRenderMode
     shareUrl?: string
     editable?: boolean
+    albumSlug?: string
   }>(),
   {
     mode: 'full',

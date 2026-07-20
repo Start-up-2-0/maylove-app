@@ -54,6 +54,7 @@ const CANONICAL_PRESENTATIONS = [
   'magazine-style',
   'luxury-album',
   'timeline',
+  'memorial-luz',
 ] as const
 
 export type CanonicalPresentationId = (typeof CANONICAL_PRESENTATIONS)[number]
@@ -333,6 +334,33 @@ const CANONICAL_THEMES: Record<CanonicalPresentationId, BookTheme> = {
       pageNumbers: false,
       showBinder: false,
       chapterOpeners: false,
+      polaroidFrames: false,
+      scrapbookDecor: false,
+      textureOverlay: false,
+    },
+  },
+  'memorial-luz': {
+    id: 'memorial-luz',
+    name: 'Memorial Digital',
+    strategy: 'classic',
+    fonts: {
+      display: "'Cormorant Garamond', Georgia, serif",
+      body: "'Hanken Grotesk', system-ui, sans-serif",
+      accent: "'Cormorant Garamond', Georgia, serif",
+    },
+    tokens: {
+      paper: '#14110f',
+      paperAlt: '#1c1814',
+      ink: '#f0ebe3',
+      muted: '#a89f94',
+      border: 'rgba(201, 168, 106, 0.14)',
+      shadow: '0 32px 64px -36px rgba(0, 0, 0, 0.55)',
+    },
+    cover: { variant: 'minimal', eyebrow: 'EM MEMÓRIA' },
+    features: {
+      pageNumbers: false,
+      showBinder: false,
+      chapterOpeners: true,
       polaroidFrames: false,
       scrapbookDecor: false,
       textureOverlay: false,

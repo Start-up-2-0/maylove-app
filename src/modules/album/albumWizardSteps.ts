@@ -1,3 +1,9 @@
+import {
+  isMemorialPresentation,
+  isPhotoFirstPresentation,
+  normalizePresentationId,
+} from './book/presentations'
+
 export type AlbumWizardStep =
   | 'basics'
   | 'pages'
@@ -15,7 +21,7 @@ export const ALBUM_WIZARD_STEPS: AlbumWizardStep[] = [
   'publish',
 ]
 
-/** Livro de memórias: inclui organização em capítulos/memórias. */
+/** Livro de memórias / memorial: inclui organização em capítulos/memórias. */
 export const MEMORY_BOOK_WIZARD_STEPS: AlbumWizardStep[] = [
   'basics',
   'photos',
@@ -40,24 +46,11 @@ export const ALBUM_WIZARD_STEP_LABELS: Record<AlbumWizardStep, string> = {
 
 export function wizardStepsFor(presentation?: string | null): AlbumWizardStep[] {
   const id = normalizePresentationId(presentation)
+  if (isMemorialPresentation(id)) {
+    return MEMORY_BOOK_WIZARD_STEPS
+  }
   if (id === 'classic-photobook' || isPhotoFirstPresentation(id)) {
     return ALBUM_WIZARD_STEPS
   }
   return MEMORY_BOOK_WIZARD_STEPS
-}
-
-function normalizePresentationId(presentation?: string | null): string {
-  if (!presentation) return 'classic-photobook'
-  const map: Record<string, string> = {
-    'family-album': 'family-memories',
-    'romantic-book': 'wedding-book',
-    polaroid: 'polaroid-memories',
-    'memory-notebook': 'travel-journal',
-    'photo-magazine': 'magazine-style',
-  }
-  return map[presentation] ?? presentation
-}
-
-function isPhotoFirstPresentation(id: string): boolean {
-  return id === 'polaroid-board' || id === 'portrait-album' || id === 'instant-photo'
 }

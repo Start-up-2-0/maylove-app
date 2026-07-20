@@ -2,7 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { forceTheme, initTheme } from '@/composables/useTheme'
 
-const PUBLIC_EXPERIENCE_ROUTES = new Set(['public-album', 'public-tribute'])
+const PUBLIC_EXPERIENCE_ROUTES = new Set(['public-album', 'public-tribute', 'public-map'])
 
 const router = createRouter({
   history: createWebHistory(),
@@ -79,6 +79,21 @@ const router = createRouter({
           name: 'album-detail',
           component: () => import('@/modules/album/AlbumDetailView.vue'),
         },
+        {
+          path: 'maps',
+          name: 'maps-dashboard',
+          component: () => import('@/modules/map/MapsDashboardView.vue'),
+        },
+        {
+          path: 'maps/new',
+          name: 'map-new',
+          component: () => import('@/modules/map/NewMapView.vue'),
+        },
+        {
+          path: 'maps/:id/edit',
+          name: 'map-edit',
+          component: () => import('@/modules/map/MapEditorView.vue'),
+        },
       ],
     },
     {
@@ -90,6 +105,11 @@ const router = createRouter({
       path: '/h/:slug',
       name: 'public-tribute',
       component: () => import('@/modules/public-tribute/PublicTributeRenderer.vue'),
+    },
+    {
+      path: '/map/:slug',
+      name: 'public-map',
+      component: () => import('@/modules/map/PublicMapRenderer.vue'),
     },
   ],
 })

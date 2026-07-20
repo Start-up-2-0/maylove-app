@@ -47,6 +47,21 @@
           <span>Novo álbum</span>
         </RouterLink>
 
+        <p class="sidebar__label sidebar__label--spaced">Mapas</p>
+        <RouterLink to="/dashboard/maps" class="nav-item" active-class="nav-item--active" @click="drawerOpen = false">
+          <svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M3 6.5 9 4l6 2.5 6-2.5v13L15 19l-6-2.5L3 19.5V6.5Z" stroke-linejoin="round" />
+            <path d="M9 4v13.5M15 6.5V20" stroke-linecap="round" />
+          </svg>
+          <span>Meus mapas</span>
+        </RouterLink>
+        <RouterLink to="/dashboard/maps/new" class="nav-item" active-class="nav-item--active" @click="drawerOpen = false">
+          <svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M12 5v14M5 12h14" stroke-linecap="round" />
+          </svg>
+          <span>Novo mapa</span>
+        </RouterLink>
+
         <p class="sidebar__label sidebar__label--spaced">Recursos</p>
         <RouterLink to="/dashboard/modelos" class="nav-item" active-class="nav-item--active" @click="drawerOpen = false">
           <svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">

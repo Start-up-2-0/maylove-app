@@ -1,5 +1,5 @@
 <template>
-  <div class="public-page">
+  <div class="public-page" :class="{ 'public-page--memorial': isMemorial }">
     <section v-if="loading" class="public-state">
       <span class="public-spinner" aria-hidden="true" />
       <p>Carregando álbum...</p>
@@ -21,6 +21,7 @@
         :book="bookModel"
         mode="full"
         :share-url="shareUrl"
+        :album-slug="album.slug"
       />
 
       <MusicPlayerFloat
@@ -52,6 +53,7 @@ import MusicPlayerFloat from '@/components/experience/shared/MusicPlayerFloat.vu
 import LogoMark from '@/components/brand/LogoMark.vue'
 import { buildMemoryBookModelFromDetail } from '@/modules/album/book/buildModel'
 import BookRenderer from '@/modules/album/book/BookRenderer.vue'
+import { isMemorialPresentation } from '@/modules/album/albumModels'
 
 const route = useRoute()
 const album = ref<PublicAlbum | null>(null)
@@ -66,6 +68,14 @@ const bookModel = computed(() => {
 const shareUrl = computed(() =>
   typeof window !== 'undefined' ? window.location.href : '',
 )
+
+const isMemorial = computed(() => {
+  if (!album.value) return false
+  const presentation =
+    (album.value as { presentation?: string }).presentation ??
+    (album.value.content_json as { presentation?: string } | undefined)?.presentation
+  return isMemorialPresentation(presentation) || album.value.category === 'memorial'
+})
 
 onMounted(async () => {
   const slug = route.params.slug as string
@@ -95,6 +105,24 @@ function getSessionId(): string {
   display: flex;
   flex-direction: column;
   background: var(--bg);
+}
+
+.public-page--memorial {
+  background: #14110f;
+}
+
+.public-page--memorial .public-foot {
+  background: #1c1814;
+  border-top-color: rgba(201, 168, 106, 0.14);
+  color: #a89f94;
+}
+
+.public-page--memorial .public-foot__brand {
+  color: #a89f94;
+}
+
+.public-page--memorial .public-foot__cta {
+  color: #c9a86a;
 }
 
 .public-state {

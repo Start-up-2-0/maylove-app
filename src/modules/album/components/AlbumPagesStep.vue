@@ -155,9 +155,14 @@ const gallery = computed<Array<{ id: string; url: string }>>(() => {
     .filter((m) => m.url)
 })
 
-const stepDescription = computed(
-  () => `Capítulos: ${chapters.value.length}. Anexe fotos da fototeca a cada memória.`,
-)
+const stepDescription = computed(() => {
+  const isMemorial =
+    props.form?.presentation === 'memorial-luz' || props.form?.category === 'memorial'
+  if (isMemorial) {
+    return `Capítulos: ${chapters.value.length}. Monte a biografia, linha do tempo e recordações com fotos e datas.`
+  }
+  return `Capítulos: ${chapters.value.length}. Anexe fotos da fototeca a cada memória.`
+})
 
 function mediaOf(memory: AlbumMemory): Array<{ id: string; url: string }> {
   const ids = memory.media_ids ?? []

@@ -1,5 +1,6 @@
 import {
   isInstantPhotoPresentation,
+  isMemorialPresentation,
   isMuralPresentation,
   isTimelinePresentation,
   normalizePresentationId,
@@ -216,7 +217,7 @@ function buildContentPages(album: AlbumBookInput): MemoryBookContentPage[] {
     return pages.length ? pages : buildGalleryPagesFromMedia(album)
   }
 
-  if (isTimelinePresentation(presentation) || isMuralPresentation(presentation)) {
+  if (isMemorialPresentation(presentation) || isTimelinePresentation(presentation) || isMuralPresentation(presentation)) {
     const pages = buildMemoryMosaicPages(album)
     return pages.length ? pages : buildGalleryPagesFromMedia(album)
   }
@@ -265,6 +266,7 @@ export function buildMemoryBookModel(album: AlbumBookInput): MemoryBookModel {
     album.book_config as BookConfig | null | undefined,
     presentation,
   )
+  const defaultAccent = isMemorialPresentation(presentation) ? '#c9a86a' : '#c45d7a'
   const coverId = bookConfig.cover.media_id
   const coverMedia = coverId
     ? (album.media ?? []).find((m) => m.id === coverId)
@@ -276,7 +278,7 @@ export function buildMemoryBookModel(album: AlbumBookInput): MemoryBookModel {
     subtitle: album.subtitle ?? undefined,
     closingMessage: album.dedication?.trim() || undefined,
     signature: album.honoree_names?.trim() || undefined,
-    colorPrimary: bookConfig.colors.accent || album.color_primary || '#c45d7a',
+    colorPrimary: bookConfig.colors.accent || album.color_primary || defaultAccent,
     contentPages,
     bookConfig,
     coverPhotoUrl: coverMedia ? resolveMediaUrl(coverMedia.url) ?? undefined : undefined,

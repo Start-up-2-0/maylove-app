@@ -1,8 +1,8 @@
 <template>
   <div class="basics-step">
     <WizardStepHeader
-      title="Identidade da galeria"
-      description="Título, tipografia e cores — a assinatura visual do seu álbum."
+      :title="stepTitle"
+      :description="stepDescription"
     />
 
     <form class="basics-form" @submit.prevent>
@@ -65,16 +65,21 @@
       </fieldset>
 
       <label class="ml-field">
-        <span>Nomes da homenagem (opcional)</span>
-        <input v-model="form.honoree_names" class="ml-input" maxlength="120" />
+        <span>{{ honoreeLabel }}</span>
+        <input
+          v-model="form.honoree_names"
+          class="ml-input"
+          maxlength="120"
+          :placeholder="honoreePlaceholder"
+        />
       </label>
       <label class="ml-field">
-        <span>Dedicatória (opcional)</span>
+        <span>{{ dedicationLabel }}</span>
         <textarea
           v-model="form.dedication"
           class="ml-input"
           rows="3"
-          placeholder="Aparece na contracapa, como um fechamento íntimo."
+          :placeholder="dedicationPlaceholder"
         />
       </label>
       <label class="ml-check">
@@ -86,15 +91,51 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import type { AlbumMedia } from '@/api/types'
 import type { useAlbumWizard } from '@/composables/useAlbumWizard'
+import { isMemorialCategory, isMemorialPresentation } from '../albumModels'
 import WizardStepHeader from '@/components/wizard/WizardStepHeader.vue'
 
-defineProps<{
+const props = defineProps<{
   form: ReturnType<typeof useAlbumWizard>['form']
   album: ReturnType<typeof useAlbumWizard>['album']['value']
   photos: AlbumMedia[]
 }>()
+
+const isMemorial = computed(
+  () =>
+    isMemorialPresentation(props.form.presentation) ||
+    isMemorialCategory(props.form.category),
+)
+
+const stepTitle = computed(() =>
+  isMemorial.value ? 'Identidade do memorial' : 'Identidade da galeria',
+)
+
+const stepDescription = computed(() =>
+  isMemorial.value
+    ? 'Nome do homenageado, datas de vida e biografia — o coração da homenagem.'
+    : 'Título, tipografia e cores — a assinatura visual do seu álbum.',
+)
+
+const honoreeLabel = computed(() =>
+  isMemorial.value ? 'Nome do homenageado' : 'Nomes da homenagem (opcional)',
+)
+
+const honoreePlaceholder = computed(() =>
+  isMemorial.value ? 'Ex.: José da Silva' : '',
+)
+
+const dedicationLabel = computed(() =>
+  isMemorial.value ? 'Biografia / história de vida' : 'Dedicatória (opcional)',
+)
+
+const dedicationPlaceholder = computed(() =>
+  isMemorial.value
+    ? 'Conte quem foi essa pessoa, sua trajetória e o legado que deixou.'
+    : 'Aparece na contracapa, como um fechamento íntimo.',
+)
 
 const fontPresets = [
   {

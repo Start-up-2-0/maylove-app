@@ -202,6 +202,14 @@ export function normalizeBookConfig(raw?: Partial<BookConfig> | null): BookConfi
 /** Defaults visuais por apresentação (photobook editorial). */
 export function defaultBookConfigFor(presentation?: string | null): BookConfig {
   switch (presentation) {
+    case 'memorial-luz':
+      return normalizeBookConfig({
+        cover: { mode: 'photo', media_id: null, eyebrow: 'EM MEMÓRIA' },
+        colors: { paper: '#14110f', ink: '#f0ebe3', accent: '#c9a86a', page: '#1c1814' },
+        fonts: { preset: 'editorial' },
+        frame_style: DEFAULT_BOOK_FRAME_STYLE,
+        board: { items: [] },
+      })
     case 'instant-photo':
     case 'polaroid-board':
     case 'portrait-album':

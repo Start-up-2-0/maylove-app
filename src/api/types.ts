@@ -280,6 +280,8 @@ export interface AlbumDetail extends AlbumSummary {
   category?: AlbumCategory | null
   honoree_names?: string | null
   dedication?: string | null
+  closing_message?: string | null
+  presentation?: string | null
   music_media_id: string | null
   media: AlbumMedia[]
   book_config?: Record<string, unknown> | null
@@ -308,6 +310,7 @@ export interface PublicAlbum {
   title: string | null
   subtitle: string | null
   color_primary: string | null
+  presentation?: string | null
   category?: AlbumCategory | null
   honoree_names?: string | null
   dedication?: string | null
@@ -459,9 +462,10 @@ export interface PixPaymentData {
 
 export interface CheckoutResponse {
   order_id: string
-  kind?: 'tribute' | 'album'
+  kind?: 'tribute' | 'album' | 'map'
   tribute_id?: string | null
   album_id?: string | null
+  couple_map_id?: string | null
   status: string
   price_cents: number
   payment_method?: 'pix'
@@ -582,4 +586,116 @@ export const WIZARD_STEP_LABELS: Record<WizardStep, string> = {
   effects: 'Efeitos',
   preview: 'Revisar e Concluir',
   publish: 'Publicar',
+}
+
+export type CoupleMapStatus = 'draft' | 'awaiting_payment' | 'published' | 'archived'
+export type MapStyle = 'default' | 'romantic' | 'minimal' | 'vintage'
+export type MapPlaceType =
+  | 'first_meeting'
+  | 'first_date'
+  | 'first_kiss'
+  | 'proposal'
+  | 'wedding'
+  | 'anniversary'
+  | 'trip'
+  | 'vacation'
+  | 'restaurant'
+  | 'home'
+  | 'milestone'
+  | 'other'
+export type MapMediaType = 'photo' | 'video'
+
+export interface MapMedia {
+  id: string
+  place_id: string
+  media_type: MapMediaType
+  original_filename: string
+  mime_type?: string | null
+  size_bytes?: number | null
+  sort_order: number
+  url?: string | null
+  url_thumbnail?: string | null
+  created_at: string
+}
+
+export interface MapPlace {
+  id: string
+  place_type: MapPlaceType
+  title: string
+  subtitle?: string | null
+  description?: string | null
+  memory_date?: string | null
+  memory_time?: string | null
+  latitude: number
+  longitude: number
+  address_label?: string | null
+  city?: string | null
+  country?: string | null
+  sentiment?: string | null
+  is_highlight: boolean
+  sort_order: number
+  content_json?: Record<string, unknown>
+  media?: MapMedia[]
+  created_at: string
+  updated_at: string
+}
+
+export interface CoupleMapSummary {
+  id: string
+  slug: string
+  status: CoupleMapStatus
+  title: string
+  subtitle?: string | null
+  couple_names: string
+  map_style: MapStyle
+  show_route: boolean
+  places_count: number
+  views_count: number
+  highlight_title?: string | null
+  published_at?: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface CoupleMapDetail extends CoupleMapSummary {
+  center_lat?: number | null
+  center_lng?: number | null
+  default_zoom?: number | null
+  content_json?: Record<string, unknown>
+  media_urls_expire_at?: string
+  places: MapPlace[]
+}
+
+export interface PublicCoupleMap extends CoupleMapDetail {
+  public_url: string
+  highlight_place?: {
+    id: string
+    title: string
+    latitude: number
+    longitude: number
+    cover_url?: string | null
+  } | null
+  route_polyline?: Array<{ lat: number; lng: number }> | null
+}
+
+export interface CoupleMapValidation {
+  valid: boolean
+  errors: Array<{ field: string; code: string; message: string }>
+  warnings: Array<{ field: string; code: string; message: string }>
+}
+
+export interface MapUploadPolicy {
+  photo: {
+    accepted_mimes: string[]
+    accepted_extensions: string[]
+    max_file_bytes: number
+    max_count_per_place: number
+  }
+  video: {
+    accepted_mimes: string[]
+    accepted_extensions: string[]
+    max_file_bytes: number
+    max_count_per_place: number
+  }
+  max_places_per_map: number
 }

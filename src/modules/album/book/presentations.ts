@@ -1,4 +1,5 @@
 import type { BookPresentationDefinition } from './types'
+import { MEMORIAL_PRESENTATION } from '../albumModels'
 
 /** Catálogo completo (lookups + álbuns legados). */
 export const ALL_BOOK_PRESENTATIONS: BookPresentationDefinition[] = [
@@ -90,9 +91,17 @@ export const ALL_BOOK_PRESENTATIONS: BookPresentationDefinition[] = [
     emoji: '🕰️',
     tagline: 'Capítulo a capítulo',
   },
+  {
+    id: MEMORIAL_PRESENTATION,
+    name: 'Memorial Digital',
+    description:
+      'Homenagem serena para quem partiu: biografia, linha do tempo, recordações e tributos.',
+    emoji: '🕯️',
+    tagline: 'Em memória eterna',
+  },
 ]
 
-/** Catálogo visível — galeria fotográfica profissional. */
+/** Catálogo visível — galeria + memorial. */
 export const BOOK_PRESENTATIONS: BookPresentationDefinition[] = [
   {
     id: 'classic-photobook',
@@ -101,6 +110,14 @@ export const BOOK_PRESENTATIONS: BookPresentationDefinition[] = [
       'Galeria fotográfica premium: capa, masonry responsivo, legendas e lightbox elegante.',
     emoji: '🖼️',
     tagline: 'Como um portfólio de estúdio',
+  },
+  {
+    id: MEMORIAL_PRESENTATION,
+    name: 'Memorial Digital',
+    description:
+      'Homenagem serena para quem partiu: biografia, linha do tempo, recordações e tributos.',
+    emoji: '🕯️',
+    tagline: 'Em memória eterna',
   },
 ]
 
@@ -111,6 +128,10 @@ export function getBookPresentation(id: string): BookPresentationDefinition | un
     ALL_BOOK_PRESENTATIONS.find((item) => item.id === normalized) ??
     LEGACY_PRESENTATION_FALLBACKS[id]
   )
+}
+
+export function isMemorialPresentation(id: string | null | undefined): boolean {
+  return normalizePresentationId(id) === MEMORIAL_PRESENTATION
 }
 
 export function isTimelinePresentation(id: string | null | undefined): boolean {

@@ -13,6 +13,7 @@ export type BookPresentationId =
   | 'magazine-style'
   | 'luxury-album'
   | 'timeline'
+  | 'memorial-luz'
   /** @deprecated slugs legados — normalizados em runtime */
   | 'family-album'
   | 'polaroid'

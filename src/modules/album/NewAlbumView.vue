@@ -11,50 +11,78 @@
       <p class="eyebrow">Começar</p>
       <h1 class="section-title">Novo álbum</h1>
       <p class="text-muted">
-        Galeria fotográfica profissional — capa, masonry, legendas e lightbox elegante.
+        Escolha o formato da sua história — galeria fotográfica ou memorial digital sereno.
       </p>
     </header>
 
-    <article class="style-card style-card--active">
-      <span class="style-card__emoji" aria-hidden="true">🖼️</span>
-      <div>
-        <h2 class="style-card__title">Galeria de Memórias</h2>
-        <p class="style-card__desc">
-          Como um portfólio de estúdio: capas, fotos sem corte forçado e visualização em lightbox.
-        </p>
-      </div>
-    </article>
+    <div class="model-grid">
+      <button
+        v-for="model in ALBUM_MODELS"
+        :key="model.id"
+        type="button"
+        class="style-card"
+        :class="{ 'style-card--active': selectedModelId === model.id }"
+        @click="selectedModelId = model.id"
+      >
+        <span class="style-card__emoji" aria-hidden="true">{{ model.emoji }}</span>
+        <div>
+          <h2 class="style-card__title">{{ model.name }}</h2>
+          <p class="style-card__tagline">{{ model.tagline }}</p>
+          <p class="style-card__desc">{{ model.description }}</p>
+        </div>
+      </button>
+    </div>
 
     <p v-if="error" class="ml-alert ml-alert--danger">{{ error }}</p>
 
     <button class="ml-btn ml-btn--primary ml-btn--lg" :disabled="creating" @click="create">
       <span v-if="creating" class="ml-spinner ml-spinner--sm" />
-      {{ creating ? 'Criando álbum...' : 'Criar álbum' }}
+      {{ creating ? 'Criando álbum...' : createLabel }}
     </button>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
-import { createAlbum, updateAlbum } from '@/api/albums'
+import { createAlbum, createAlbumChapter, updateAlbum } from '@/api/albums'
 import { resolveApiError } from '@/api/errors'
+import { ALBUM_MODELS, getAlbumModel } from './albumModels'
 import { defaultBookConfigFor } from './book/bookConfig'
-import { DEFAULT_BOOK_PRESENTATION } from './book/presentations'
 
 const router = useRouter()
 const creating = ref(false)
 const error = ref('')
+const selectedModelId = ref(ALBUM_MODELS[0]?.id ?? 'gallery')
+
+const selectedModel = computed(() => getAlbumModel(selectedModelId.value) ?? ALBUM_MODELS[0]!)
+
+const createLabel = computed(() =>
+  selectedModel.value.id === 'memorial' ? 'Criar memorial' : 'Criar álbum',
+)
 
 async function create() {
+  const model = selectedModel.value
   creating.value = true
   error.value = ''
   try {
     const album = await createAlbum()
     await updateAlbum(album.id, {
-      presentation: DEFAULT_BOOK_PRESENTATION,
-      book_config: defaultBookConfigFor(DEFAULT_BOOK_PRESENTATION),
+      category: model.category,
+      title: model.defaultTitle,
+      presentation: model.presentation,
+      book_config: defaultBookConfigFor(model.presentation),
+      content_json: { presentation: model.presentation, effects: model.id === 'memorial' ? ['stars'] : [] },
     })
+
+    if (model.seedChapters?.length) {
+      await Promise.all(
+        model.seedChapters.map((title, index) =>
+          createAlbumChapter(album.id, { title, sort_order: index }),
+        ),
+      )
+    }
+
     await router.replace({
       path: `/dashboard/albums/${album.id}/edit`,
       query: { step: 'basics' },
@@ -85,18 +113,38 @@ async function create() {
   margin-bottom: 22px;
 }
 
+.model-grid {
+  display: grid;
+  gap: 14px;
+  max-width: 640px;
+  margin-bottom: 20px;
+}
+
 .style-card {
   display: flex;
   gap: 16px;
   align-items: flex-start;
   width: 100%;
-  max-width: 520px;
-  margin-bottom: 20px;
   padding: 18px 20px;
   text-align: left;
   border-radius: var(--radius-lg);
-  border: 1px solid color-mix(in srgb, var(--primary) 40%, var(--border));
+  border: 1px solid var(--border);
+  background: #fff;
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.style-card:hover {
+  border-color: color-mix(in srgb, var(--primary) 35%, var(--border));
+}
+
+.style-card--active {
+  border-color: color-mix(in srgb, var(--primary) 40%, var(--border));
   background: color-mix(in srgb, var(--primary-soft, #fce7f0) 55%, #fff);
+  box-shadow: 0 8px 24px -16px color-mix(in srgb, var(--primary) 30%, transparent);
 }
 
 .style-card__emoji {
@@ -105,8 +153,15 @@ async function create() {
 }
 
 .style-card__title {
-  margin: 0 0 4px;
+  margin: 0 0 2px;
   font-size: 1.1rem;
+}
+
+.style-card__tagline {
+  margin: 0 0 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--primary-strong, var(--primary));
 }
 
 .style-card__desc {

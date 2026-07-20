@@ -35,6 +35,7 @@ export function useAlbumWizard(albumId: string) {
     honoree_names: form.honoree_names || null,
     dedication: form.dedication || null,
     category: form.category || null,
+    presentation: form.presentation,
     color_primary: form.book_config.colors.accent || form.color_primary,
     is_public: form.is_public,
     book_config: form.book_config,
@@ -84,7 +85,7 @@ export function useAlbumWizard(albumId: string) {
     form.title = data.title ?? ''
     form.subtitle = data.subtitle ?? ''
     form.honoree_names = data.honoree_names ?? ''
-    form.dedication = data.dedication ?? ''
+    form.dedication = data.dedication ?? data.closing_message ?? ''
     form.category = data.category ?? ''
     form.color_primary = data.color_primary ?? DEFAULT_BOOK_CONFIG.colors.accent
     form.is_public = data.is_public
