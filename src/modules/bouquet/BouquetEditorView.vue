@@ -66,6 +66,7 @@
           :letter-design="form.letter_design"
           :show-letter="currentStep === 'letter'"
           embedded
+          preview-size="sm"
         />
       </aside>
     </div>
@@ -129,36 +130,65 @@ async function onPublished() {
 </script>
 
 <style scoped>
+.wiz-panel {
+  padding: clamp(20px, 3vw, 28px);
+}
+
 .wizard-body--split {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
-  gap: clamp(20px, 3vw, 28px);
+  gap: clamp(24px, 3vw, 40px);
   align-items: start;
-  max-width: 1180px;
-  margin-inline: auto;
+  width: 100%;
 }
 
 .wizard-body--split .wizard-editor {
   max-width: none;
   margin-inline: 0;
+  min-width: 0;
+}
+
+.wizard-body--split :deep(.wiz-step-content) {
+  max-width: none;
+}
+
+@media (min-width: 1024px) {
+  .wizard-body--split {
+    grid-template-columns: minmax(420px, 1fr) minmax(260px, 340px);
+  }
+}
+
+@media (min-width: 1440px) {
+  .wizard-body--split {
+    grid-template-columns: minmax(520px, 1fr) minmax(280px, 360px);
+  }
 }
 
 .bouquet-preview-panel {
   position: sticky;
-  top: 24px;
+  top: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 0;
+  padding: clamp(16px, 2vw, 24px);
+  border-radius: 22px;
+  border: 1px solid color-mix(in srgb, var(--primary) 12%, var(--border));
+  background: color-mix(in srgb, var(--primary-soft, #fce7f0) 35%, var(--surface));
+  box-shadow: 0 24px 56px -40px color-mix(in srgb, var(--primary) 28%, transparent);
 }
 
 .bouquet-preview-panel__label {
-  margin: 0 0 12px;
+  margin: 0 0 14px;
+  width: 100%;
   text-align: center;
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--muted);
+  color: color-mix(in srgb, var(--primary) 55%, var(--muted));
 }
 
-@media (max-width: 960px) {
+@media (max-width: 1023px) {
   .wizard-body--split {
     grid-template-columns: 1fr;
   }

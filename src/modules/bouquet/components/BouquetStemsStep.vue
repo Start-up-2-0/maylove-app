@@ -86,15 +86,15 @@ const maxStems = BOUQUET_MAX_STEMS
 <style scoped>
 .flower-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
 }
 
 .flower-card {
-  border: 2px solid var(--border);
+  border: 1px solid var(--border);
   border-radius: var(--radius-md);
   background: var(--surface);
-  padding: 8px;
+  padding: 10px 8px;
   text-align: center;
   cursor: pointer;
   transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
@@ -204,7 +204,7 @@ const maxStems = BOUQUET_MAX_STEMS
 
 .wrap-card {
   position: relative;
-  border: 2px solid var(--border);
+  border: 1px solid var(--border);
   border-radius: var(--radius-md);
   padding: 12px;
   background: var(--surface);
@@ -239,6 +239,12 @@ const maxStems = BOUQUET_MAX_STEMS
 @media (max-width: 900px) {
   .flower-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1440px) {
+  .flower-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 </style>

@@ -13,7 +13,7 @@
         Seu buquê vai florescer aqui conforme você escolhe as flores.
       </div>
 
-      <BouquetDisplay v-else :stems="stems" :wrap-color="wrapColor" size="lg" />
+      <BouquetDisplay v-else :stems="stems" :wrap-color="wrapColor" :size="displaySize" />
 
       <BouquetLetterPreview
         v-if="showLetter"
@@ -29,6 +29,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { BouquetLetterDesign, BouquetWrapColor } from '@/api/types'
+import type { BouquetPreviewSize } from '@/modules/bouquet/bouquetLayout'
 import BouquetDisplay from './BouquetDisplay.vue'
 import BouquetLetterPreview from './BouquetLetterPreview.vue'
 
@@ -42,6 +43,7 @@ const props = withDefaults(
     letterDesign?: BouquetLetterDesign
     showLetter?: boolean
     embedded?: boolean
+    previewSize?: BouquetPreviewSize
   }>(),
   {
     recipientName: '',
@@ -50,8 +52,11 @@ const props = withDefaults(
     letterDesign: 'classic',
     showLetter: false,
     embedded: false,
+    previewSize: 'lg',
   },
 )
+
+const displaySize = computed(() => (props.embedded ? props.previewSize : 'lg'))
 
 const wrapColor = computed(() => props.wrapColor)
 const letterDesign = computed(() => props.letterDesign)
@@ -71,14 +76,35 @@ const stems = computed(() => props.stems)
   border: 1px solid var(--border);
   border-radius: var(--radius-lg, 20px);
   padding: 20px;
-  min-height: 520px;
   display: flex;
   flex-direction: column;
   box-shadow: var(--shadow-sm);
 }
 
 .bouquet-preview--embedded {
-  min-height: 480px;
+  width: 100%;
+  min-height: 0;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+}
+
+.bouquet-preview--embedded :deep(.bouquet-display) {
+  max-width: 100%;
+}
+
+.bouquet-preview--embedded :deep(.bouquet-letter) {
+  width: 100%;
+}
+
+.bouquet-preview--embedded .bouquet-preview__stage {
+  padding-top: 0;
+}
+
+.bouquet-preview:not(.bouquet-preview--embedded) {
+  min-height: 520px;
 }
 
 .bouquet-preview--wrap-cream {
@@ -101,13 +127,16 @@ const stems = computed(() => props.stems)
 .bouquet-preview__stage {
   position: relative;
   flex: 1;
-  min-height: 420px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
   gap: 0;
   padding-top: 8px;
+}
+
+.bouquet-preview:not(.bouquet-preview--embedded) .bouquet-preview__stage {
+  min-height: 420px;
 }
 
 .bouquet-preview__empty {

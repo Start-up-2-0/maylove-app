@@ -241,7 +241,7 @@ async function copyLink() {
 }
 
 .design-card {
-  border: 2px solid var(--border);
+  border: 1px solid var(--border);
   border-radius: var(--radius-md);
   padding: 16px;
   text-align: left;
