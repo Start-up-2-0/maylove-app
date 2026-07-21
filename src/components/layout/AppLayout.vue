@@ -62,6 +62,20 @@
           <span>Novo mapa</span>
         </RouterLink>
 
+        <p class="sidebar__label sidebar__label--spaced">Buquês</p>
+        <RouterLink to="/dashboard/bouquets" class="nav-item" active-class="nav-item--active" @click="drawerOpen = false">
+          <svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M12 3c3 4 5 7 5 10a5 5 0 1 1-10 0c0-3 2-6 5-10Z" />
+          </svg>
+          <span>Meus buquês</span>
+        </RouterLink>
+        <RouterLink to="/dashboard/bouquets/new" class="nav-item" active-class="nav-item--active" @click="drawerOpen = false">
+          <svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M12 5v14M5 12h14" stroke-linecap="round" />
+          </svg>
+          <span>Novo buquê</span>
+        </RouterLink>
+
         <p class="sidebar__label sidebar__label--spaced">Recursos</p>
         <RouterLink to="/dashboard/modelos" class="nav-item" active-class="nav-item--active" @click="drawerOpen = false">
           <svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">

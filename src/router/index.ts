@@ -2,7 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { forceTheme, initTheme } from '@/composables/useTheme'
 
-const PUBLIC_EXPERIENCE_ROUTES = new Set(['public-album', 'public-tribute', 'public-map'])
+const PUBLIC_EXPERIENCE_ROUTES = new Set(['public-album', 'public-tribute', 'public-map', 'public-bouquet'])
 
 const router = createRouter({
   history: createWebHistory(),
@@ -118,6 +118,21 @@ const router = createRouter({
           name: 'map-edit',
           component: () => import('@/modules/map/MapEditorView.vue'),
         },
+        {
+          path: 'bouquets',
+          name: 'bouquets-dashboard',
+          component: () => import('@/modules/bouquet/BouquetsDashboardView.vue'),
+        },
+        {
+          path: 'bouquets/new',
+          name: 'bouquet-new',
+          component: () => import('@/modules/bouquet/NewBouquetView.vue'),
+        },
+        {
+          path: 'bouquets/:id/edit',
+          name: 'bouquet-edit',
+          component: () => import('@/modules/bouquet/BouquetEditorView.vue'),
+        },
       ],
     },
     {
@@ -134,6 +149,11 @@ const router = createRouter({
       path: '/map/:slug',
       name: 'public-map',
       component: () => import('@/modules/map/PublicMapRenderer.vue'),
+    },
+    {
+      path: '/bouquet/:slug',
+      name: 'public-bouquet',
+      component: () => import('@/modules/bouquet/PublicBouquetRenderer.vue'),
     },
   ],
 })

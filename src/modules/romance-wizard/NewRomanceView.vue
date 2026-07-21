@@ -20,6 +20,7 @@
             'rom-experience-card--active': hoveredExperience === experience.id,
             'rom-experience-card--soon': experience.product === 'coming_soon',
             'rom-experience-card--map': experience.product === 'map',
+            'rom-experience-card--bouquet': experience.product === 'bouquet',
           }"
           :disabled="creating || experience.product === 'coming_soon'"
           @click="startExperience(experience.id)"
@@ -37,6 +38,12 @@
             class="rom-experience-card__badge rom-experience-card__badge--map"
           >
             Mapas
+          </span>
+          <span
+            v-else-if="experience.product === 'bouquet'"
+            class="rom-experience-card__badge rom-experience-card__badge--bouquet"
+          >
+            Buquês
           </span>
           <span v-else class="rom-experience-card__chevron" aria-hidden="true">→</span>
         </button>
@@ -90,6 +97,10 @@ async function startExperience(experienceId: RomanceExperienceId) {
 
   if (experience.product === 'map') {
     await router.push('/dashboard/maps/new')
+    return
+  }
+  if (experience.product === 'bouquet') {
+    await router.push('/dashboard/bouquets/new')
     return
   }
   if (experience.product === 'coming_soon') return

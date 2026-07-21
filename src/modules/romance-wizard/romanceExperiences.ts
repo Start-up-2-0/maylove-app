@@ -23,7 +23,7 @@ export type RomanceExperienceId =
   | 'nossa-historia'
   | 'playlist-casal'
 
-export type RomanceExperienceProduct = 'tribute' | 'map' | 'coming_soon'
+export type RomanceExperienceProduct = 'tribute' | 'map' | 'bouquet' | 'coming_soon'
 
 export interface RomanceExperienceDefinition {
   id: RomanceExperienceId
@@ -135,7 +135,7 @@ export const ROMANCE_EXPERIENCES: RomanceExperienceDefinition[] = [
     tagline: 'Monte flor por flor, com significado',
     description: 'Escolha o modelo, monte o arranjo e escreva o cartão — como um presente físico.',
     opening: 'Flores desabrochando enquanto o buquê ganha forma.',
-    product: 'coming_soon',
+    product: 'bouquet',
     steps: [],
   },
   {

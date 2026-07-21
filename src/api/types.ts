@@ -743,6 +743,51 @@ export interface CoupleMapValidation {
   warnings: Array<{ field: string; code: string; message: string }>
 }
 
+export type DigitalBouquetStatus = 'draft' | 'awaiting_payment' | 'published' | 'archived'
+export type BouquetWrapColor = 'blush' | 'cream' | 'burgundy'
+export type BouquetLetterDesign = 'classic' | 'romantic'
+
+export interface DigitalBouquetSummary {
+  id: string
+  slug: string
+  status: DigitalBouquetStatus
+  title: string
+  stems_count: number
+  wrap_color: BouquetWrapColor
+  recipient_name: string
+  sender_name: string
+  letter_design: BouquetLetterDesign
+  views_count: number
+  published_at?: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface DigitalBouquetDetail extends DigitalBouquetSummary {
+  stems: string[]
+  letter_body: string
+  content_json?: Record<string, unknown>
+}
+
+export interface PublicDigitalBouquet {
+  slug: string
+  title: string
+  stems: string[]
+  wrap_color: BouquetWrapColor
+  recipient_name: string
+  sender_name: string
+  letter_body: string
+  letter_design: BouquetLetterDesign
+  content_json?: Record<string, unknown>
+  published_at?: string | null
+}
+
+export interface DigitalBouquetValidation {
+  valid: boolean
+  errors: Array<{ field: string; code: string; message: string }>
+  warnings: Array<{ field: string; code: string; message: string }>
+}
+
 export interface MapUploadPolicy {
   photo: {
     accepted_mimes: string[]

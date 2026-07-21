@@ -201,6 +201,9 @@ export async function startRomanceExperience(
   if (experience.product === 'map') {
     throw new Error('Use o módulo de mapas para esta experiência.')
   }
+  if (experience.product === 'bouquet') {
+    throw new Error('Use o módulo de buquês para esta experiência.')
+  }
 
   const option = resolveWizardOption(experienceId)
   if (!option) throw new Error('Catálogo indisponível.')
