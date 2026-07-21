@@ -46,11 +46,15 @@ const CANONICAL_PRESENTATIONS = [
   'wedding-book',
   'family-memories',
   'polaroid-memories',
+  'polaroid-board',
+  'portrait-album',
+  'instant-photo',
   'scrapbook',
   'travel-journal',
   'magazine-style',
   'luxury-album',
   'timeline',
+  'memorial-luz',
 ] as const
 
 export type CanonicalPresentationId = (typeof CANONICAL_PRESENTATIONS)[number]
@@ -65,7 +69,8 @@ export function normalizePresentationId(id: string | null | undefined): BookPres
 const BASE_FEATURES: BookTheme['features'] = {
   pageNumbers: true,
   showBinder: false,
-  chapterOpeners: true,
+  // Capítulos automáticos desligados até existirem controles no wizard
+  chapterOpeners: false,
   polaroidFrames: false,
   scrapbookDecor: false,
   textureOverlay: false,
@@ -74,22 +79,23 @@ const BASE_FEATURES: BookTheme['features'] = {
 const CANONICAL_THEMES: Record<CanonicalPresentationId, BookTheme> = {
   'classic-photobook': {
     id: 'classic-photobook',
-    name: 'Classic Photobook',
+    name: 'Memory Book',
     strategy: 'classic',
     fonts: {
-      display: "'Playfair Display', Georgia, serif",
-      body: "'Cormorant Garamond', Georgia, serif",
+      display: "'Cormorant Garamond', Georgia, serif",
+      body: "'Libre Baskerville', Georgia, serif",
+      accent: "'Cormorant Garamond', Georgia, serif",
     },
     tokens: {
-      paper: '#fffdf9',
-      paperAlt: '#f7f3ec',
-      ink: '#1f1a17',
-      muted: '#6f655c',
-      border: 'rgba(31, 26, 23, 0.1)',
-      shadow: '0 28px 60px -32px rgba(20, 16, 12, 0.45)',
+      paper: '#fbfaf7',
+      paperAlt: '#f5f3ee',
+      ink: '#1c1814',
+      muted: '#6e655c',
+      border: 'rgba(28, 24, 20, 0.1)',
+      shadow: '0 28px 56px -32px rgba(28, 24, 20, 0.32)',
     },
-    cover: { variant: 'minimal', eyebrow: 'Photobook' },
-    features: { ...BASE_FEATURES, showBinder: true },
+    cover: { variant: 'minimal', eyebrow: 'ÁLBUM' },
+    features: { ...BASE_FEATURES, showBinder: false, pageNumbers: true },
   },
   'wedding-book': {
     id: 'wedding-book',
@@ -148,6 +154,84 @@ const CANONICAL_THEMES: Record<CanonicalPresentationId, BookTheme> = {
     },
     cover: { variant: 'polaroid', eyebrow: 'Instantâneos' },
     features: { ...BASE_FEATURES, chapterOpeners: false, polaroidFrames: true },
+  },
+  'polaroid-board': {
+    id: 'polaroid-board',
+    name: 'Quadro Polaroid',
+    strategy: 'polaroid',
+    fonts: {
+      display: "'Caveat', cursive",
+      body: "'Special Elite', monospace",
+      accent: "'Caveat', cursive",
+    },
+    tokens: {
+      paper: '#c4a574',
+      paperAlt: '#b8956a',
+      ink: '#2c241c',
+      muted: '#5c4f42',
+      border: 'rgba(44, 36, 28, 0.18)',
+      shadow: '0 20px 40px -18px rgba(0, 0, 0, 0.55)',
+    },
+    cover: { variant: 'polaroid', eyebrow: 'Coladas com carinho' },
+    features: {
+      ...BASE_FEATURES,
+      pageNumbers: false,
+      chapterOpeners: false,
+      polaroidFrames: true,
+      scrapbookDecor: true,
+      textureOverlay: true,
+    },
+  },
+  'portrait-album': {
+    id: 'portrait-album',
+    name: 'Álbum Retrato',
+    strategy: 'scrapbook',
+    fonts: {
+      display: "'Special Elite', monospace",
+      body: "'Cormorant Garamond', Georgia, serif",
+      accent: "'Caveat', cursive",
+    },
+    tokens: {
+      paper: '#e8dcc8',
+      paperAlt: '#dccfb8',
+      ink: '#3b3228',
+      muted: '#7a6f60',
+      border: 'rgba(59, 50, 40, 0.16)',
+      shadow: '0 16px 36px -18px rgba(40, 30, 20, 0.4)',
+    },
+    cover: { variant: 'scrapbook', eyebrow: 'Álbum de retratos' },
+    features: {
+      ...BASE_FEATURES,
+      pageNumbers: false,
+      chapterOpeners: false,
+      scrapbookDecor: true,
+      textureOverlay: true,
+    },
+  },
+  'instant-photo': {
+    id: 'instant-photo',
+    name: 'Instant Photo',
+    strategy: 'polaroid',
+    fonts: {
+      display: "'Archivo Black', 'Arial Black', sans-serif",
+      body: "'Hanken Grotesk', system-ui, sans-serif",
+      accent: "'Space Grotesk', system-ui, sans-serif",
+    },
+    tokens: {
+      paper: '#141414',
+      paperAlt: '#1c1c1c',
+      ink: '#f5f5f5',
+      muted: '#9a9a9a',
+      border: 'rgba(255, 255, 255, 0.12)',
+      shadow: '0 24px 48px -28px rgba(0, 0, 0, 0.65)',
+    },
+    cover: { variant: 'minimal', eyebrow: 'INSTANT PHOTO' },
+    features: {
+      ...BASE_FEATURES,
+      pageNumbers: true,
+      chapterOpeners: false,
+      polaroidFrames: true,
+    },
   },
   scrapbook: {
     id: 'scrapbook',
@@ -255,6 +339,33 @@ const CANONICAL_THEMES: Record<CanonicalPresentationId, BookTheme> = {
       textureOverlay: false,
     },
   },
+  'memorial-luz': {
+    id: 'memorial-luz',
+    name: 'Memorial Digital',
+    strategy: 'classic',
+    fonts: {
+      display: "'Cormorant Garamond', Georgia, serif",
+      body: "'Hanken Grotesk', system-ui, sans-serif",
+      accent: "'Cormorant Garamond', Georgia, serif",
+    },
+    tokens: {
+      paper: '#14110f',
+      paperAlt: '#1c1814',
+      ink: '#f0ebe3',
+      muted: '#a89f94',
+      border: 'rgba(201, 168, 106, 0.14)',
+      shadow: '0 32px 64px -36px rgba(0, 0, 0, 0.55)',
+    },
+    cover: { variant: 'minimal', eyebrow: 'EM MEMÓRIA' },
+    features: {
+      pageNumbers: false,
+      showBinder: false,
+      chapterOpeners: true,
+      polaroidFrames: false,
+      scrapbookDecor: false,
+      textureOverlay: false,
+    },
+  },
 }
 
 export function getBookTheme(presentation: string | null | undefined): BookTheme {
@@ -262,17 +373,46 @@ export function getBookTheme(presentation: string | null | undefined): BookTheme
   return CANONICAL_THEMES[canonical as CanonicalPresentationId] ?? CANONICAL_THEMES['classic-photobook']
 }
 
-export function getThemeCssVars(theme: BookTheme, accentColor: string): Record<string, string> {
+export function getThemeCssVars(
+  theme: BookTheme,
+  accentColor: string,
+  overrides?: {
+    paper?: string
+    ink?: string
+    page?: string
+    fontDisplay?: string
+    fontBody?: string
+  },
+): Record<string, string> {
   return {
-    '--book-paper': theme.tokens.paper,
-    '--book-paper-alt': theme.tokens.paperAlt,
-    '--book-ink': theme.tokens.ink,
+    '--book-paper': overrides?.paper ?? theme.tokens.paper,
+    '--book-paper-alt': overrides?.page ?? theme.tokens.paperAlt,
+    '--book-ink': overrides?.ink ?? theme.tokens.ink,
     '--book-muted': theme.tokens.muted,
     '--book-border': theme.tokens.border,
     '--book-shadow': theme.tokens.shadow,
     '--book-accent': accentColor,
-    '--book-font-display': theme.fonts.display,
-    '--book-font-body': theme.fonts.body,
+    '--book-font-display': overrides?.fontDisplay ?? theme.fonts.display,
+    '--book-font-body': overrides?.fontBody ?? theme.fonts.body,
     '--book-font-accent': theme.fonts.accent ?? theme.fonts.display,
   }
+}
+
+const FONT_PRESETS: Record<string, { display: string; body: string }> = {
+  editorial: {
+    display: "'Cormorant Garamond', Georgia, serif",
+    body: "'Libre Baskerville', Georgia, serif",
+  },
+  classic: {
+    display: "'Playfair Display', Georgia, serif",
+    body: "'Cormorant Garamond', Georgia, serif",
+  },
+  modern: {
+    display: "'Space Grotesk', system-ui, sans-serif",
+    body: "'Hanken Grotesk', system-ui, sans-serif",
+  },
+}
+
+export function fontPresetVars(preset?: string): { display: string; body: string } {
+  return FONT_PRESETS[preset ?? 'editorial'] ?? FONT_PRESETS.editorial
 }

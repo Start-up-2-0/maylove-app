@@ -102,6 +102,7 @@ import {
   categoryLabel,
 } from '@/templates/categories'
 import { resolveContent, resolveTheme } from '@/composables/useExperienceContent'
+import { useModalLifecycle } from '@/composables/useModalLifecycle'
 import ExperienceRenderer from '@/components/experience/ExperienceRenderer.vue'
 
 const router = useRouter()
@@ -160,13 +161,13 @@ function bannerStyle(def: TemplateDefinition) {
 
 function openPreview(def: TemplateDefinition) {
   previewDef.value = def
-  document.body.style.overflow = 'hidden'
 }
 
 function closePreview() {
   previewDef.value = null
-  document.body.style.overflow = ''
 }
+
+useModalLifecycle(previewDef, closePreview, { lockScroll: true })
 
 async function use(def: TemplateDefinition) {
   const catalog = catalogTemplates.value.find((item) => item.slug === def.slug)
@@ -180,7 +181,7 @@ async function use(def: TemplateDefinition) {
   try {
     const tribute = await createTribute(type.id, catalog.id)
     closePreview()
-    await router.push(`/dashboard/tributes/${tribute.id}/edit`)
+    await router.push(`/dashboard/romances/${tribute.id}/edit`)
   } catch (err) {
     createError.value = resolveApiError(err, 'Não foi possível criar a homenagem.')
     creatingSlug.value = null

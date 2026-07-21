@@ -1,6 +1,7 @@
 <template>
   <div class="music-step">
     <WizardStepHeader
+      v-if="!compact"
       title="Trilha sonora"
       :description="
         !supportsMusic
@@ -90,11 +91,15 @@ import { isYoutubeUrl, loadAudioDuration } from '@/storage/musicMime'
 import MusicTrimEditor from '@/components/wizard/MusicTrimEditor.vue'
 import WizardStepHeader from '@/components/wizard/WizardStepHeader.vue'
 
-const props = defineProps<{
-  tributeId: string
-  supportsMusic: boolean
-  form: ReturnType<typeof useTributeWizard>['form']
-}>()
+const props = withDefaults(
+  defineProps<{
+    tributeId: string
+    supportsMusic: boolean
+    form: ReturnType<typeof useTributeWizard>['form']
+    compact?: boolean
+  }>(),
+  { compact: false },
+)
 
 const emit = defineEmits<{ changed: [] }>()
 

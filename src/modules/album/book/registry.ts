@@ -1,14 +1,18 @@
 import { defineAsyncComponent, type Component } from 'vue'
-import { isTimelinePresentation, normalizePresentationId } from './presentations'
-import type { BookPresentationId } from './types'
+import { isMemorialPresentation } from './presentations'
 
-const PhotobookTemplate = defineAsyncComponent(() => import('./templates/PhotobookTemplate.vue'))
-const TimelineTemplate = defineAsyncComponent(() => import('./templates/TimelineTemplate.vue'))
+const ProfessionalGalleryTemplate = defineAsyncComponent(
+  () => import('./templates/ProfessionalGalleryTemplate.vue'),
+)
 
-export function getBookTemplate(presentation: BookPresentationId | string): Component {
-  const normalized = normalizePresentationId(presentation)
-  if (isTimelinePresentation(normalized)) {
-    return TimelineTemplate
+const MemorialTemplate = defineAsyncComponent(
+  () => import('./templates/MemorialTemplate.vue'),
+)
+
+/** Resolve o template público conforme apresentação do álbum. */
+export function getBookTemplate(presentation?: string): Component {
+  if (isMemorialPresentation(presentation)) {
+    return MemorialTemplate
   }
-  return PhotobookTemplate
+  return ProfessionalGalleryTemplate
 }

@@ -1,96 +1,72 @@
 <template>
   <div class="photos-step">
     <WizardStepHeader
-      title="Páginas do livro"
+      title="Fototeca"
       :description="stepDescription"
     />
 
-    <section v-if="!isTimeline" class="layout-panel ml-card">
-      <label class="layout-panel__field">
-        <span class="layout-panel__label">Fotos por página</span>
-        <select v-model.number="photosPerPage" class="ml-input ml-input--sm">
-          <option v-for="option in layoutOptions" :key="option" :value="option">
-            {{ option }} {{ option === 1 ? 'foto' : 'fotos' }} por página
-          </option>
-        </select>
-      </label>
+    <section class="layout-panel ml-card">
       <p class="layout-panel__hint text-muted">
-        {{ pageEstimate }} páginas no livro com {{ photos.length }} foto(s) enviada(s).
-        Textos de título e descrição aparecem em cada foto na prévia.
+        {{ photos.length }} foto(s) na galeria. Defina a capa e arraste para reordenar. Os metadados
+        de cada foto são editados dentro das memórias.
       </p>
     </section>
-
-    <section v-else class="layout-panel ml-card layout-panel--timeline">
-      <p class="layout-panel__hint text-muted">
-        Cada foto vira um <strong>momento</strong> na linha do tempo. Informe
-        <strong>data</strong>, <strong>título</strong> e <strong>descrição</strong> em todas as fotos.
-        A ordem na prévia segue a data (da mais antiga para a mais recente).
-      </p>
-      <p class="layout-panel__hint text-muted">
-        {{ photos.length }} momento(s) · {{ pageEstimate }} seções no livro (capa + momentos + encerramento).
-      </p>
-    </section>
-
-    <div v-if="photos.length" :class="isTimeline ? 'timeline-photos' : 'photo-grid'">
-      <figure v-for="(photo, index) in photos" :key="photo.id" class="photo-tile" :class="{ 'photo-tile--timeline': isTimeline }">
+    <div v-if="photos.length" class="photo-grid">
+      <figure
+        v-for="(photo, index) in photos"
+        :key="photo.id"
+        class="photo-tile"
+        :class="{
+          'photo-tile--dragging': photoDragIndex === index,
+          'photo-tile--over': photoDropIndex === index,
+        }"
+        draggable="true"
+        @dragstart="onPhotoDragStart(index, $event)"
+        @dragover.prevent="onPhotoDragOver(index)"
+        @dragleave="onPhotoDragLeave(index)"
+        @drop.prevent="onPhotoDrop(index)"
+        @dragend="onPhotoDragEnd"
+      >
         <img
           v-if="mediaPreviewUrl(photo)"
           class="photo-tile__img"
           :src="mediaPreviewUrl(photo)!"
           alt=""
           loading="lazy"
+          draggable="false"
         />
         <div v-else class="photo-tile__placeholder">Prévia indisponível</div>
         <figcaption class="photo-tile__bar">
-          <span class="photo-tile__index">#{{ index + 1 }}</span>
+          <span class="photo-tile__index">
+            #{{ index + 1 }} · ⠿
+            <em v-if="isCover(photo.id)" class="photo-tile__cover-tag">Capa</em>
+          </span>
           <div class="photo-tile__actions">
-            <button class="ml-icon-btn" :disabled="index === 0" title="Mover para cima" @click="move(index, -1)">
+            <button
+              class="ml-icon-btn"
+              :class="{ 'ml-icon-btn--active': isCover(photo.id) }"
+              title="Definir como capa"
+              @click="setAsCover(photo.id)"
+            >
+              ★
+            </button>
+            <button class="ml-icon-btn" :disabled="index === 0 || reordering" title="Mover para cima" @click="move(index, -1)">
               ↑
             </button>
             <button
               class="ml-icon-btn"
-              :disabled="index === photos.length - 1"
+              :disabled="index === photos.length - 1 || reordering"
               title="Mover para baixo"
               @click="move(index, 1)"
             >
               ↓
             </button>
-            <button class="ml-icon-btn ml-icon-btn--danger" title="Remover" @click="remove(photo.id)">×</button>
+            <button class="ml-icon-btn ml-icon-btn--danger" :disabled="removingId === photo.id" title="Remover" @click="remove(photo.id)">
+              <span v-if="removingId === photo.id" class="ml-spinner ml-spinner--xs" />
+              <template v-else>×</template>
+            </button>
           </div>
         </figcaption>
-        <div class="photo-meta">
-          <label class="photo-meta__date">
-            <span class="photo-meta__date-label">
-              Data<span v-if="isTimeline" class="photo-meta__req">*</span>
-              <span v-else> (opcional)</span>
-            </span>
-            <input
-              v-model="captions[photo.id].memory_date"
-              class="ml-input ml-input--sm"
-              :class="{ 'ml-input--invalid': isTimeline && showValidation && !captions[photo.id]?.memory_date }"
-              type="date"
-              :required="isTimeline"
-              @change="queueCaptionSave(photo.id)"
-            />
-          </label>
-          <input
-            v-model="captions[photo.id].title"
-            class="ml-input ml-input--sm"
-            :class="{ 'ml-input--invalid': isTimeline && showValidation && !captions[photo.id]?.title?.trim() }"
-            :placeholder="isTimeline ? 'Título' : 'Título (opcional)'"
-            :required="isTimeline"
-            @input="queueCaptionSave(photo.id)"
-          />
-          <textarea
-            v-model="captions[photo.id].caption"
-            class="ml-input ml-input--sm"
-            :class="{ 'ml-input--invalid': isTimeline && showValidation && !captions[photo.id]?.caption?.trim() }"
-            rows="2"
-            :placeholder="isTimeline ? 'Descrição' : 'Descrição (opcional)'"
-            :required="isTimeline"
-            @input="queueCaptionSave(photo.id)"
-          />
-        </div>
       </figure>
     </div>
 
@@ -115,13 +91,12 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import {
   confirmAlbumMedia,
   deleteAlbumMedia,
   presignAlbumMedia,
   reorderAlbumMedia,
-  updateAlbum,
 } from '@/api/albums'
 import type { AlbumMedia } from '@/api/types'
 import { resolveApiError } from '@/api/errors'
@@ -129,8 +104,6 @@ import { uploadFile } from '@/storage/upload'
 import { inferImageMimeType } from '@/storage/mime'
 import { photoUploadHint, validatePhotoUpload } from '@/storage/validateUpload'
 import { MEDIA_LIMITS } from '@/config/mediaLimits'
-import { estimateBookPageCount } from '@/modules/album/book/buildModel'
-import { isTimelinePresentation } from '@/modules/album/book/presentations'
 import { resolveMediaUrl } from '@/modules/album/book/mediaUrl'
 import type { useAlbumWizard } from '@/composables/useAlbumWizard'
 import WizardStepHeader from '@/components/wizard/WizardStepHeader.vue'
@@ -144,104 +117,43 @@ const props = defineProps<{
 const emit = defineEmits<{ changed: [] }>()
 
 const maxPhotos = MEDIA_LIMITS.photo.maxCountPerAlbum
-const layoutOptions = [1, 2, 3, 4]
 const uploading = ref(false)
 const error = ref('')
-const captions = reactive<Record<string, { title: string; caption: string; memory_date: string }>>({})
-const saveTimers = new Map<string, ReturnType<typeof setTimeout>>()
-const showValidation = ref(false)
+const reordering = ref(false)
+const removingId = ref<string | null>(null)
+const photoDragIndex = ref<number | null>(null)
+const photoDropIndex = ref<number | null>(null)
 
-const isTimeline = computed(() => isTimelinePresentation(props.form.presentation))
-
-const photosPerPage = computed({
-  get: () => props.form.photos_per_page,
-  set: (value: number) => {
-    props.form.photos_per_page = value
-  },
-})
-
-const pageEstimate = computed(() =>
-  estimateBookPageCount(props.photos.length, photosPerPage.value, props.form.presentation),
+const stepDescription = computed(
+  () =>
+    `Envie as fotos da fototeca e arraste para reordenar. Defina a capa do livro. Até ${maxPhotos} fotos. ${photoUploadHint()}`,
 )
-
-const stepDescription = computed(() => {
-  if (isTimeline.value) {
-    return `Monte a linha do tempo: uma foto por momento, com data, título e descrição obrigatórios. Adicione até ${maxPhotos} fotos. ${photoUploadHint()}`
-  }
-  return `Organize as fotos e os textos de cada página. Adicione até ${maxPhotos} fotos. ${photoUploadHint()}`
-})
 
 watch(
   () => props.form.presentation,
-  (presentation) => {
-    if (isTimelinePresentation(presentation)) {
-      props.form.photos_per_page = 1
-    }
-    showValidation.value = false
+  () => {
+    error.value = ''
   },
 )
-
-watch(
-  () => props.photos,
-  (photos) => {
-    for (const photo of photos) {
-      captions[photo.id] = {
-        title: photo.title ?? '',
-        caption: photo.caption ?? '',
-        memory_date: photo.memory_date ?? '',
-      }
-    }
-  },
-  { immediate: true, deep: true },
-)
-
-onBeforeUnmount(() => {
-  void flushPendingCaptionSaves()
-})
 
 function mediaPreviewUrl(photo: AlbumMedia): string | null {
   return resolveMediaUrl(photo.url, photo.url_thumbnail)
 }
 
-function queueCaptionSave(mediaId: string) {
-  const existing = saveTimers.get(mediaId)
-  if (existing) clearTimeout(existing)
-  saveTimers.set(
-    mediaId,
-    setTimeout(() => {
-      saveTimers.delete(mediaId)
-      void saveCaption(mediaId)
-    }, 600),
-  )
+function isCover(mediaId: string) {
+  return props.form.book_config.cover.media_id === mediaId
 }
 
-async function flushPendingCaptionSaves() {
-  for (const timer of saveTimers.values()) {
-    clearTimeout(timer)
-  }
-  saveTimers.clear()
-  await Promise.all(props.photos.map((photo) => saveCaption(photo.id, false)))
+function setAsCover(mediaId: string) {
+  props.form.book_config.cover.media_id = mediaId
 }
 
-function isPhotoTimelineComplete(photoId: string): boolean {
-  const meta = captions[photoId]
-  if (!meta) return false
-  return Boolean(meta.memory_date && meta.title.trim() && meta.caption.trim())
-}
-
-function validateTimelineFields(): boolean {
-  if (!isTimeline.value) return true
-  showValidation.value = true
-  const valid = props.photos.every((photo) => isPhotoTimelineComplete(photo.id))
-  if (!valid) {
-    error.value = 'Preencha data, título e descrição em todas as fotos da linha do tempo.'
-  }
-  return valid
-}
+// Metadados de foto (título/descrição/data/local) são editados dentro de cada
+// memória (AlbumMemoriesStep) no novo modelo de chapters/memories, não na fototeca.
+function flushPendingCaptionSaves() {}
 
 defineExpose({
   flushPendingCaptionSaves,
-  validateTimelineFields,
 })
 
 async function onFilesSelected(event: Event) {
@@ -290,44 +202,80 @@ async function onFilesSelected(event: Event) {
 }
 
 async function remove(mediaId: string) {
+  if (removingId.value) return
+  removingId.value = mediaId
+  error.value = ''
   try {
     await deleteAlbumMedia(props.albumId, mediaId)
     emit('changed')
   } catch {
     error.value = 'Não foi possível remover a foto.'
+  } finally {
+    removingId.value = null
   }
 }
 
 async function move(index: number, direction: -1 | 1) {
+  if (reordering.value) return
   const order = props.photos.map((photo) => photo.id)
   const target = index + direction
   if (target < 0 || target >= order.length) return
   ;[order[index], order[target]] = [order[target], order[index]]
+  reordering.value = true
+  error.value = ''
   try {
     await reorderAlbumMedia(props.albumId, order)
     emit('changed')
   } catch {
     error.value = 'Não foi possível reordenar as fotos.'
+  } finally {
+    reordering.value = false
   }
 }
 
-async function saveCaption(mediaId: string, showError = true) {
-  const meta = captions[mediaId]
-  if (!meta) return
-  try {
-    await updateAlbum(props.albumId, {
-      pages: [{
-        media_id: mediaId,
-        title: meta.title.trim(),
-        caption: meta.caption.trim(),
-        memory_date: meta.memory_date || null,
-      }],
-    })
-  } catch {
-    if (showError) {
-      error.value = 'Não foi possível salvar o texto da foto.'
-    }
+function onPhotoDragStart(index: number, event: DragEvent) {
+  photoDragIndex.value = index
+  event.dataTransfer?.setData('text/plain', String(index))
+  if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move'
+}
+
+function onPhotoDragOver(index: number) {
+  if (photoDragIndex.value === null || photoDragIndex.value === index) return
+  photoDropIndex.value = index
+}
+
+function onPhotoDragLeave(index: number) {
+  if (photoDropIndex.value === index) photoDropIndex.value = null
+}
+
+async function onPhotoDrop(index: number) {
+  if (photoDragIndex.value === null || photoDragIndex.value === index) {
+    onPhotoDragEnd()
+    return
   }
+  if (reordering.value) {
+    onPhotoDragEnd()
+    return
+  }
+  const order = props.photos.map((photo) => photo.id)
+  const [id] = order.splice(photoDragIndex.value, 1)
+  order.splice(index, 0, id)
+  onPhotoDragEnd()
+  reordering.value = true
+  error.value = ''
+  try {
+    await reorderAlbumMedia(props.albumId, order)
+    emit('changed')
+  } catch {
+    error.value = 'Não foi possível reordenar as fotos.'
+  } finally {
+    reordering.value = false
+  }
+}
+
+function onPhotoDragEnd() {
+  photoDragIndex.value = null
+  photoDropIndex.value = null
 }
 </script>
 
@@ -364,15 +312,43 @@ async function saveCaption(mediaId: string, showError = true) {
 
 .photo-tile--timeline {
   display: grid;
-  grid-template-columns: 120px 1fr;
+  grid-template-columns: minmax(96px, 140px) 1fr;
   gap: 12px;
   align-items: start;
 }
 
-.photo-tile--timeline .photo-tile__img,
+.photo-tile__cover-tag {
+  margin-left: 6px;
+  font-style: normal;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent, #c45d7a);
+}
+
+.ml-icon-btn--active {
+  color: var(--accent, #c45d7a);
+}
+
+.photo-tile--dragging {
+  opacity: 0.55;
+}
+
+.photo-tile--over {
+  outline: 2px solid color-mix(in srgb, var(--accent, #c45d7a) 55%, transparent);
+  outline-offset: 2px;
+}
+
+.photo-tile--timeline .photo-tile__img {
+  aspect-ratio: auto;
+  max-height: 180px;
+  object-fit: contain;
+  background: var(--surface-3);
+}
+
 .photo-tile--timeline .photo-tile__placeholder {
-  aspect-ratio: 1;
-  min-height: 0;
+  min-height: 96px;
+  aspect-ratio: auto;
 }
 
 .photo-tile--timeline .photo-tile__bar {
@@ -420,9 +396,12 @@ async function saveCaption(mediaId: string, showError = true) {
 
 .photo-tile__img {
   width: 100%;
-  aspect-ratio: 4 / 3;
-  object-fit: cover;
+  height: auto;
+  max-height: 220px;
+  object-fit: contain;
+  object-position: center;
   display: block;
+  background: var(--surface-3);
 }
 
 .photo-tile__placeholder {

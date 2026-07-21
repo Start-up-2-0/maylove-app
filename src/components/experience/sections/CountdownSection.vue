@@ -1,13 +1,19 @@
 <template>
-  <section v-if="targetDate" class="exp-section countdown-section">
+  <section v-if="targetDate" class="exp-section countdown-section" :class="`countdown-section--${displayFormat}`">
     <div class="exp-container countdown" v-reveal>
-      <p v-if="title" class="exp-eyebrow countdown__eyebrow">{{ title }}</p>
-      <div class="countdown__grid">
+      <p v-if="eyebrow" class="exp-eyebrow countdown__eyebrow">{{ eyebrow }}</p>
+      <h2 v-if="blockTitle" class="countdown__heading">{{ blockTitle }}</h2>
+      <p v-if="description" class="countdown__description">{{ description }}</p>
+
+      <p v-if="showDateOnly" class="countdown__date-only">{{ formattedDate }}</p>
+
+      <div v-else class="countdown__grid">
         <div v-for="unit in units" :key="unit.label" class="countdown__unit">
           <span class="countdown__value">{{ unit.value }}</span>
           <span class="countdown__label">{{ unit.label }}</span>
         </div>
       </div>
+
       <p v-if="caption" class="countdown__caption">{{ caption }}</p>
     </div>
   </section>
@@ -17,17 +23,65 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import type { SectionComponentProps } from '@/templates/types'
 import { vReveal } from '@/composables/useReveal'
+import { defaultSpecialDateTitle, formatSpecialDateLabel } from '@/utils/specialDate'
 
 const props = defineProps<SectionComponentProps>()
 
 const now = ref(Date.now())
 let timer: number | undefined
 
-const mode = computed(() => (props.section.config?.mode as string) || 'countup')
-const title = computed(
-  () => (props.section.config?.title as string) || (mode.value === 'countup' ? 'Juntos há' : 'Contagem regressiva'),
+const wizardConfig = computed(() => props.content.specialDateConfig)
+
+const mode = computed(() => {
+  if (wizardConfig.value?.enabled) {
+    return wizardConfig.value.counterMode === 'countdown' ? 'countdown' : 'countup'
+  }
+  return (props.section.config?.mode as string) || 'countup'
+})
+
+const displayFormat = computed(
+  () => wizardConfig.value?.displayFormat ?? (props.section.config?.format as string) ?? 'card',
 )
-const caption = computed(() => (props.section.config?.caption as string) || '')
+
+const showDateOnly = computed(
+  () => wizardConfig.value?.counterMode === 'none' || props.section.config?.mode === 'date-only',
+)
+
+const blockTitle = computed(() => {
+  if (wizardConfig.value?.enabled) return defaultSpecialDateTitle(wizardConfig.value)
+  return (props.section.config?.title as string) || ''
+})
+
+const eyebrow = computed(() => {
+  if (wizardConfig.value?.enabled) {
+    return mode.value === 'countup' ? 'Desde o evento' : 'Contagem regressiva'
+  }
+  return (
+    (props.section.config?.eyebrow as string) ||
+    (mode.value === 'countup' ? 'Juntos há' : 'Contagem regressiva')
+  )
+})
+
+const description = computed(
+  () => wizardConfig.value?.description || (props.section.config?.description as string) || '',
+)
+
+const formattedDate = computed(() =>
+  wizardConfig.value ? formatSpecialDateLabel(wizardConfig.value) : '',
+)
+
+const caption = computed(() => {
+  if (wizardConfig.value?.enabled && wizardConfig.value.counterMode !== 'none') {
+    return wizardConfig.value.counterMode === 'countdown'
+      ? formattedDate.value
+        ? `Até ${formattedDate.value}`
+        : ''
+      : formattedDate.value
+        ? `Desde ${formattedDate.value}`
+        : ''
+  }
+  return (props.section.config?.caption as string) || ''
+})
 
 const targetDate = computed(() => {
   if (!props.content.specialDate) return null
@@ -36,7 +90,7 @@ const targetDate = computed(() => {
 })
 
 const units = computed(() => {
-  if (!targetDate.value) return []
+  if (!targetDate.value || showDateOnly.value) return []
   const diffMs =
     mode.value === 'countup'
       ? now.value - targetDate.value.getTime()
@@ -55,8 +109,10 @@ const units = computed(() => {
 })
 
 onMounted(() => {
+  if (showDateOnly.value) return
   timer = window.setInterval(() => (now.value = Date.now()), 1000)
 })
+
 onUnmounted(() => window.clearInterval(timer))
 </script>
 
@@ -64,9 +120,25 @@ onUnmounted(() => window.clearInterval(timer))
 .countdown-section {
   text-align: center;
 }
+.countdown-section--inline {
+  text-align: left;
+}
 .countdown__eyebrow {
   display: block;
-  margin-bottom: 26px;
+  margin-bottom: 18px;
+}
+.countdown__heading {
+  font-family: var(--exp-font-display);
+  font-size: clamp(1.6rem, 4vw, 2.4rem);
+  font-weight: 600;
+  color: var(--exp-ink);
+  margin-bottom: 10px;
+}
+.countdown__description {
+  max-width: 560px;
+  margin: 0 auto 20px;
+  color: var(--exp-muted);
+  line-height: 1.5;
 }
 .countdown__grid {
   display: flex;
@@ -98,11 +170,17 @@ onUnmounted(() => window.clearInterval(timer))
   text-transform: uppercase;
   color: var(--exp-muted);
 }
-.countdown__caption {
+.countdown__caption,
+.countdown__date-only {
   margin-top: 24px;
   color: var(--exp-muted);
   font-family: var(--exp-font-display);
   font-style: italic;
   font-size: 1.05rem;
+}
+.countdown__date-only {
+  font-style: normal;
+  font-weight: 600;
+  color: var(--exp-primary);
 }
 </style>

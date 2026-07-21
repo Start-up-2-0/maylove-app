@@ -123,10 +123,17 @@ export const tributeHandlers = [
     const id = params.id as string
     const response: CheckoutResponse = {
       order_id: `order-${id}`,
+      kind: 'tribute',
       tribute_id: id,
       status: 'pending',
-      price_cents: 599,
-      checkout_url: `/dashboard/tributes/${id}/edit?step=publish&payment=success`,
+      price_cents: 499,
+      payment_method: 'pix',
+      checkout_url: null,
+      pix: {
+        qr_code: '00020126MOCKPIX',
+        qr_code_base64: null,
+        ticket_url: `/dashboard/tributes/${id}/edit?step=publish&payment=success`,
+      },
     }
     return ok(response)
   }),

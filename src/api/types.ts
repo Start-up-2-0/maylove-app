@@ -95,6 +95,38 @@ export interface TributeTimelineItem {
   description?: string
   photo_url?: string
   photo_media_id?: string
+  location?: string
+  emotion?: string
+  video_url?: string
+}
+
+export type SpecialDateCounterMode = 'countdown' | 'since' | 'none'
+export type SpecialDateDisplayFormat = 'compact' | 'card' | 'hero' | 'inline'
+
+export interface TributeSpecialDateConfig {
+  enabled?: boolean
+  kind?: 'first_meeting' | 'first_kiss' | 'dating_proposal' | 'wedding' | 'anniversary' | 'custom'
+  date?: string
+  time?: string
+  title?: string
+  description?: string
+  counter_mode?: SpecialDateCounterMode
+  display_format?: SpecialDateDisplayFormat
+}
+
+export interface TributeModulesConfig {
+  digital_album?: boolean
+  letter?: boolean
+  timeline?: boolean
+  couple_map?: boolean
+  digital_book?: boolean
+  quiz?: boolean
+  playlist?: boolean
+  night_sky?: boolean
+  qr_code?: boolean
+  comments?: boolean
+  reactions?: boolean
+  gifts?: boolean
 }
 
 export interface TributeEventInfo {
@@ -132,6 +164,10 @@ export interface TributeContentJson {
   style_id?: string | null
   /** Estilo de apresentação (experiência/layout) escolhido pelo usuário. */
   presentation?: string | null
+  /** Tema visual do wizard de romances (Love Cards). */
+  romance_theme_id?: string | null
+  /** Paleta de cores do tema Retrospectiva Interativa. */
+  retrospective_palette_id?: string | null
   /** Pergunta do pedido (usada no estilo "Pedido interativo"). */
   question?: string
   /** Mensagem exibida quando o pedido é aceito. */
@@ -150,6 +186,16 @@ export interface TributeContentJson {
   include_opening_message?: boolean
   /** Exibe mensagem de encerramento ao final da experiência. */
   include_closing_message?: boolean
+  /** Configuração da data especial com contador. */
+  special_date_config?: TributeSpecialDateConfig
+  /** Módulos extras ativos na homenagem. */
+  modules?: TributeModulesConfig
+  /** Categoria escolhida no wizard (slug interno). */
+  wizard_category_slug?: string | null
+  /** ID estável do tipo escolhido no wizard (ex.: declaracao-amor). */
+  wizard_type_id?: string | null
+  /** Experiência romance escolhida na galeria (ex.: carta-amor). */
+  romance_experience_id?: string | null
 }
 
 export interface TributeDetail {
@@ -244,7 +290,7 @@ export interface PresignResponse {
 export interface AlbumMedia {
   id: string
   storage_file_id: string
-  media_type: 'photo' | 'audio'
+  media_type: AlbumMediaType
   original_filename: string
   mime_type: string | null
   size_bytes: number | null
@@ -252,6 +298,7 @@ export interface AlbumMedia {
   title: string | null
   caption: string | null
   memory_date: string | null
+  place_name?: string | null
   url_thumbnail: string | null
   url?: string | null
   created_at: string
@@ -260,25 +307,35 @@ export interface AlbumMedia {
 export interface AlbumSummary {
   id: string
   slug: string
-  status: 'draft' | 'published' | 'archived'
+  status: 'draft' | 'awaiting_payment' | 'published' | 'archived'
+  category?: AlbumCategory | null
   title: string | null
   subtitle: string | null
   color_primary: string | null
-  presentation: string
-  photos_per_page: number
+  presentation?: string | null
   is_public: boolean
-  photo_count: number
+  chapter_count?: number
+  memory_count?: number
   views_count: number
+  cover_url?: string | null
+  preview_thumbs?: string[]
   published_at: string | null
   created_at: string
   updated_at: string
 }
 
 export interface AlbumDetail extends AlbumSummary {
-  closing_message: string | null
-  signature: string | null
+  category?: AlbumCategory | null
+  honoree_names?: string | null
+  dedication?: string | null
+  closing_message?: string | null
+  presentation?: string | null
   music_media_id: string | null
   media: AlbumMedia[]
+  book_config?: Record<string, unknown> | null
+  chapters: AlbumChapter[]
+  experiences: AlbumExperience[]
+  content_json?: Record<string, unknown> | null
 }
 
 export interface AlbumValidation {
@@ -292,6 +349,7 @@ export interface PublicAlbumPhoto {
   title: string | null
   caption: string | null
   memory_date: string | null
+  place_name?: string | null
   sort_order: number
 }
 
@@ -299,15 +357,144 @@ export interface PublicAlbum {
   slug: string
   title: string | null
   subtitle: string | null
-  closing_message: string | null
-  signature: string | null
   color_primary: string | null
-  presentation: string
-  photos_per_page: number
+  presentation?: string | null
+  category?: AlbumCategory | null
+  honoree_names?: string | null
+  dedication?: string | null
   published_at: string | null
   views_count: number
   photos: PublicAlbumPhoto[]
-  music: { id: string; url: string | null } | null
+  chapters: AlbumChapter[]
+  experiences: AlbumExperience[]
+  content_json?: Record<string, unknown> | null
+  music: {
+    id: string
+    url: string | null
+    autoplay?: boolean
+    loop?: boolean
+    duration_seconds?: number | null
+    start_seconds?: number | null
+    end_seconds?: number | null
+  } | null
+}
+
+// ---- Álbum (modelo genérico / spec 16) ----
+
+export type AlbumCategory =
+  | 'couple'
+  | 'wedding'
+  | 'proposal'
+  | 'marriage_proposal'
+  | 'birthday'
+  | 'family'
+  | 'parents'
+  | 'mother'
+  | 'children'
+  | 'friends'
+  | 'graduation'
+  | 'company'
+  | 'pet'
+  | 'memorial'
+  | 'posthumous'
+  | 'holiday'
+  | 'custom'
+
+export type AlbumStatus = 'draft' | 'awaiting_payment' | 'published' | 'archived'
+
+export type AlbumMediaType = 'photo' | 'audio'
+
+export type Sentiment = 'feliz' | 'saudade' | 'amor' | 'gratidao' | 'orgulho' | 'paz' | 'outro'
+
+export type ExperienceType = 'bouquet' | 'map' | 'starry_sky' | 'surprise' | 'game'
+
+export interface AlbumMemoryMediaRef {
+  id: string
+  media_type: AlbumMediaType
+  url: string
+}
+
+export interface AlbumMemoryDocumentRef {
+  id: string
+  doc_type: string
+  label?: string
+  url: string
+}
+
+export interface AlbumMemory {
+  id: string
+  sort_order: number
+  title?: string
+  subtitle?: string
+  description?: string
+  date?: string
+  time?: string
+  location?: { lat: number; lng: number; label?: string }
+  climate?: string
+  sentiment?: Sentiment
+  tags: string[]
+  people: string[]
+  media: AlbumMemoryMediaRef[]
+  documents?: AlbumMemoryDocumentRef[]
+  /** IDs de AlbumMedia (fototeca solta) vinculados a esta memória, persistidos em content_json. */
+  media_ids?: string[]
+  content_json?: Record<string, unknown> | null
+}
+
+export type AlbumMemoryPayload = Partial<
+  Omit<AlbumMemory, 'id' | 'media' | 'documents' | 'tags' | 'people'>
+> & {
+  sort_order?: number
+  tags?: string[]
+  people?: string[]
+  media?: AlbumMemoryMediaRef[]
+  documents?: AlbumMemoryDocumentRef[]
+  media_ids?: string[]
+}
+
+export interface AlbumChapter {
+  id: string
+  title: string
+  sort_order: number
+  memories: AlbumMemory[]
+}
+
+export interface AlbumExperience {
+  id: string
+  type: ExperienceType
+  config: Record<string, unknown>
+}
+
+export interface AlbumTimelineItemDto {
+  date: string
+  title: string
+  description?: string
+  chapter_id?: string
+  memory_id?: string
+  media?: AlbumMemoryMediaRef[]
+}
+
+export interface AlbumTimeline {
+  items: AlbumTimelineItemDto[]
+}
+
+export interface AlbumQr {
+  slug: string
+  public_url: string
+  deep_link: string
+  url: string
+  memory_id?: string | null
+}
+
+export type AlbumVisitorTributeType = 'candle' | 'flower' | 'message'
+
+export interface AlbumVisitorTribute {
+  id: string
+  type: AlbumVisitorTributeType
+  author_name: string
+  message: string
+  expires_at: string | null
+  created_at: string
 }
 
 export interface AlbumUploadPolicy {
@@ -328,12 +515,49 @@ export interface AlbumUploadPolicy {
   }
 }
 
+export interface PixPaymentData {
+  qr_code: string | null
+  qr_code_base64: string | null
+  ticket_url: string | null
+}
+
 export interface CheckoutResponse {
   order_id: string
-  tribute_id: string
+  kind?: 'tribute' | 'album' | 'map'
+  tribute_id?: string | null
+  album_id?: string | null
+  couple_map_id?: string | null
   status: string
   price_cents: number
+  payment_method?: 'pix'
   checkout_url: string | null
+  pix?: PixPaymentData | null
+}
+
+export interface BillingProductPrice {
+  billing_mode: string
+  price_cents: number
+  formatted: string
+}
+
+export interface BillingProduct {
+  slug: string
+  name: string
+  features: Record<string, unknown>
+  prices: BillingProductPrice[]
+}
+
+export interface OrderStatusResponse {
+  id: string
+  status: string
+  amount_cents: number
+  payment_method?: string
+  tribute_id: string | null
+  album_id: string | null
+  checkout_url: string | null
+  pix?: PixPaymentData | null
+  paid_at: string | null
+  created_at: string
 }
 
 export interface SubscriptionInfo {
@@ -388,39 +612,149 @@ export const TRIBUTE_EFFECTS = [
 export type TributeEffect = (typeof TRIBUTE_EFFECTS)[number]
 
 export type WizardStep =
-  | 'presentation'
-  | 'photos'
-  | 'moments'
+  | 'type'
+  | 'basics'
+  | 'special-date'
+  | 'story'
+  | 'personalization'
   | 'texts'
-  | 'style'
-  | 'music'
-  | 'video'
-  | 'event'
-  | 'effects'
-  | 'preview'
+  | 'modules'
+  | 'review'
   | 'publish'
 
+/** @deprecated Use TRIBUTE_WIZARD_STEPS de tributeWizardSteps.ts */
 export const WIZARD_STEPS: WizardStep[] = [
-  'presentation',
-  'style',
+  'type',
+  'basics',
+  'special-date',
+  'story',
+  'personalization',
   'texts',
-  'photos',
-  'music',
-  'effects',
-  'preview',
+  'modules',
+  'review',
   'publish',
 ]
 
 export const WIZARD_STEP_LABELS: Record<WizardStep, string> = {
-  presentation: 'Apresentação',
-  photos: 'Fotos',
-  moments: 'Momentos',
+  type: 'Tipo',
+  basics: 'Informações',
+  'special-date': 'Data especial',
+  story: 'Nossa história',
+  personalization: 'Personalização',
   texts: 'Textos',
-  style: 'Estilo',
-  music: 'Música',
-  video: 'Vídeo',
-  event: 'Evento',
-  effects: 'Efeitos',
-  preview: 'Revisar e Concluir',
-  publish: 'Publicar',
+  modules: 'Recursos extras',
+  review: 'Revisão',
+  publish: 'Publicação',
+}
+
+export type CoupleMapStatus = 'draft' | 'awaiting_payment' | 'published' | 'archived'
+export type MapStyle = 'default' | 'romantic' | 'minimal' | 'vintage'
+export type MapPlaceType =
+  | 'first_meeting'
+  | 'first_date'
+  | 'first_kiss'
+  | 'proposal'
+  | 'wedding'
+  | 'anniversary'
+  | 'trip'
+  | 'vacation'
+  | 'restaurant'
+  | 'home'
+  | 'milestone'
+  | 'other'
+export type MapMediaType = 'photo' | 'video'
+
+export interface MapMedia {
+  id: string
+  place_id: string
+  media_type: MapMediaType
+  original_filename: string
+  mime_type?: string | null
+  size_bytes?: number | null
+  sort_order: number
+  url?: string | null
+  url_thumbnail?: string | null
+  created_at: string
+}
+
+export interface MapPlace {
+  id: string
+  place_type: MapPlaceType
+  title: string
+  subtitle?: string | null
+  description?: string | null
+  memory_date?: string | null
+  memory_time?: string | null
+  latitude: number
+  longitude: number
+  address_label?: string | null
+  city?: string | null
+  country?: string | null
+  sentiment?: string | null
+  is_highlight: boolean
+  sort_order: number
+  content_json?: Record<string, unknown>
+  media?: MapMedia[]
+  created_at: string
+  updated_at: string
+}
+
+export interface CoupleMapSummary {
+  id: string
+  slug: string
+  status: CoupleMapStatus
+  title: string
+  subtitle?: string | null
+  couple_names: string
+  map_style: MapStyle
+  show_route: boolean
+  places_count: number
+  views_count: number
+  highlight_title?: string | null
+  published_at?: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface CoupleMapDetail extends CoupleMapSummary {
+  center_lat?: number | null
+  center_lng?: number | null
+  default_zoom?: number | null
+  content_json?: Record<string, unknown>
+  media_urls_expire_at?: string
+  places: MapPlace[]
+}
+
+export interface PublicCoupleMap extends CoupleMapDetail {
+  public_url: string
+  highlight_place?: {
+    id: string
+    title: string
+    latitude: number
+    longitude: number
+    cover_url?: string | null
+  } | null
+  route_polyline?: Array<{ lat: number; lng: number }> | null
+}
+
+export interface CoupleMapValidation {
+  valid: boolean
+  errors: Array<{ field: string; code: string; message: string }>
+  warnings: Array<{ field: string; code: string; message: string }>
+}
+
+export interface MapUploadPolicy {
+  photo: {
+    accepted_mimes: string[]
+    accepted_extensions: string[]
+    max_file_bytes: number
+    max_count_per_place: number
+  }
+  video: {
+    accepted_mimes: string[]
+    accepted_extensions: string[]
+    max_file_bytes: number
+    max_count_per_place: number
+  }
+  max_places_per_map: number
 }

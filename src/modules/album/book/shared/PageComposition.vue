@@ -4,12 +4,9 @@
     :class="[
       `page-comp--${page.layout}`,
       `page-comp--${theme.strategy}`,
-      { 'page-comp--scrapbook': theme.features.scrapbookDecor },
       { 'page-comp--texture': theme.features.textureOverlay },
     ]"
   >
-    <span v-if="theme.features.scrapbookDecor" class="page-comp__tape" aria-hidden="true" />
-
     <!-- Abertura de capítulo -->
     <template v-if="page.layout === 'chapter-opener'">
       <div class="page-comp__chapter">
@@ -20,54 +17,81 @@
       </div>
     </template>
 
-    <!-- Só texto -->
+    <!-- Só texto — pausa narrativa -->
     <template v-else-if="page.layout === 'text-focus'">
       <div class="page-comp__text-only">
         <p v-if="page.memoryDate" class="page-comp__meta">{{ page.memoryDate }}</p>
         <h2 v-if="page.title" class="page-comp__title">{{ page.title }}</h2>
-        <RichText v-if="page.message" :text="page.message" class="page-comp__body" />
+        <RichText v-if="page.message" :text="page.message" class="page-comp__body page-comp__body--lead" />
       </div>
     </template>
 
-    <!-- Polaroid -->
+    <!-- Polaroid scrapbook -->
     <template v-else-if="page.layout === 'polaroid-memory'">
-      <div class="page-comp__polaroid-grid">
-        <article v-for="photo in page.photos" :key="photo.id" class="page-comp__polaroid">
-          <figure v-if="photo.url" class="page-comp__polaroid-frame">
-            <img :src="photo.url" :alt="photo.title || 'Memória'" loading="lazy" />
-            <figcaption class="page-comp__polaroid-cap">
-              <span v-if="photo.title">{{ photo.title }}</span>
-              <RichText v-if="photo.caption" :text="photo.caption" />
-            </figcaption>
-          </figure>
-        </article>
-      </div>
-      <div v-if="page.message && page.photos.length <= 1" class="page-comp__aside">
-        <RichText :text="page.message" />
+      <PolaroidScrapStage :photos="page.photos" :frame-style="frameStyle" />
+      <p v-if="page.title" class="page-comp__scrap-title">{{ page.title }}</p>
+    </template>
+
+    <!-- Full bleed -->
+    <template v-else-if="page.layout === 'full-bleed'">
+      <div class="page-comp__media page-comp__media--full-bleed">
+        <figure v-if="leadPhoto" class="page-comp__photo">
+          <img :src="leadPhoto.url" :alt="leadPhoto.title || 'Memória'" loading="lazy" />
+        </figure>
       </div>
     </template>
 
-    <!-- Demais layouts com fotos -->
+    <!-- Página dupla (spread) -->
+    <template v-else-if="page.layout === 'double-spread'">
+      <div class="page-comp__media page-comp__media--double-spread">
+        <figure v-if="leadPhoto" class="page-comp__photo">
+          <img :src="leadPhoto.url" :alt="leadPhoto.title || 'Memória'" loading="lazy" />
+        </figure>
+      </div>
+      <aside v-if="showCaptionBlock" class="page-comp__caption-block page-comp__caption-block--spread">
+        <p v-if="captionMetaLine" class="page-comp__meta">{{ captionMetaLine }}</p>
+        <h2 v-if="captionTitle" class="page-comp__title">{{ captionTitle }}</h2>
+        <RichText v-if="captionBody" :text="captionBody" class="page-comp__body" />
+      </aside>
+    </template>
+
+    <!-- Hero + legenda -->
+    <template v-else-if="page.layout === 'hero-caption'">
+      <div class="page-comp__media page-comp__media--hero-caption">
+        <figure v-if="leadPhoto" class="page-comp__photo">
+          <img :src="leadPhoto.url" :alt="leadPhoto.title || 'Memória'" loading="lazy" />
+        </figure>
+      </div>
+      <aside v-if="showCaptionBlock" class="page-comp__caption-block">
+        <p v-if="captionMetaLine" class="page-comp__meta">{{ captionMetaLine }}</p>
+        <h2 v-if="captionTitle" class="page-comp__title">{{ captionTitle }}</h2>
+        <RichText v-if="captionBody" :text="captionBody" class="page-comp__body" />
+      </aside>
+    </template>
+
+    <!-- Duo assimétrico / trio editorial / collage -->
     <template v-else>
       <div class="page-comp__media" :class="`page-comp__media--${page.layout}`">
         <figure
-          v-for="(photo, idx) in page.photos"
+          v-for="(photo, index) in page.photos"
           :key="photo.id"
           class="page-comp__photo"
-          :class="`page-comp__photo--${idx}`"
+          :class="`page-comp__photo--${index}`"
         >
-          <img v-if="photo.url" :src="photo.url" :alt="photo.title || 'Memória'" loading="lazy" />
-          <figcaption v-if="photo.title && page.layout === 'collage-grid'" class="page-comp__mini-cap">
-            {{ photo.title }}
+          <img :src="photo.url" :alt="photo.title || 'Memória'" loading="lazy" />
+          <figcaption
+            v-if="photo.title || photo.caption || photo.memoryDate || photo.placeName"
+            class="page-comp__mini-cap"
+            :class="{ 'page-comp__mini-cap--rich': Boolean(photo.caption) }"
+          >
+            <span v-if="photo.memoryDate || photo.placeName" class="page-comp__mini-date">
+              {{ [photo.memoryDate, photo.placeName].filter(Boolean).join(' · ') }}
+            </span>
+            <span v-if="photo.title" class="page-comp__mini-title">{{ photo.title }}</span>
+            <RichText v-if="photo.caption" :text="photo.caption" class="page-comp__mini-body" />
           </figcaption>
         </figure>
       </div>
-
-      <aside v-if="showCaptionBlock" class="page-comp__caption-block">
-        <p v-if="page.memoryDate" class="page-comp__meta">{{ page.memoryDate }}</p>
-        <h2 v-if="page.title" class="page-comp__title">{{ page.title }}</h2>
-        <RichText v-if="page.message" :text="page.message" class="page-comp__body" />
-      </aside>
     </template>
 
     <span v-if="showPageNumber" class="page-comp__pagenum">{{ page.pageNo }}</span>
@@ -78,19 +102,45 @@
 import { computed } from 'vue'
 import RichText from '@/components/experience/shared/RichText.vue'
 import type { BookTheme } from '../themes'
+import type { BookFrameStyle } from '../frameStyles'
+import PolaroidScrapStage from './PolaroidScrapStage.vue'
 import type { MemoryBookContentPage } from '../types'
 
-const props = defineProps<{
-  page: MemoryBookContentPage
-  theme: BookTheme
-}>()
+const props = withDefaults(
+  defineProps<{
+    page: MemoryBookContentPage
+    theme: BookTheme
+    frameStyle?: BookFrameStyle | string | null
+  }>(),
+  { frameStyle: 'classic' },
+)
 
 const showPageNumber = computed(() => props.theme.features.pageNumbers)
 
-const showCaptionBlock = computed(
-  () =>
-    props.page.layout !== 'full-bleed' &&
-    Boolean(props.page.title || props.page.message || props.page.memoryDate),
+const leadPhoto = computed(() => props.page.photos[0] ?? null)
+
+const captionTitle = computed(
+  () => props.page.title?.trim() || leadPhoto.value?.title?.trim() || '',
+)
+
+const captionBody = computed(
+  () => props.page.message?.trim() || leadPhoto.value?.caption?.trim() || '',
+)
+
+const captionDate = computed(
+  () => props.page.memoryDate?.trim() || leadPhoto.value?.memoryDate?.trim() || '',
+)
+
+const captionPlace = computed(
+  () => leadPhoto.value?.placeName?.trim() || '',
+)
+
+const captionMetaLine = computed(() =>
+  [captionDate.value, captionPlace.value].filter(Boolean).join(' · '),
+)
+
+const showCaptionBlock = computed(() =>
+  Boolean(captionTitle.value || captionBody.value || captionMetaLine.value),
 )
 </script>
 
@@ -100,7 +150,7 @@ const showCaptionBlock = computed(
   display: flex;
   flex-direction: column;
   min-height: inherit;
-  padding: clamp(18px, 4vw, 32px);
+  padding: clamp(28px, 5vw, 48px) clamp(22px, 4vw, 40px);
   font-family: var(--book-font-body);
   color: var(--book-ink);
   background: var(--book-paper);
@@ -111,155 +161,197 @@ const showCaptionBlock = computed(
   content: '';
   position: absolute;
   inset: 0;
-  opacity: 0.2;
+  opacity: 0.18;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E");
   pointer-events: none;
 }
 
-.page-comp__tape {
-  position: absolute;
-  top: 12px;
-  right: 8%;
-  width: 64px;
-  height: 18px;
-  background: color-mix(in srgb, var(--book-accent) 30%, #f5e6b8);
-  transform: rotate(8deg);
-  opacity: 0.9;
-  z-index: 2;
-}
-
 .page-comp__pagenum {
   position: absolute;
-  bottom: 12px;
-  right: 16px;
-  font-size: 0.72rem;
-  letter-spacing: 0.12em;
+  bottom: 14px;
+  right: 18px;
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
   color: var(--book-muted);
 }
 
-/* Capítulo */
 .page-comp__chapter {
   margin: auto;
   text-align: center;
-  padding: 24px;
+  padding: clamp(32px, 8vw, 64px) 24px;
+  max-width: 28rem;
 }
 
 .page-comp__chapter-num {
-  font-size: 0.75rem;
-  letter-spacing: 0.2em;
+  font-size: 0.72rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
   color: var(--book-accent);
 }
 
 .page-comp__chapter-title {
   font-family: var(--book-font-display);
-  font-size: clamp(1.6rem, 5vw, 2.4rem);
-  margin: 10px 0 6px;
+  font-size: clamp(1.85rem, 5vw, 2.75rem);
+  margin: 14px 0 8px;
   font-weight: 500;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
 }
 
 .page-comp__chapter-date {
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   color: var(--book-muted);
   font-style: italic;
 }
 
 .page-comp__chapter-rule {
   display: block;
-  width: 48px;
-  height: 2px;
-  margin: 16px auto 0;
-  background: var(--book-accent);
+  width: 40px;
+  height: 1px;
+  margin: 22px auto 0;
+  background: color-mix(in srgb, var(--book-ink) 35%, transparent);
 }
 
-/* Texto exclusivo */
 .page-comp__text-only {
   margin: auto;
-  max-width: 38ch;
+  max-width: 34ch;
   text-align: center;
-  padding: 20px;
+  padding: clamp(40px, 10vw, 80px) 20px;
 }
 
 .page-comp__meta {
-  font-size: 0.76rem;
-  letter-spacing: 0.14em;
+  font-size: 0.72rem;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--book-accent);
-  margin: 0 0 8px;
+  margin: 0 0 12px;
 }
 
 .page-comp__title {
   font-family: var(--book-font-display);
-  font-size: clamp(1.25rem, 4vw, 1.75rem);
+  font-size: clamp(1.35rem, 3.8vw, 1.95rem);
   font-weight: 500;
-  margin: 0 0 10px;
+  margin: 0 0 14px;
   line-height: 1.2;
+  letter-spacing: -0.015em;
 }
 
 .page-comp__body {
-  font-size: 1rem;
-  line-height: 1.65;
+  font-size: 1.02rem;
+  line-height: 1.7;
   color: var(--book-muted);
 }
 
-/* Full bleed */
+.page-comp__body--lead {
+  font-size: clamp(1.15rem, 2.6vw, 1.35rem);
+  line-height: 1.75;
+  font-style: italic;
+  color: var(--book-ink);
+}
+
 .page-comp--full-bleed {
   padding: 0;
 }
 
-.page-comp--full-bleed .page-comp__media--full-bleed {
+.page-comp--double-spread {
+  padding: 0;
+}
+
+.page-comp__media--double-spread {
   flex: 1;
   display: grid;
-  grid-template-columns: 1fr;
-  min-height: inherit;
+  place-items: center;
+  min-height: clamp(360px, 62vh, 820px);
+  background: color-mix(in srgb, var(--book-ink) 3%, var(--book-paper));
+}
+
+.page-comp--double-spread .page-comp__photo {
+  margin: 0;
+  width: 100%;
+  box-shadow: none;
+  border-radius: 0;
+  background: transparent;
+}
+
+.page-comp--double-spread .page-comp__photo img {
+  width: 100%;
+  height: auto;
+  max-height: min(82vh, 960px);
+  object-fit: contain;
+}
+
+.page-comp__caption-block--spread {
+  text-align: center;
+  max-width: 46rem;
+  margin-inline: auto;
+  padding: clamp(18px, 3vw, 28px) clamp(20px, 4vw, 40px) clamp(24px, 4vw, 36px);
+}
+
+.page-comp__media--full-bleed {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  min-height: clamp(320px, 58vh, 720px);
+  background: color-mix(in srgb, var(--book-ink) 4%, var(--book-paper));
 }
 
 .page-comp--full-bleed .page-comp__photo {
   margin: 0;
-  min-height: inherit;
+  width: 100%;
+  box-shadow: none;
+  border-radius: 0;
+  background: transparent;
 }
 
 .page-comp--full-bleed .page-comp__photo img {
   width: 100%;
-  height: 100%;
-  min-height: inherit;
-  object-fit: cover;
+  height: auto;
+  max-height: min(78vh, 900px);
+  object-fit: contain;
 }
 
-/* Hero + legenda */
 .page-comp--hero-caption {
-  display: grid;
-  grid-template-rows: 1fr auto;
   padding: 0;
+  display: grid;
+  grid-template-rows: auto auto;
 }
 
 .page-comp__media--hero-caption {
-  min-height: 62%;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--book-ink) 3%, var(--book-paper));
+  min-height: clamp(240px, 42vh, 560px);
 }
 
 .page-comp__media--hero-caption .page-comp__photo {
-  height: 100%;
   margin: 0;
+  width: 100%;
+  box-shadow: none;
+  border-radius: 0;
+  background: transparent;
 }
 
 .page-comp__media--hero-caption img {
   width: 100%;
-  height: 100%;
-  min-height: 220px;
-  object-fit: cover;
+  height: auto;
+  max-height: min(68vh, 780px);
+  object-fit: contain;
 }
 
 .page-comp--hero-caption .page-comp__caption-block {
-  padding: clamp(16px, 4vw, 28px);
+  padding: clamp(22px, 4vw, 36px) clamp(24px, 5vw, 48px) clamp(28px, 5vw, 44px);
+  max-width: 38rem;
+  margin-inline: auto;
+  text-align: center;
 }
 
-/* Assimétrico 2 fotos */
 .page-comp--asymmetric-duo .page-comp__media--asymmetric-duo {
   display: grid;
-  grid-template-columns: 1.15fr 0.85fr;
-  grid-template-rows: 1fr 0.72fr;
-  gap: 10px;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: clamp(14px, 2.5vw, 22px);
+  align-items: start;
   flex: 1;
-  min-height: 240px;
 }
 
 .page-comp__media--asymmetric-duo .page-comp__photo--0 {
@@ -269,25 +361,26 @@ const showCaptionBlock = computed(
 .page-comp__photo {
   margin: 0;
   overflow: hidden;
-  border-radius: 4px;
-  box-shadow: var(--book-shadow);
+  border-radius: 0;
+  box-shadow: none;
+  background: color-mix(in srgb, var(--book-ink) 4%, var(--book-paper));
 }
 
 .page-comp__photo img {
   display: block;
   width: 100%;
-  height: 100%;
-  object-fit: cover;
-  aspect-ratio: auto;
-  min-height: 100px;
+  height: auto;
+  max-height: min(64vh, 720px);
+  object-fit: contain;
+  object-position: center;
 }
 
-/* Editorial trio */
 .page-comp--editorial-trio .page-comp__media--editorial-trio {
   display: grid;
-  grid-template-columns: 1.2fr 0.8fr;
-  grid-template-rows: 1fr 1fr;
-  gap: 10px;
+  grid-template-columns: 1.25fr 0.75fr;
+  grid-template-rows: auto auto;
+  gap: clamp(12px, 2vw, 18px);
+  align-items: start;
   flex: 1;
 }
 
@@ -295,81 +388,70 @@ const showCaptionBlock = computed(
   grid-row: span 2;
 }
 
-/* Collage */
 .page-comp--collage-grid .page-comp__media--collage-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 8px;
+  gap: clamp(10px, 2vw, 16px);
+  align-items: start;
   flex: 1;
+}
+
+.page-comp--collage-grid .page-comp__photo img {
+  max-height: min(42vh, 420px);
 }
 
 .page-comp__mini-cap {
-  padding: 6px 8px;
-  font-size: 0.78rem;
-  text-align: center;
-  background: color-mix(in srgb, var(--book-paper) 90%, transparent);
-}
-
-/* Polaroid grid */
-.page-comp__polaroid-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 16px;
-  place-content: center;
-  flex: 1;
+  gap: 4px;
+  padding: 10px 4px 0;
+  text-align: left;
 }
 
-.page-comp__polaroid-frame {
-  margin: 0;
-  padding: 10px 10px 14px;
-  background: #fff;
-  box-shadow: 0 14px 28px -16px rgba(0, 0, 0, 0.45);
-  transform: rotate(-1.5deg);
+.page-comp__mini-date {
+  font-size: 0.66rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--book-accent);
 }
 
-.page-comp__polaroid:nth-child(even) .page-comp__polaroid-frame {
-  transform: rotate(1.5deg);
-}
-
-.page-comp__polaroid-frame img {
-  display: block;
-  width: 100%;
-  aspect-ratio: 1;
-  object-fit: cover;
-  filter: sepia(0.12) contrast(1.06) saturate(0.92);
-}
-
-.page-comp__polaroid-cap {
-  min-height: 40px;
-  padding-top: 8px;
-  text-align: center;
-  font-family: var(--book-font-accent);
-  font-size: 1.05rem;
+.page-comp__mini-title {
+  font-family: var(--book-font-display);
+  font-size: 0.92rem;
+  font-weight: 500;
   color: var(--book-ink);
 }
 
-.page-comp__aside {
-  margin-top: 12px;
-  padding: 0 8px;
-  font-family: var(--book-font-accent);
-  font-size: 1.15rem;
+.page-comp__mini-body {
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: var(--book-muted);
+}
+
+.page-comp__scrap-title {
+  margin: 0;
+  padding: 14px 18px 4px;
   text-align: center;
+  font-family: 'Caveat', 'Segoe Print', cursive;
+  font-size: 1.45rem;
+  color: var(--book-muted);
 }
 
-/* Magazine variant */
-.page-comp--magazine .page-comp__title {
-  font-family: var(--book-font-display);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+.page-comp--polaroid-memory {
+  padding: 10px;
+  overflow: hidden;
 }
 
-/* Luxury — mais espaço */
+.page-comp--polaroid-memory :deep(.scrap) {
+  min-height: clamp(340px, 52vh, 600px);
+  background: transparent;
+}
+
 .page-comp--luxury {
-  padding: clamp(24px, 5vw, 40px);
+  padding: clamp(36px, 6vw, 56px) clamp(28px, 5vw, 52px);
 }
 
 .page-comp--luxury .page-comp__caption-block {
-  padding-top: 20px;
+  padding-top: 8px;
 }
 
 @media (max-width: 640px) {
@@ -382,6 +464,10 @@ const showCaptionBlock = computed(
   .page-comp__media--asymmetric-duo .page-comp__photo--0,
   .page-comp__media--editorial-trio .page-comp__photo--0 {
     grid-row: auto;
+  }
+
+  .page-comp--hero-caption .page-comp__caption-block {
+    text-align: left;
   }
 }
 </style>

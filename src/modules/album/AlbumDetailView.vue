@@ -76,6 +76,14 @@
           <p class="metric__label">{{ metric.label }}</p>
         </article>
       </section>
+
+      <AlbumQrCard
+        v-if="album.status === 'published' && isMemorial"
+        :album-id="albumId"
+        variant="memorial"
+        :headline="memorialHeadline"
+        :subtitle="album.subtitle"
+      />
     </template>
 
     <Teleport to="body">
@@ -109,6 +117,9 @@ import { useRoute, useRouter, RouterLink } from 'vue-router'
 import { deleteAlbum, fetchAlbum } from '@/api/albums'
 import type { AlbumDetail } from '@/api/types'
 import { getBookPresentation } from '@/modules/album/book/presentations'
+import { isMemorialCategory } from '@/modules/album/albumModels'
+import { isMemorialPresentation } from '@/modules/album/book/presentations'
+import AlbumQrCard from '@/modules/album/components/AlbumQrCard.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -123,11 +134,16 @@ const deleteError = ref('')
 
 const albumTitle = computed(() => album.value?.title || 'Desempenho do álbum')
 
+function presentationOf(item: AlbumDetail | null): string {
+  return (item?.content_json as { presentation?: string } | undefined)?.presentation ?? ''
+}
+
 const albumMeta = computed(() => {
   const item = album.value
   if (!item) return ''
-  const style = getBookPresentation(item.presentation)?.name ?? 'Livro digital'
-  return `${style} · ${item.photo_count} foto(s)`
+  const style = getBookPresentation(presentationOf(item))?.name ?? 'Livro digital'
+  const count = item.memory_count ?? (item.media ?? []).length
+  return `${style} · ${count} memória(s)`
 })
 
 const publicPath = computed(() => (album.value?.slug ? `/a/${album.value.slug}` : ''))
@@ -135,6 +151,26 @@ const publicPath = computed(() => (album.value?.slug ? `/a/${album.value.slug}` 
 const publicUrl = computed(() =>
   album.value?.slug ? `${window.location.origin}/a/${album.value.slug}` : '',
 )
+
+const isMemorial = computed(() => {
+  const item = album.value
+  if (!item) return false
+  const presentation =
+    item.presentation ??
+    (item.content_json as { presentation?: string } | undefined)?.presentation
+  return isMemorialPresentation(presentation) || isMemorialCategory(item.category)
+})
+
+const memorialHeadline = computed(() => {
+  const item = album.value
+  if (!item) return null
+  if (item.honoree_names?.trim()) {
+    return item.honoree_names.trim().startsWith('Em memória')
+      ? item.honoree_names.trim()
+      : `Em memória de ${item.honoree_names.trim()}`
+  }
+  return item.title?.trim() || null
+})
 
 const statusLabel = computed(() => {
   const status = album.value?.status ?? ''
@@ -158,8 +194,8 @@ const metrics = computed(() => {
   const hasMusic = (item.media ?? []).some((m) => m.media_type === 'audio')
   return [
     {
-      label: 'Fotos',
-      value: String(item.photo_count),
+      label: 'Memórias',
+      value: String(item.memory_count ?? (item.media ?? []).length),
       tint: 'var(--gold-soft)',
       color: 'var(--gold)',
       icon: iconImage,
@@ -173,7 +209,7 @@ const metrics = computed(() => {
     },
     {
       label: 'Estilo',
-      value: getBookPresentation(item.presentation)?.name ?? '—',
+      value: getBookPresentation(presentationOf(item) || '')?.name ?? '—',
       tint: 'var(--violet-soft)',
       color: 'var(--violet)',
       icon: iconBook,

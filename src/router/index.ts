@@ -2,7 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { forceTheme, initTheme } from '@/composables/useTheme'
 
-const PUBLIC_EXPERIENCE_ROUTES = new Set(['public-album', 'public-tribute'])
+const PUBLIC_EXPERIENCE_ROUTES = new Set(['public-album', 'public-tribute', 'public-map'])
 
 const router = createRouter({
   history: createWebHistory(),
@@ -45,19 +45,43 @@ const router = createRouter({
           component: () => import('@/modules/templates/TemplatesGalleryView.vue'),
         },
         {
+          path: 'romances/new',
+          name: 'romance-new',
+          component: () => import('@/modules/romance-wizard/NewRomanceView.vue'),
+        },
+        {
+          path: 'romances/create',
+          redirect: { name: 'romance-new' },
+        },
+        {
+          path: 'romances/:id/edit',
+          name: 'romance-edit',
+          component: () => import('@/modules/romance-wizard/RomanceWizardView.vue'),
+        },
+        {
+          path: 'romances/:id',
+          name: 'romance-detail',
+          component: () => import('@/modules/dashboard/TributeDetailView.vue'),
+        },
+        {
           path: 'tributes/new',
-          name: 'tribute-new',
-          component: () => import('@/modules/tribute-wizard/NewTributeView.vue'),
+          redirect: { name: 'romance-new' },
         },
         {
           path: 'tributes/:id/edit',
-          name: 'tribute-edit',
-          component: () => import('@/modules/tribute-wizard/TributeWizardView.vue'),
+          redirect: (to) => ({
+            name: 'romance-edit',
+            params: { id: to.params.id },
+            query: to.query,
+          }),
         },
         {
           path: 'tributes/:id',
-          name: 'tribute-detail',
-          component: () => import('@/modules/dashboard/TributeDetailView.vue'),
+          redirect: (to) => ({
+            name: 'romance-detail',
+            params: { id: to.params.id },
+            query: to.query,
+          }),
         },
         {
           path: 'albums',
@@ -79,6 +103,21 @@ const router = createRouter({
           name: 'album-detail',
           component: () => import('@/modules/album/AlbumDetailView.vue'),
         },
+        {
+          path: 'maps',
+          name: 'maps-dashboard',
+          component: () => import('@/modules/map/MapsDashboardView.vue'),
+        },
+        {
+          path: 'maps/new',
+          name: 'map-new',
+          component: () => import('@/modules/map/NewMapView.vue'),
+        },
+        {
+          path: 'maps/:id/edit',
+          name: 'map-edit',
+          component: () => import('@/modules/map/MapEditorView.vue'),
+        },
       ],
     },
     {
@@ -90,6 +129,11 @@ const router = createRouter({
       path: '/h/:slug',
       name: 'public-tribute',
       component: () => import('@/modules/public-tribute/PublicTributeRenderer.vue'),
+    },
+    {
+      path: '/map/:slug',
+      name: 'public-map',
+      component: () => import('@/modules/map/PublicMapRenderer.vue'),
     },
   ],
 })

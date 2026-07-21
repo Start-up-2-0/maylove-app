@@ -40,7 +40,7 @@ import { computed } from 'vue'
 import type { useAlbumWizard } from '@/composables/useAlbumWizard'
 import type { AlbumDetail } from '@/api/types'
 import WizardStepHeader from '@/components/wizard/WizardStepHeader.vue'
-import { BOOK_PRESENTATIONS, isTimelinePresentation } from '../book/presentations'
+import { BOOK_PRESENTATIONS } from '../book/presentations'
 import { buildMemoryBookModelFromDetail } from '../book/buildModel'
 import BookRenderer from '../book/BookRenderer.vue'
 import type { BookPresentationId } from '../book/types'
@@ -56,16 +56,12 @@ const previewBook = computed(() => {
   if (!props.album) return null
   return buildMemoryBookModelFromDetail({
     ...props.album,
-    presentation: props.form.presentation,
-    photos_per_page: props.form.photos_per_page ?? props.album.photos_per_page,
+    content_json: { ...(props.album.content_json ?? {}), presentation: props.form.presentation },
   })
 })
 
 function select(id: BookPresentationId) {
   props.form.presentation = id
-  if (isTimelinePresentation(id)) {
-    props.form.photos_per_page = 1
-  }
 }
 </script>
 

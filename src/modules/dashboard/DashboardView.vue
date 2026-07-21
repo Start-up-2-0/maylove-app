@@ -3,16 +3,16 @@
     <header class="dash-head">
       <div>
         <p class="eyebrow">Seu espaço</p>
-        <h1 class="section-title">Suas homenagens</h1>
+        <h1 class="section-title">Seus romances</h1>
         <p class="text-muted dash-head__sub">
-          Olá, {{ firstName }}. Cada projeto aqui guarda um pedaço de amor para compartilhar.
+          Olá, {{ firstName }}. Cada presente digital aqui guarda um pedaço de amor para compartilhar.
         </p>
       </div>
-      <RouterLink to="/dashboard/tributes/new" class="ml-btn ml-btn--primary ml-btn--lg">
+      <RouterLink to="/dashboard/romances/new" class="ml-btn ml-btn--primary ml-btn--lg">
         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M12 5v14M5 12h14" stroke-linecap="round" />
         </svg>
-        Nova homenagem
+        Nova experiência
       </RouterLink>
     </header>
 
@@ -66,9 +66,9 @@
           <path d="M12 21s-7.5-4.6-10-9.2C.6 8.9 2 5.5 5.2 5.1 7 4.9 8.7 5.8 12 8.6c3.3-2.8 5-3.7 6.8-3.5C22 5.5 23.4 8.9 22 11.8 19.5 16.4 12 21 12 21Z" stroke-linecap="round" stroke-linejoin="round" />
         </svg>
       </span>
-      <h2>Sua primeira homenagem espera por você</h2>
+      <h2>Seu primeiro romance espera por você</h2>
       <p class="text-muted">Transforme memórias em um presente digital cheio de carinho.</p>
-      <RouterLink to="/dashboard/tributes/new" class="ml-btn ml-btn--primary ml-btn--lg">
+      <RouterLink to="/dashboard/romances/new" class="ml-btn ml-btn--primary ml-btn--lg">
         Começar agora
       </RouterLink>
     </div>
@@ -131,7 +131,7 @@
             <button
               type="button"
               class="tribute-card__action tribute-card__action--danger"
-              title="Excluir homenagem"
+              title="Excluir romance"
               :disabled="deletingId === tribute.id"
               @click="confirmDelete(tribute)"
             >
@@ -149,7 +149,7 @@
       <div v-if="deleteTarget" class="delete-modal" role="dialog" aria-modal="true" aria-labelledby="delete-title">
         <div class="delete-modal__backdrop" @click="cancelDelete" />
         <div class="delete-modal__panel ml-card">
-          <h2 id="delete-title" class="delete-modal__title">Excluir homenagem?</h2>
+          <h2 id="delete-title" class="delete-modal__title">Excluir romance?</h2>
           <p class="text-muted delete-modal__text">
             <strong>{{ deleteTarget.title || deleteTarget.honoree_name || 'Sem título' }}</strong>
             será removida permanentemente, incluindo fotos, músicas e demais arquivos armazenados.
@@ -182,6 +182,7 @@ import { deleteTribute, listTributes } from '@/api/tributes'
 import type { TributeSummary } from '@/api/types'
 import { useAuthStore } from '@/stores/auth'
 import { formatTributeMeta } from '@/utils/tributeMeta'
+import { useModalLifecycle } from '@/composables/useModalLifecycle'
 
 const auth = useAuthStore()
 
@@ -269,8 +270,8 @@ async function load() {
 
 function tributeLink(tribute: TributeSummary): string {
   return tribute.status === 'published'
-    ? `/dashboard/tributes/${tribute.id}`
-    : `/dashboard/tributes/${tribute.id}/edit`
+    ? `/dashboard/romances/${tribute.id}`
+    : `/dashboard/romances/${tribute.id}/edit`
 }
 
 function bannerStyle(tribute: TributeSummary): Record<string, string> {
@@ -325,6 +326,8 @@ function cancelDelete() {
   deleteError.value = ''
 }
 
+useModalLifecycle(deleteTarget, cancelDelete)
+
 async function executeDelete() {
   if (!deleteTarget.value) return
   deletingId.value = deleteTarget.value.id
@@ -334,7 +337,7 @@ async function executeDelete() {
     rawTributes.value = rawTributes.value.filter((item) => item.id !== deleteTarget.value?.id)
     deleteTarget.value = null
   } catch {
-    deleteError.value = 'Não foi possível excluir a homenagem. Tente novamente.'
+    deleteError.value = 'Não foi possível excluir o romance. Tente novamente.'
   } finally {
     deletingId.value = null
   }

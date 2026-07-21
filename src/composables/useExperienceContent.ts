@@ -19,6 +19,14 @@ import {
   resolveTimelinePhoto,
   timelineItemHasContent,
 } from '@/utils/timeline'
+import {
+  resolveTributeModules,
+  shouldBoostLetterContent,
+} from '@/utils/tributeModules'
+import {
+  resolveSpecialDateConfig,
+  specialDateIso,
+} from '@/utils/specialDate'
 
 type WizardForm = ReturnType<typeof useTributeWizard>['form']
 
@@ -172,13 +180,20 @@ export function resolveContent(def: TemplateDefinition, opts: ResolveOptions): E
     (useSample ? sample.closingMessage : '') ||
     (useSample ? 'Feito com carinho' : '')
 
-  const specialDate =
+  const legacySpecialDate =
     form?.special_date ||
     detail?.special_date ||
     publicData?.special_date ||
     tribute?.special_date ||
     (useSample ? sample.specialDate : '') ||
     null
+
+  const specialDateConfig = resolveSpecialDateConfig(
+    form?.special_date_config ?? content.special_date_config,
+    legacySpecialDate,
+  )
+
+  const specialDate = specialDateIso(specialDateConfig) || legacySpecialDate
 
   const realPhotos = publicData
     ? mediaFromPublic(publicData.media)
@@ -264,16 +279,25 @@ export function resolveContent(def: TemplateDefinition, opts: ResolveOptions): E
     def.layout ??
     'scroll'
 
-  const includeOpeningMessage = (() => {
+  const modules = resolveTributeModules(form?.modules, content.modules)
+
+  let includeOpeningMessage = (() => {
     const optional = layoutUsesOptionalTextBlocks(resolvedLayout)
     if (!optional) return true
     return resolveTextFlag(form?.include_opening_message, content.include_opening_message, message)
   })()
-  const includeClosingMessage = (() => {
+  let includeClosingMessage = (() => {
     const optional = layoutUsesOptionalTextBlocks(resolvedLayout)
     if (!optional) return true
     return resolveTextFlag(form?.include_closing_message, content.include_closing_message, closingMessage)
   })()
+
+  if (shouldBoostLetterContent(modules, resolvedLayout, Boolean(message?.trim()))) {
+    includeOpeningMessage = true
+  }
+  if (shouldBoostLetterContent(modules, resolvedLayout, Boolean(closingMessage?.trim()))) {
+    includeClosingMessage = true
+  }
 
   return {
     honoreeName,
@@ -289,6 +313,7 @@ export function resolveContent(def: TemplateDefinition, opts: ResolveOptions): E
     celebration,
     signature: form?.signature || content.signature || (useSample ? sample.signature : '') || senderName,
     specialDate,
+    specialDateConfig,
     photos,
     videoUrl: form?.video_url || content.video_url || (useSample ? sample.videoUrl : null) || null,
     music: {
@@ -307,6 +332,15 @@ export function resolveContent(def: TemplateDefinition, opts: ResolveOptions): E
     textStyle,
     slug: detail?.slug || publicData?.slug || tribute?.slug || '',
     viewsCount: publicData ? publicData.views_count : null,
+    romanceThemeId:
+      form?.romance_theme_id ||
+      (content.romance_theme_id as string | undefined) ||
+      null,
+    retrospectivePaletteId:
+      form?.retrospective_palette_id ||
+      (content.retrospective_palette_id as string | undefined) ||
+      null,
+    modules,
   }
 }
 
@@ -334,6 +368,8 @@ function mapTimelineItem(
     date: item.date,
     title: item.title?.trim() || fallbackTimelineTitle(item.description),
     description: item.description,
+    location: item.location?.trim() || undefined,
+    emotion: item.emotion?.trim() || undefined,
     photoMediaId: photoMediaId || undefined,
     photoUrl: rawPhotoUrl || undefined,
   }

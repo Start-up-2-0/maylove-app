@@ -7,6 +7,13 @@
         <p v-if="content.honoreeName" class="ltr__to">Para {{ content.honoreeName }}</p>
       </header>
 
+      <SpecialDateBlock
+        v-if="showSpecialDate"
+        :content="content"
+        :theme="theme"
+        placement="after-cover"
+      />
+
       <div v-if="paragraphs.length || messageIsHtml" class="ltr__body">
         <template v-if="messageIsHtml">
           <RichText :text="content.message" class="ltr__para" />
@@ -23,6 +30,12 @@
         </figure>
       </div>
 
+      <ExperienceTimelineList
+        v-if="showTimeline"
+        :items="content.timeline"
+        root-class="ltr__timeline"
+      />
+
       <footer class="ltr__foot">
         <RichText v-if="content.closingMessage" :text="content.closingMessage" class="ltr__closing" />
         <p class="ltr__sign">{{ content.signature || content.senderName }}</p>
@@ -38,8 +51,18 @@ import type { LayoutComponentProps } from '@/templates/types'
 import { containsHtml } from '@/utils/richText'
 import ShareBar from '../shared/ShareBar.vue'
 import RichText from '../shared/RichText.vue'
+import SpecialDateBlock from '../shared/SpecialDateBlock.vue'
+import ExperienceTimelineList from '../shared/ExperienceTimelineList.vue'
+import { shouldShowWizardSpecialDate } from '@/utils/specialDate'
+import { shouldShowTimelineModule } from '@/utils/tributeModules'
 
 const props = defineProps<LayoutComponentProps>()
+
+const showSpecialDate = computed(() => shouldShowWizardSpecialDate(props.content))
+
+const showTimeline = computed(() =>
+  shouldShowTimelineModule(props.content.modules, props.content.timeline, 'letter'),
+)
 
 const messageIsHtml = computed(() => containsHtml(props.content.message))
 const extraParagraphs = computed(() => props.content.messages.filter(Boolean))
@@ -81,6 +104,17 @@ const photos = computed(() => props.content.photos.slice(0, 3))
   text-align: center;
   margin-bottom: clamp(22px, 4vw, 34px);
 }
+.ltr__paper :deep(.special-date-block) {
+  padding: 0;
+  margin: 0 0 clamp(18px, 3vw, 28px);
+  background: transparent;
+}
+.ltr__paper :deep(.special-date-block--after-cover) {
+  margin-top: 0;
+}
+.ltr__paper :deep(.special-date-block__shell) {
+  width: 100%;
+}
 .ltr__eyebrow {
   font-style: normal;
   margin-bottom: 12px;
@@ -114,6 +148,13 @@ const photos = computed(() => props.content.photos.slice(0, 3))
   justify-content: center;
   gap: 14px;
   margin: clamp(20px, 4vw, 32px) 0;
+}
+.ltr__timeline {
+  margin: clamp(20px, 4vw, 32px) 0;
+  padding: 0;
+}
+.ltr__timeline :deep(.timeline-wrap) {
+  max-width: 100%;
 }
 .ltr__photo {
   width: min(180px, 42%);

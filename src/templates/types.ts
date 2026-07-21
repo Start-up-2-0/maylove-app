@@ -1,4 +1,5 @@
-import type { TributeEffect } from '@/api/types'
+import type { TributeEffect, TributeModulesConfig } from '@/api/types'
+import type { ResolvedSpecialDateConfig } from '@/utils/specialDate'
 
 /**
  * Tipos de secao suportados pela engine. Adicionar uma nova capacidade =
@@ -89,6 +90,8 @@ export interface LayoutConfig {
   minimal?: boolean
   /** Clima mais dramático/cinematográfico (vinheta reforçada). */
   dramatic?: boolean
+  /** Renderizado dentro do mockup do wizard (sem position: fixed). */
+  contained?: boolean
 }
 
 /** Instancia de uma secao dentro de um template (metadados). */
@@ -145,6 +148,8 @@ export interface ExperienceTimelineItem {
   date?: string
   title: string
   description?: string
+  location?: string
+  emotion?: string
   photoUrl?: string
   photoMediaId?: string
 }
@@ -174,6 +179,8 @@ export interface ExperienceContent {
   celebration: string
   signature: string
   specialDate: string | null
+  /** Configuração rica da data especial (wizard). */
+  specialDateConfig: ResolvedSpecialDateConfig | null
   photos: ExperienceMediaItem[]
   videoUrl: string | null
   music: {
@@ -195,6 +202,12 @@ export interface ExperienceContent {
   textStyle: TextStyle | null
   slug: string
   viewsCount: number | null
+  /** Tema visual Love Cards (ex.: estilo-spotify). */
+  romanceThemeId?: string | null
+  /** Paleta do tema Retrospectiva Interativa (ex.: cosmic, custom). */
+  retrospectivePaletteId?: string | null
+  /** Recursos extras ativados no wizard (carta, timeline, QR…). */
+  modules: Required<TributeModulesConfig>
 }
 
 export interface ResolvedTheme {

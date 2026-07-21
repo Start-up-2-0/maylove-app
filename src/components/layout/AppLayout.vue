@@ -23,13 +23,13 @@
             <path d="M5 9.5V20h14V9.5" stroke-linecap="round" stroke-linejoin="round" />
             <path d="M9.5 20v-6h5v6" stroke-linecap="round" stroke-linejoin="round" />
           </svg>
-          <span>Homenagens</span>
+          <span>Romances</span>
         </RouterLink>
-        <RouterLink to="/dashboard/tributes/new" class="nav-item" active-class="nav-item--active">
+        <RouterLink to="/dashboard/romances/new" class="nav-item" active-class="nav-item--active">
           <svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
             <path d="M12 5v14M5 12h14" stroke-linecap="round" />
           </svg>
-          <span>Nova homenagem</span>
+          <span>Nova experiência</span>
         </RouterLink>
 
         <p class="sidebar__label sidebar__label--spaced">Álbuns</p>
@@ -45,6 +45,21 @@
             <path d="M12 5v14M5 12h14" stroke-linecap="round" />
           </svg>
           <span>Novo álbum</span>
+        </RouterLink>
+
+        <p class="sidebar__label sidebar__label--spaced">Mapas</p>
+        <RouterLink to="/dashboard/maps" class="nav-item" active-class="nav-item--active" @click="drawerOpen = false">
+          <svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M3 6.5 9 4l6 2.5 6-2.5v13L15 19l-6-2.5L3 19.5V6.5Z" stroke-linejoin="round" />
+            <path d="M9 4v13.5M15 6.5V20" stroke-linecap="round" />
+          </svg>
+          <span>Meus mapas</span>
+        </RouterLink>
+        <RouterLink to="/dashboard/maps/new" class="nav-item" active-class="nav-item--active" @click="drawerOpen = false">
+          <svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M12 5v14M5 12h14" stroke-linecap="round" />
+          </svg>
+          <span>Novo mapa</span>
         </RouterLink>
 
         <p class="sidebar__label sidebar__label--spaced">Recursos</p>
@@ -128,7 +143,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useTheme } from '@/composables/useTheme'
@@ -140,6 +155,13 @@ const route = useRoute()
 const { isDark, toggle } = useTheme()
 
 const drawerOpen = ref(false)
+const DESKTOP_BREAKPOINT = 1024
+
+function closeDrawerIfDesktop() {
+  if (window.innerWidth >= DESKTOP_BREAKPOINT) {
+    drawerOpen.value = false
+  }
+}
 
 watch(
   () => route.fullPath,
@@ -147,6 +169,15 @@ watch(
     drawerOpen.value = false
   },
 )
+
+onMounted(() => {
+  closeDrawerIfDesktop()
+  window.addEventListener('resize', closeDrawerIfDesktop)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', closeDrawerIfDesktop)
+})
 
 const initials = computed(() => {
   const name = auth.user?.name?.trim()
@@ -452,6 +483,9 @@ async function logout() {
     opacity var(--dur) var(--ease),
     transform var(--dur) var(--ease);
 }
+.page-leave-active {
+  pointer-events: none;
+}
 .page-enter-from {
   opacity: 0;
   transform: translateY(6px);
@@ -461,6 +495,13 @@ async function logout() {
 }
 
 /* ---------- Responsivo ---------- */
+@media (min-width: 1024px) {
+  .app-overlay {
+    display: none;
+    pointer-events: none;
+  }
+}
+
 @media (max-width: 1023px) {
   .sidebar {
     transform: translateX(-100%);

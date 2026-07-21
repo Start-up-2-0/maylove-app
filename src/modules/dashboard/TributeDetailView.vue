@@ -17,7 +17,7 @@
       <div class="detail-head__actions">
         <RouterLink
           v-if="stats && stats.status !== 'published'"
-          :to="`/dashboard/tributes/${tributeId}/edit`"
+          :to="`/dashboard/romances/${tributeId}/edit`"
           class="ml-btn ml-btn--secondary"
         >
           Continuar edição
@@ -84,7 +84,7 @@
       <div v-if="deleteOpen" class="delete-modal" role="dialog" aria-modal="true" aria-labelledby="delete-title">
         <div class="delete-modal__backdrop" @click="cancelDelete" />
         <div class="delete-modal__panel ml-card">
-          <h2 id="delete-title" class="delete-modal__title">Excluir homenagem?</h2>
+          <h2 id="delete-title" class="delete-modal__title">Excluir romance?</h2>
           <p class="text-muted delete-modal__text">
             <strong>{{ tributeTitle }}</strong>
             será removida permanentemente, incluindo fotos, músicas e demais arquivos armazenados.
@@ -125,7 +125,7 @@ const deleting = ref(false)
 const deleteError = ref('')
 
 const tributeTitle = computed(
-  () => tribute.value?.title || tribute.value?.honoree_name || 'Desempenho da homenagem',
+  () => tribute.value?.title || tribute.value?.honoree_name || 'Desempenho do romance',
 )
 
 const tributeMeta = computed(() => {

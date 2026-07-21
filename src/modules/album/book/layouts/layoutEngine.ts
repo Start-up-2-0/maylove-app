@@ -1,4 +1,4 @@
-import type { PageLayoutId, LayoutStrategy, PageGroup } from './types'
+import type { PageLayoutId, PageGroup } from './types'
 import type { MemoryBookContentPage, MemoryBookPhoto } from '../types'
 import type { BookTheme } from '../themes'
 
@@ -15,12 +15,8 @@ function resolveLayout(group: PageGroup, theme: BookTheme): PageLayoutId {
   }
 
   if (count === 0 && text) return 'text-focus'
-  if (count === 1 && !text) {
-    return theme.strategy === 'luxury' ? 'full-bleed' : 'full-bleed'
-  }
-  if (count === 1 && text) {
-    return theme.strategy === 'magazine' ? 'hero-caption' : 'hero-caption'
-  }
+  if (count === 1 && !text) return 'full-bleed'
+  if (count === 1 && text) return 'hero-caption'
   if (count === 2) return 'asymmetric-duo'
   if (count === 3) return 'editorial-trio'
   if (count >= 4) return 'collage-grid'
@@ -28,37 +24,16 @@ function resolveLayout(group: PageGroup, theme: BookTheme): PageLayoutId {
   return 'hero-caption'
 }
 
-/** Agrupa fotos em páginas conforme estratégia editorial do tema */
-function packGroups(
-  photos: MemoryBookPhoto[],
-  perPage: number,
-  strategy: LayoutStrategy,
-): PageGroup[] {
+/**
+ * Agrupa fotos em páginas de tamanho fixo (`photos_per_page`).
+ * A última página pode ter menos fotos se sobrar resto.
+ */
+function packGroups(photos: MemoryBookPhoto[], perPage: number): PageGroup[] {
   const groups: PageGroup[] = []
   let index = 0
 
   while (index < photos.length) {
-    let size = perPage
-
-    if (strategy === 'luxury' || strategy === 'classic' || strategy === 'wedding') {
-      const pattern = index % 6
-      if (pattern === 0 || pattern === 3) size = 1
-      else if (pattern === 1 || pattern === 4) size = Math.min(2, perPage)
-      else size = Math.min(3, perPage)
-    } else if (strategy === 'polaroid') {
-      size = Math.min(2, perPage)
-    } else if (strategy === 'magazine') {
-      size = index % 3 === 0 ? 1 : Math.min(2, perPage)
-    } else if (strategy === 'scrapbook') {
-      const sizes = [1, 2, 3, 2, 1, 4]
-      size = Math.min(sizes[index % sizes.length] ?? 1, perPage)
-    } else if (strategy === 'travel') {
-      size = index % 4 === 0 ? 1 : Math.min(2, perPage)
-    } else if (strategy === 'family') {
-      size = index % 5 === 0 ? 1 : Math.min(2, perPage)
-    }
-
-    size = Math.max(1, Math.min(size, perPage, photos.length - index))
+    const size = Math.max(1, Math.min(perPage, photos.length - index))
     const chunk = photos.slice(index, index + size)
     const lead = chunk[0]
 
@@ -80,7 +55,7 @@ export function composePhotobookPages(
   perPage: number,
   theme: BookTheme,
 ): MemoryBookContentPage[] {
-  const groups = packGroups(photos, perPage, theme.strategy)
+  const groups = packGroups(photos, perPage)
   const pages: MemoryBookContentPage[] = []
 
   groups.forEach((group, index) => {

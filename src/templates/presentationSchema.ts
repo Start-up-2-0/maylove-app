@@ -1,25 +1,47 @@
-import { WIZARD_STEP_LABELS, type WizardStep } from '@/api/types'
 import { getPresentation, listPresentations as listPresentationStyles } from './presentations'
 import type { ExperienceLayout, TemplateDefinition } from './types'
 import { EXPERIENCE_LAYOUT_LABELS } from './types'
 
 /**
- * Configuração da apresentação (o "schema" que dirige o wizard).
+ * Configuração da apresentação (o "schema" que dirige componentes legados).
  *
  * Cada estilo de apresentação tem uma estrutura própria: passos, campos
  * obrigatórios/opcionais e limites diferentes. Em vez de espalhar condicionais
  * por vários componentes, centralizamos aqui uma configuração declarativa que o
  * frontend interpreta para montar dinamicamente os steps e os campos.
- *
- * Este módulo representa o contrato que, futuramente, pode ser servido pelo
- * backend (`GET /tributes/:id/wizard-schema`): a forma dos dados é serializável
- * e não depende de nenhuma regra fixa por apresentação no restante do frontend.
- * Para adicionar uma nova apresentação basta descrever a configuração dela aqui.
  */
+
+/** Passos legados do schema dinâmico por apresentação (componentes internos). */
+export type LegacyWizardStep =
+  | 'presentation'
+  | 'photos'
+  | 'moments'
+  | 'texts'
+  | 'style'
+  | 'music'
+  | 'video'
+  | 'event'
+  | 'effects'
+  | 'preview'
+  | 'publish'
+
+const LEGACY_WIZARD_STEP_LABELS: Record<LegacyWizardStep, string> = {
+  presentation: 'Apresentação',
+  photos: 'Fotos',
+  moments: 'Momentos',
+  texts: 'Textos',
+  style: 'Estilo',
+  music: 'Música',
+  video: 'Vídeo',
+  event: 'Evento',
+  effects: 'Efeitos',
+  preview: 'Revisar e Concluir',
+  publish: 'Publicar',
+}
 
 /** Passo do wizard já rotulado, pronto para o stepper. */
 export interface WizardStepConfig {
-  id: WizardStep
+  id: LegacyWizardStep
   label: string
 }
 
@@ -362,8 +384,8 @@ const MIN_PHOTOS: Record<ExperienceLayout, number> = {
   proposal: 1,
 }
 
-function buildStepConfig(id: WizardStep): WizardStepConfig {
-  return { id, label: WIZARD_STEP_LABELS[id] }
+function buildStepConfig(id: LegacyWizardStep): WizardStepConfig {
+  return { id, label: LEGACY_WIZARD_STEP_LABELS[id] }
 }
 
 /**
@@ -406,7 +428,7 @@ export function resolvePresentationSchema(
   const supportsVideo = definition?.capabilities?.supportsVideo === true
   const isEvent = definition ? EVENT_CATEGORIES.includes(definition.category) : false
 
-  const steps: WizardStep[] = ['presentation', 'style', 'texts', 'photos']
+  const steps: LegacyWizardStep[] = ['presentation', 'style', 'texts', 'photos']
   if (usesMoments) steps.push('moments')
   if (supportsVideo && VIDEO_LAYOUTS.includes(layout)) steps.push('video')
   if (config.music) steps.push('music')
@@ -437,7 +459,7 @@ function catalogSteps(
   layout: ExperienceLayout,
   config: { music: boolean; minimal: boolean },
 ): WizardStepConfig[] {
-  const ids: WizardStep[] = ['presentation', 'style', 'texts', 'photos']
+  const ids: LegacyWizardStep[] = ['presentation', 'style', 'texts', 'photos']
   if (MOMENT_LAYOUTS.includes(layout)) ids.push('moments')
   if (config.music) ids.push('music')
   if (!config.minimal) ids.push('effects')

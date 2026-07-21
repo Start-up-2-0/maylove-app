@@ -5,11 +5,15 @@ export type BookPresentationId =
   | 'wedding-book'
   | 'family-memories'
   | 'polaroid-memories'
+  | 'polaroid-board'
+  | 'portrait-album'
+  | 'instant-photo'
   | 'scrapbook'
   | 'travel-journal'
   | 'magazine-style'
   | 'luxury-album'
   | 'timeline'
+  | 'memorial-luz'
   /** @deprecated slugs legados — normalizados em runtime */
   | 'family-album'
   | 'polaroid'
@@ -23,6 +27,12 @@ export interface MemoryBookPhoto {
   title?: string
   caption?: string
   memoryDate?: string
+  placeName?: string
+  /** Posicionamento livre (páginas Polaroid scrap). */
+  x?: number
+  y?: number
+  rotation?: number
+  scale?: number
 }
 
 export interface MemoryBookContentPage {
@@ -55,6 +65,8 @@ export interface MemoryBookModel {
   signature?: string
   colorPrimary: string
   contentPages: MemoryBookContentPage[]
+  bookConfig?: import('./bookConfig').BookConfig
+  coverPhotoUrl?: string
 }
 
 export interface BookPresentationDefinition {

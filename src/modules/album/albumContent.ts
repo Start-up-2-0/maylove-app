@@ -1,4 +1,5 @@
 import type { ExperienceContent } from '@/templates/types'
+import { DEFAULT_TRIBUTE_MODULES } from '@/utils/tributeModules'
 
 /** Monta ExperienceContent mínimo para o AlbumLayout standalone. */
 export function buildAlbumExperienceContent(input: {
@@ -28,6 +29,7 @@ export function buildAlbumExperienceContent(input: {
     celebration: '',
     signature: input.signature ?? '',
     specialDate: null,
+    specialDateConfig: null,
     photos: input.photos.map((photo) => ({
       id: photo.id,
       url: photo.url,
@@ -46,5 +48,6 @@ export function buildAlbumExperienceContent(input: {
     textStyle: null,
     slug: '',
     viewsCount: null,
+    modules: { ...DEFAULT_TRIBUTE_MODULES },
   }
 }

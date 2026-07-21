@@ -1,4 +1,5 @@
 import { apiClient, unwrap } from './client'
+import { authPayloadFromResponse } from './authResponse'
 import type { ApiEnvelope, AuthPayload, User } from './types'
 
 export async function register(payload: {
@@ -25,7 +26,7 @@ export async function login(payload: {
   password: string
 }): Promise<AuthPayload> {
   const response = await apiClient.post<ApiEnvelope<AuthPayload>>('/auth/login', payload)
-  return unwrap(response)
+  return authPayloadFromResponse(response)
 }
 
 export async function logout(): Promise<void> {

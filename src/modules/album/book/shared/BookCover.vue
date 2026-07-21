@@ -1,47 +1,155 @@
 <template>
   <header
     class="book-cover"
-    :class="[`book-cover--${theme.cover.variant}`, { 'book-cover--texture': theme.features.textureOverlay }]"
+    :class="[
+      `book-cover--${theme.cover.variant}`,
+      `book-cover--mode-${coverMode}`,
+      { 'book-cover--texture': theme.features.textureOverlay },
+      { 'book-cover--opened': opened },
+      { 'book-cover--has-photo': Boolean(coverPhotoUrl) },
+    ]"
   >
-    <span v-if="theme.cover.eyebrow" class="book-cover__eyebrow">{{ theme.cover.eyebrow }}</span>
-    <h1 class="book-cover__title">{{ book.title }}</h1>
-    <p v-if="book.subtitle" class="book-cover__subtitle">{{ book.subtitle }}</p>
-    <span class="book-cover__rule" aria-hidden="true" />
-    <p class="book-cover__hint">Role para folhear o álbum</p>
+    <div
+      v-if="coverPhotoUrl && (coverMode === 'photo' || coverMode === 'full-bleed')"
+      class="book-cover__media"
+      aria-hidden="true"
+    >
+      <img :src="coverPhotoUrl" alt="" />
+    </div>
+
+    <div class="book-cover__copy">
+      <span v-if="eyebrow" class="book-cover__eyebrow">{{ eyebrow }}</span>
+      <h1 class="book-cover__title">
+        <span class="book-cover__title-main">{{ titleMain }}</span>
+        <span v-if="titleSide" class="book-cover__title-side">{{ titleSide }}</span>
+      </h1>
+      <p v-if="book.subtitle" class="book-cover__subtitle">{{ book.subtitle }}</p>
+      <span class="book-cover__rule" aria-hidden="true" />
+      <p class="book-cover__hint">{{ hint }}</p>
+    </div>
   </header>
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import type { BookTheme } from '../themes'
 import type { MemoryBookModel } from '../types'
+import type { CoverMode } from '../bookConfig'
 
-defineProps<{
-  book: MemoryBookModel
-  theme: BookTheme
-}>()
+const props = withDefaults(
+  defineProps<{
+    book: MemoryBookModel
+    theme: BookTheme
+    opened?: boolean
+  }>(),
+  { opened: false },
+)
+
+const coverMode = computed<CoverMode>(
+  () => props.book.bookConfig?.cover.mode ?? 'text',
+)
+
+const coverPhotoUrl = computed(() => props.book.coverPhotoUrl)
+
+const eyebrow = computed(
+  () => props.book.bookConfig?.cover.eyebrow?.trim() || props.theme.cover.eyebrow || 'MEMORY',
+)
+
+const titleMain = computed(() => props.book.title)
+const titleSide = computed(() =>
+  coverMode.value === 'text' && !props.opened ? 'BOOK.' : '',
+)
+
+const hint = computed(() => (props.opened ? 'Álbum aberto' : 'Toque na capa para abrir'))
 </script>
 
 <style scoped>
 .book-cover {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 1fr;
   align-items: center;
-  justify-content: center;
+  justify-items: center;
   text-align: center;
   width: 100%;
   min-height: inherit;
   padding: clamp(32px, 8vw, 64px) clamp(24px, 6vw, 48px);
   position: relative;
   overflow: hidden;
+  background: var(--book-paper);
+  color: var(--book-ink);
 }
 
-.book-cover--texture::before {
+.book-cover--mode-photo {
+  grid-template-columns: 1.05fr 0.95fr;
+  text-align: left;
+  justify-items: stretch;
+  gap: clamp(16px, 4vw, 28px);
+}
+
+.book-cover--mode-full-bleed .book-cover__media {
+  position: absolute;
+  inset: 0;
+}
+
+.book-cover--mode-full-bleed .book-cover__copy {
+  position: relative;
+  z-index: 1;
+  color: #fff;
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.45);
+}
+
+.book-cover--mode-full-bleed .book-cover__eyebrow,
+.book-cover--mode-full-bleed .book-cover__subtitle,
+.book-cover--mode-full-bleed .book-cover__hint {
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.book-cover--mode-full-bleed .book-cover__rule {
+  background: #fff;
+}
+
+.book-cover--opened {
+  min-height: clamp(200px, 34vh, 300px);
+  padding-bottom: 8px;
+}
+
+.book-cover__media {
+  width: 100%;
+  min-height: clamp(180px, 36vh, 340px);
+  overflow: hidden;
+  background: #ddd;
+}
+
+.book-cover__media img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.book-cover--mode-full-bleed .book-cover__media img {
+  object-fit: cover;
+}
+
+.book-cover--mode-full-bleed .book-cover__media::after {
   content: '';
   position: absolute;
   inset: 0;
-  opacity: 0.35;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.08'/%3E%3C/svg%3E");
-  pointer-events: none;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.15), rgba(0, 0, 0, 0.55));
+}
+
+.book-cover__copy {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: inherit;
+}
+
+.book-cover--mode-photo .book-cover__copy {
+  align-items: flex-start;
 }
 
 .book-cover__eyebrow {
@@ -54,22 +162,43 @@ defineProps<{
 }
 
 .book-cover__title {
+  position: relative;
   font-family: var(--book-font-display);
-  font-size: clamp(2rem, 7vw, 3.4rem);
-  font-weight: 500;
-  line-height: 1.08;
-  color: var(--book-ink);
+  font-size: clamp(2rem, 7vw, 3.6rem);
+  font-weight: 700;
+  line-height: 0.95;
+  color: inherit;
   margin: 0;
-  max-width: 16ch;
+  max-width: 14ch;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+}
+
+.book-cover__title-side {
+  position: absolute;
+  right: -1.1em;
+  top: 0.15em;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  font-size: 0.55em;
+  letter-spacing: 0.08em;
+}
+
+.book-cover--opened .book-cover__title {
+  font-size: clamp(1.5rem, 5vw, 2.4rem);
+}
+
+.book-cover--opened .book-cover__title-side {
+  display: none;
 }
 
 .book-cover__subtitle {
-  margin: 12px 0 0;
+  margin: 14px 0 0;
   font-family: var(--book-font-body);
-  font-size: clamp(1rem, 2.5vw, 1.25rem);
+  font-size: clamp(0.9rem, 2.2vw, 1.05rem);
   font-style: italic;
   color: var(--book-muted);
-  max-width: 28ch;
+  max-width: 32ch;
 }
 
 .book-cover__rule {
@@ -80,97 +209,31 @@ defineProps<{
   background: var(--book-accent);
 }
 
+.book-cover--mode-photo .book-cover__rule {
+  margin-left: 0;
+}
+
 .book-cover__hint {
   font-size: 0.8rem;
   color: var(--book-muted);
   margin: 0;
 }
 
-/* Variantes */
+.book-cover--opened .book-cover__hint {
+  opacity: 0.7;
+}
+
 .book-cover--minimal {
-  background:
-    radial-gradient(120% 90% at 50% 0%, color-mix(in srgb, var(--book-accent) 10%, transparent), transparent 55%),
-    var(--book-paper);
+  background: var(--book-paper);
 }
 
-.book-cover--romantic {
-  background:
-    radial-gradient(ellipse at 50% 0%, color-mix(in srgb, var(--book-accent) 14%, #fff), transparent 60%),
-    linear-gradient(180deg, #fff, var(--book-paper));
-}
+@media (max-width: 720px) {
+  .book-cover--mode-photo {
+    grid-template-columns: 1fr;
+  }
 
-.book-cover--romantic .book-cover__title {
-  font-family: var(--book-font-display);
-  font-weight: 400;
-}
-
-.book-cover--family {
-  background:
-    repeating-linear-gradient(
-      -4deg,
-      transparent,
-      transparent 18px,
-      color-mix(in srgb, var(--book-accent) 4%, transparent) 18px,
-      color-mix(in srgb, var(--book-accent) 4%, transparent) 19px
-    ),
-    var(--book-paper);
-}
-
-.book-cover--polaroid {
-  background: var(--book-paper-alt);
-}
-
-.book-cover--scrapbook {
-  background:
-    linear-gradient(var(--book-paper) 0 0) padding-box,
-    repeating-linear-gradient(0deg, transparent, transparent 27px, rgba(160, 140, 110, 0.12) 27px, rgba(160, 140, 110, 0.12) 28px);
-}
-
-.book-cover--scrapbook::after {
-  content: '';
-  position: absolute;
-  top: 16px;
-  left: 18%;
-  width: 72px;
-  height: 22px;
-  background: color-mix(in srgb, var(--book-accent) 35%, #f5e6b8);
-  transform: rotate(-14deg);
-  opacity: 0.85;
-}
-
-.book-cover--travel {
-  background:
-    linear-gradient(135deg, color-mix(in srgb, var(--book-accent) 6%, var(--book-paper)), var(--book-paper));
-  border-bottom: 3px double color-mix(in srgb, var(--book-accent) 25%, transparent);
-}
-
-.book-cover--magazine {
-  background: var(--book-paper-alt);
-  color: #fff;
-  text-align: left;
-  align-items: flex-start;
-}
-
-.book-cover--magazine .book-cover__title,
-.book-cover--magazine .book-cover__subtitle,
-.book-cover--magazine .book-cover__eyebrow,
-.book-cover--magazine .book-cover__hint {
-  color: #fff;
-}
-
-.book-cover--magazine .book-cover__rule {
-  margin-left: 0;
-}
-
-.book-cover--luxury {
-  background:
-    linear-gradient(180deg, var(--book-paper) 0%, color-mix(in srgb, var(--book-accent) 4%, var(--book-paper)) 100%);
-  border: 1px solid color-mix(in srgb, var(--book-accent) 20%, transparent);
-}
-
-.book-cover--luxury .book-cover__title {
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  font-size: clamp(1.6rem, 5vw, 2.6rem);
+  .book-cover__title-side {
+    display: none;
+  }
 }
 </style>

@@ -1,6 +1,7 @@
 <template>
   <div class="video-step">
     <WizardStepHeader
+      v-if="!compact"
       title="Vídeo"
       description="Adicione um vídeo de abertura ou de fundo (YouTube, Vimeo ou MP4)."
     />
@@ -36,9 +37,13 @@ import { computed } from 'vue'
 import type { useTributeWizard } from '@/composables/useTributeWizard'
 import WizardStepHeader from '@/components/wizard/WizardStepHeader.vue'
 
-const props = defineProps<{
-  form: ReturnType<typeof useTributeWizard>['form']
-}>()
+const props = withDefaults(
+  defineProps<{
+    form: ReturnType<typeof useTributeWizard>['form']
+    compact?: boolean
+  }>(),
+  { compact: false },
+)
 
 const isEmbed = computed(() => /youtube|youtu\.be|vimeo/i.test(props.form.video_url))
 

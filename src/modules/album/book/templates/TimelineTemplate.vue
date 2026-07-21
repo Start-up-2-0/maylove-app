@@ -147,13 +147,17 @@ const entries = computed(() =>
   margin: 0;
   overflow: hidden;
   border-radius: 10px;
+  background: color-mix(in srgb, var(--book-accent) 4%, #f7f3ee);
 }
 
 .tl-entry__photo img {
   display: block;
   width: 100%;
-  aspect-ratio: 16 / 10;
-  object-fit: cover;
+  height: auto;
+  max-height: min(78vh, 920px);
+  object-fit: contain;
+  object-position: center;
+  margin-inline: auto;
 }
 
 .tl-entry__date {

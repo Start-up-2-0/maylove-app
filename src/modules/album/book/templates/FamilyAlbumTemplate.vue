@@ -137,8 +137,8 @@ defineProps<{
   display: block;
   width: 100%;
   max-width: 280px;
-  aspect-ratio: 4 / 3;
-  object-fit: cover;
+  height: auto;
+  object-fit: contain;
 }
 
 .fam-page__text {

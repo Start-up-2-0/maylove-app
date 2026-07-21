@@ -8,6 +8,7 @@
         {{ backLabel }}
       </RouterLink>
       <h1 class="wiz-header__title">{{ title }}</h1>
+      <p v-if="subtitle" class="wiz-header__subtitle">{{ subtitle }}</p>
       <div class="wiz-header__meta">
         <span class="ml-badge" :class="badgeClass">{{ statusLabel }}</span>
         <span v-if="saving" class="wiz-header__save">
@@ -31,6 +32,7 @@ import { RouterLink } from 'vue-router'
 const props = withDefaults(
   defineProps<{
     title: string
+    subtitle?: string
     status: string
     saving: boolean
     savedAt: Date | null
@@ -96,6 +98,14 @@ function formatSavedAt(date: Date): string {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.wiz-header__subtitle {
+  margin: 6px 0 0;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--rom-accent, var(--primary));
 }
 .wiz-header__meta {
   display: flex;

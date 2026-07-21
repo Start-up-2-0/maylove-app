@@ -1,6 +1,7 @@
 <template>
   <div class="pres-step">
     <WizardStepHeader
+      v-if="!embedded"
       title="Estilo de apresentação"
       description="Defina como a homenagem será exibida e como o visitante vai interagir com ela. O mesmo modelo pode virar uma carta, um slider, uma timeline e muito mais."
     />
@@ -53,21 +54,27 @@ import { computed } from 'vue'
 import type { useTributeWizard } from '@/composables/useTributeWizard'
 import { listPresentations } from '@/templates/presentations'
 import { EXPERIENCE_LAYOUT_LABELS, type TemplateDefinition } from '@/templates/types'
+import { syncModulesFromPresentation } from '@/utils/tributeModules'
 import WizardStepHeader from '@/components/wizard/WizardStepHeader.vue'
 
-const props = defineProps<{
-  form: ReturnType<typeof useTributeWizard>['form']
-  definition: TemplateDefinition
-}>()
+const props = withDefaults(
+  defineProps<{
+    form: ReturnType<typeof useTributeWizard>['form']
+    definition?: TemplateDefinition | null
+    embedded?: boolean
+  }>(),
+  { embedded: false, definition: null },
+)
 
 const presentations = listPresentations()
 
 const defaultLayoutLabel = computed(
-  () => EXPERIENCE_LAYOUT_LABELS[props.definition.layout ?? 'scroll'],
+  () => EXPERIENCE_LAYOUT_LABELS[props.definition?.layout ?? 'scroll'],
 )
 
 function select(id: string) {
   props.form.presentation = id
+  syncModulesFromPresentation(props.form.modules, id, props.definition)
 }
 </script>
 

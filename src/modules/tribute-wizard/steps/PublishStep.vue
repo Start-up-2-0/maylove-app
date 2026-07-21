@@ -1,74 +1,96 @@
 <template>
-  <div class="publish-step">
+  <div class="publish-step wiz-step-content">
     <WizardStepHeader
+      v-if="!embedded"
       title="Publicar"
-      :description="billingEnabled
-        ? 'Valide os requisitos e publique ou inicie o pagamento avulso.'
-        : 'Valide os requisitos e publique a homenagem.'"
+      :description="headerDescription"
     />
 
-    <div v-if="paymentMessage" class="ml-alert mb-4" :class="paymentAlertClass">
-      {{ paymentMessage }}
-    </div>
-
-    <div v-if="loadingValidation" class="validation-loading">
-      <span class="ml-spinner" />
-      Validando homenagem...
-    </div>
-
-    <section v-else class="validation">
-      <div v-if="!publishBlocked" class="ml-alert ml-alert--success">
-        <svg class="ml-alert__icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M20 6 9 17l-5-5" stroke-linecap="round" stroke-linejoin="round" />
-        </svg>
-        <span>Tudo certo para publicar.</span>
+    <div class="wiz-card-stack">
+      <div v-if="paymentMessage" class="ml-alert" :class="paymentAlertClass">
+        {{ paymentMessage }}
       </div>
-      <div v-if="validation?.errors.length || schemaIssues.length" class="ml-alert ml-alert--danger">
-        <ul class="issue-list">
-          <li v-for="issue in schemaIssues" :key="issue.field + issue.code">{{ issue.message }}</li>
-          <li v-for="issue in validation?.errors ?? []" :key="issue.field + issue.code">{{ issue.message }}</li>
-        </ul>
-      </div>
-      <div v-if="validation?.warnings.length" class="ml-alert ml-alert--warning mt-3">
-        <ul class="issue-list">
-          <li v-for="issue in validation.warnings" :key="issue.field + issue.code">{{ issue.message }}</li>
-        </ul>
-      </div>
-    </section>
 
-    <div v-if="tribute?.status === 'published'" class="ml-card published-card">
-      <h3 class="published-card__title">Homenagem publicada! 🎉</h3>
-      <p class="text-muted published-card__sub">Compartilhe o link com quem você ama.</p>
-      <div class="published-card__row">
-        <input :value="publicUrl" readonly class="ml-input" />
-        <button class="ml-btn ml-btn--primary" @click="copyLink">
-          {{ copied ? 'Copiado!' : 'Copiar link' }}
-        </button>
-      </div>
-      <a :href="publicUrl" target="_blank" class="ml-btn ml-btn--secondary">Abrir página</a>
+      <section class="wiz-card">
+        <h3 class="wiz-card__title">Validação</h3>
+
+        <div v-if="loadingValidation" class="validation-loading">
+          <span class="ml-spinner" />
+          {{ romance ? 'Validando presente...' : 'Validando homenagem...' }}
+        </div>
+
+        <div v-else class="validation">
+          <div v-if="showReadyState" class="ml-alert ml-alert--success">
+            <svg class="ml-alert__icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 6 9 17l-5-5" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            <span>Tudo certo para publicar.</span>
+          </div>
+          <div v-if="validation?.errors.length || schemaIssues.length || romanceBlockingIssues.length" class="ml-alert ml-alert--danger">
+            <ul class="issue-list">
+              <li v-for="issue in romanceBlockingIssues" :key="issue.field + issue.code">{{ issue.message }}</li>
+              <li v-for="issue in schemaIssues" :key="issue.field + issue.code">{{ issue.message }}</li>
+              <li v-for="issue in validation?.errors ?? []" :key="issue.field + issue.code">{{ issue.message }}</li>
+            </ul>
+          </div>
+          <div v-if="visibleWarnings.length" class="ml-alert ml-alert--warning">
+            <ul class="issue-list">
+              <li v-for="issue in visibleWarnings" :key="issue.field + issue.code">{{ issue.message }}</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section v-if="tribute?.status === 'published'" class="wiz-card published-card">
+        <h3 class="published-card__title">{{ romance ? 'Presente publicado!' : 'Homenagem publicada!' }}</h3>
+        <p class="text-muted published-card__sub">Compartilhe o link com quem você ama.</p>
+        <div class="published-card__row">
+          <input :value="publicUrl" readonly class="ml-input" />
+          <button class="ml-btn ml-btn--primary" @click="copyLink">
+            {{ copied ? 'Copiado!' : 'Copiar link' }}
+          </button>
+        </div>
+        <a :href="publicUrl" target="_blank" class="ml-btn ml-btn--secondary">Abrir página publicada</a>
+
+        <div v-if="showQrCode" class="published-card__qr">
+          <h4>QR Code</h4>
+          <img :src="qrCodeUrl" width="180" height="180" :alt="romance ? 'QR Code do presente' : 'QR Code da homenagem'" />
+          <p class="text-muted">{{ romance ? 'Escaneie para abrir o presente no celular.' : 'Escaneie para abrir a homenagem no celular.' }}</p>
+        </div>
+      </section>
+
+      <section v-else class="wiz-card">
+        <h3 class="wiz-card__title">Publicação</h3>
+        <p class="wiz-card__hint">
+          {{ romance ? 'Quando estiver pronto, publique e compartilhe o link.' : 'Quando estiver pronto, publique ou pague para colocar no ar.' }}
+        </p>
+
+        <div class="publish-actions">
+          <button
+            v-if="canPublishDirectly"
+            class="ml-btn ml-btn--primary ml-btn--lg"
+            :disabled="publishBlocked || publishing"
+            @click="publish"
+          >
+            <span v-if="publishing" class="ml-spinner ml-spinner--sm" />
+            {{ publishButtonLabel }}
+          </button>
+          <button
+            v-if="billingEnabled && !hasSubscription"
+            class="ml-btn ml-btn--primary ml-btn--lg"
+            :disabled="publishBlocked || checkingOut"
+            @click="startCheckout"
+          >
+            <span v-if="checkingOut" class="ml-spinner ml-spinner--sm" />
+            Pagar R$ {{ priceLabel }} com PIX
+          </button>
+        </div>
+
+        <PixCheckoutPanel :checkout="checkout" @paid="onPixPaid" />
+
+        <p v-if="actionError" class="ml-alert ml-alert--danger publish-error">{{ actionError }}</p>
+      </section>
     </div>
-
-    <div v-else class="publish-actions">
-      <button
-        class="ml-btn ml-btn--primary ml-btn--lg"
-        :disabled="publishBlocked || publishing"
-        @click="publish"
-      >
-        <span v-if="publishing" class="ml-spinner ml-spinner--sm" />
-        {{ publishButtonLabel }}
-      </button>
-      <button
-        v-if="billingEnabled && !hasSubscription"
-        class="ml-btn ml-btn--secondary ml-btn--lg"
-        :disabled="publishBlocked || checkingOut"
-        @click="startCheckout"
-      >
-        <span v-if="checkingOut" class="ml-spinner ml-spinner--sm" />
-        Pagar R$ {{ priceLabel }} e publicar
-      </button>
-    </div>
-
-    <p v-if="actionError" class="ml-alert ml-alert--danger mt-3">{{ actionError }}</p>
   </div>
 </template>
 
@@ -81,64 +103,69 @@ import {
   publishTribute,
   validateTribute,
 } from '@/api/tributes'
-import type { TributeDetail, TributeValidation } from '@/api/types'
+import { fetchBillingProduct } from '@/api/billing'
+import type { CheckoutResponse, TributeDetail, TributeValidation } from '@/api/types'
 import { getTemplateDefinition } from '@/templates/registry'
-import { resolvePresentationSchema } from '@/templates/presentationSchema'
+import { collectPresentationSchemaIssuesFromTribute } from '@/modules/tribute-wizard/presentationValidation'
+import { getExperienceSteps } from '@/modules/romance-wizard/romanceExperiences'
+import { tributeHasMusicConfigured } from '@/modules/romance-wizard/romanceFinishHelpers'
 import WizardStepHeader from '@/components/wizard/WizardStepHeader.vue'
+import PixCheckoutPanel from '@/components/billing/PixCheckoutPanel.vue'
 
 const props = defineProps<{
   tributeId: string
   tribute: TributeDetail | null
+  flushAutosave?: () => Promise<boolean>
+  embedded?: boolean
+  romance?: boolean
+  experienceId?: string | null
 }>()
 
-const MOMENT_LAYOUTS = ['envelope', 'timeline', 'album', 'storytelling', 'cinematic', 'proposal']
-
-// Validações derivadas do schema da apresentação (obrigatórios e mínimos), além
-// da validação do backend. Bloqueiam a publicação no cliente com mensagens claras.
-const schemaIssues = computed<{ field: string; code: string; message: string }[]>(() => {
+const schemaIssues = computed(() => {
   const tribute = props.tribute
   if (!tribute) return []
   const definition = getTemplateDefinition(tribute.template.slug)
-  const schema = resolvePresentationSchema(tribute.content_json?.presentation, definition)
-  const issues: { field: string; code: string; message: string }[] = []
-
-  const hasText = (value?: string | null) => Boolean(value && value.replace(/<[^>]*>/g, '').trim())
-  if (schema.required.includes('title') && !hasText(tribute.title)) {
-    issues.push({ field: 'title', code: 'REQUIRED', message: 'Defina um título para a homenagem.' })
-  }
-  if (schema.required.includes('message') && !hasText(tribute.message)) {
-    issues.push({ field: 'message', code: 'REQUIRED', message: 'Escreva a mensagem principal.' })
-  }
-
-  const photoCount = (tribute.media ?? []).filter((m) => m.media_type === 'photo').length
-  const usesMoments = MOMENT_LAYOUTS.includes(schema.layout)
-
-  if (usesMoments) {
-    const moments = tribute.content_json?.timeline ?? []
-    const filledMoments = moments.filter(
-      (m) => hasText(m.description) || hasText(m.title),
-    )
-    if (filledMoments.length === 0 && photoCount === 0) {
-      issues.push({
-        field: 'moments',
-        code: 'MIN_MOMENTS',
-        message: 'Adicione ao menos um trecho com texto (ou uma foto) para esta experiência.',
-      })
-    }
-  } else if (schema.limits.minPhotos > 0 && photoCount < schema.limits.minPhotos) {
-    issues.push({
-      field: 'photos',
-      code: 'MIN_PHOTOS',
-      message: `Envie pelo menos ${schema.limits.minPhotos} foto(s) para este estilo.`,
-    })
-  }
-
-  return issues
+  return collectPresentationSchemaIssuesFromTribute(tribute, definition)
 })
 
 const publishBlocked = computed(
-  () => !validation.value?.valid || schemaIssues.value.length > 0,
+  () => !validation.value?.valid || schemaIssues.value.length > 0 || romanceBlockingIssues.value.length > 0,
 )
+
+const experienceSteps = computed(() => getExperienceSteps(props.experienceId))
+const requiresMusic = computed(
+  () => props.romance && experienceSteps.value.includes('music'),
+)
+
+const romanceBlockingIssues = computed(() => {
+  if (!props.romance || !requiresMusic.value || !props.tribute) return []
+  if (tributeHasMusicConfigured(props.tribute)) return []
+  return [{ field: 'music', code: 'MISSING_MUSIC', message: 'Adicione uma trilha sonora antes de publicar.' }]
+})
+
+const visibleWarnings = computed(() => {
+  const warnings = validation.value?.warnings ?? []
+  if (!props.romance) return warnings
+  return warnings.filter((issue) => {
+    if (issue.code === 'MISSING_MUSIC' && requiresMusic.value) return false
+    return true
+  })
+})
+
+const showReadyState = computed(
+  () => !publishBlocked.value && !visibleWarnings.value.length,
+)
+
+const headerDescription = computed(() => {
+  if (props.romance) {
+    return billingEnabled.value
+      ? 'Valide os requisitos e pague com PIX para publicar o presente.'
+      : 'Valide os requisitos e publique o presente digital.'
+  }
+  return billingEnabled.value
+    ? 'Valide os requisitos e pague com PIX para publicar a homenagem.'
+    : 'Valide os requisitos e publique a homenagem.'
+})
 
 const canPublishDirectly = computed(() => !billingEnabled.value || hasSubscription.value)
 
@@ -158,14 +185,24 @@ const publishing = ref(false)
 const checkingOut = ref(false)
 const actionError = ref('')
 const copied = ref(false)
-
-const priceLabel = '5,99'
+const checkout = ref<CheckoutResponse | null>(null)
+const priceLabel = ref('4,99')
 
 const publicUrl = computed(() => {
   const slug = props.tribute?.slug
   if (!slug) return ''
   return `${window.location.origin}/h/${slug}`
 })
+
+const showQrCode = computed(
+  () => props.tribute?.content_json?.modules?.qr_code !== false && Boolean(publicUrl.value),
+)
+
+const qrCodeUrl = computed(() =>
+  publicUrl.value
+    ? `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(publicUrl.value)}`
+    : '',
+)
 
 const paymentStatus = computed(() => route.query.payment)
 const paymentMessage = computed(() => {
@@ -185,13 +222,21 @@ const paymentAlertClass = computed(() => {
 
 onMounted(async () => {
   try {
-    const [validationResult, subscription] = await Promise.all([
+    if (props.flushAutosave) {
+      await props.flushAutosave()
+    }
+    const [validationResult, subscription, product] = await Promise.all([
       validateTribute(props.tributeId),
       fetchSubscription(),
+      fetchBillingProduct().catch(() => null),
     ])
     validation.value = validationResult
     billingEnabled.value = subscription.billing_enabled !== false
     hasSubscription.value = subscription.has_subscription
+    const tributePrice = product?.prices.find((p) => p.billing_mode === 'per_tribute')
+    if (tributePrice) {
+      priceLabel.value = (tributePrice.price_cents / 100).toFixed(2).replace('.', ',')
+    }
     if (paymentStatus.value === 'success') {
       emit('published')
     }
@@ -206,12 +251,25 @@ async function publish() {
   publishing.value = true
   actionError.value = ''
   try {
+    if (props.flushAutosave) {
+      const saved = await props.flushAutosave()
+      if (!saved) {
+        actionError.value = 'Não foi possível salvar as alterações. Aguarde e tente publicar de novo.'
+        return
+      }
+    }
+    const validationResult = await validateTribute(props.tributeId)
+    validation.value = validationResult
+    if (!validationResult.valid || schemaIssues.value.length > 0) {
+      actionError.value = 'Corrija os itens pendentes antes de publicar.'
+      return
+    }
     await publishTribute(props.tributeId)
     emit('published')
   } catch {
     actionError.value = canPublishDirectly.value
       ? 'Não foi possível publicar a homenagem.'
-      : 'Publicação indisponível. Verifique assinatura ou use o pagamento avulso.'
+      : 'Publicação indisponível. Verifique assinatura ou use o pagamento PIX.'
   } finally {
     publishing.value = false
   }
@@ -221,17 +279,32 @@ async function startCheckout() {
   checkingOut.value = true
   actionError.value = ''
   try {
-    const checkout = await checkoutTribute(props.tributeId)
-    if (checkout.checkout_url) {
-      window.location.href = checkout.checkout_url
+    if (props.flushAutosave) {
+      const saved = await props.flushAutosave()
+      if (!saved) {
+        actionError.value = 'Não foi possível salvar as alterações. Aguarde e tente gerar o PIX de novo.'
+        return
+      }
+    }
+    const validationResult = await validateTribute(props.tributeId)
+    validation.value = validationResult
+    if (!validationResult.valid || schemaIssues.value.length > 0) {
+      actionError.value = 'Corrija os itens pendentes antes de pagar.'
       return
     }
-    actionError.value = 'Checkout indisponível no momento.'
+    checkout.value = await checkoutTribute(props.tributeId)
+    if (!checkout.value.pix?.qr_code && !checkout.value.checkout_url) {
+      actionError.value = 'Checkout PIX indisponível no momento.'
+    }
   } catch {
-    actionError.value = 'Não foi possível iniciar o checkout.'
+    actionError.value = 'Não foi possível gerar o PIX.'
   } finally {
     checkingOut.value = false
   }
+}
+
+function onPixPaid() {
+  emit('published')
 }
 
 async function copyLink() {
@@ -242,24 +315,17 @@ async function copyLink() {
 </script>
 
 <style scoped>
-.mb-4 {
-  margin-bottom: 16px;
-}
-.mt-3 {
-  margin-top: 12px;
-}
 .validation-loading {
   display: flex;
   align-items: center;
   gap: 10px;
   color: var(--muted);
-  padding: 16px 0;
+  padding: 8px 0;
 }
 .validation {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  margin-bottom: 20px;
 }
 .issue-list {
   list-style: disc;
@@ -269,12 +335,9 @@ async function copyLink() {
   flex-direction: column;
   gap: 4px;
 }
-
-.published-card {
-  padding: 24px;
-}
 .published-card__title {
   font-size: 1.25rem;
+  font-weight: 600;
 }
 .published-card__sub {
   margin: 6px 0 16px;
@@ -285,13 +348,29 @@ async function copyLink() {
   gap: 12px;
   margin-bottom: 12px;
 }
-
+.published-card__qr {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+  text-align: center;
+}
+.published-card__qr h4 {
+  font-size: 0.94rem;
+  margin-bottom: 12px;
+}
+.published-card__qr img {
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: #fff;
+}
 .publish-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
 }
-
+.publish-error {
+  margin-top: 12px;
+}
 @media (max-width: 560px) {
   .published-card__row {
     grid-template-columns: 1fr;

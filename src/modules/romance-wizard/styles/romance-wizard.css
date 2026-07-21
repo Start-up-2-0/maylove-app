@@ -1,0 +1,581 @@
+.romance-wizard {
+  --rom-accent: #e11d48;
+  --rom-accent-strong: #be123c;
+  --rom-accent-soft: #fff1f2;
+  --rom-muted: #9f1239;
+  --rom-bg: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--rom-accent) 4%, var(--bg)) 0%,
+    var(--bg) 220px
+  );
+  min-height: 100%;
+  background: var(--rom-bg);
+}
+.romance-wizard::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 8% 12%, color-mix(in srgb, var(--rom-accent) 8%, transparent), transparent 42%),
+    radial-gradient(circle at 92% 4%, color-mix(in srgb, #fda4af 12%, transparent), transparent 38%);
+  z-index: 0;
+}
+.romance-wizard > * {
+  position: relative;
+  z-index: 1;
+}
+.romance-wizard--editor {
+  padding: 0 clamp(12px, 2.5vw, 20px) 28px;
+}
+.romance-wizard__shell {
+  display: grid;
+  gap: 20px;
+  align-items: start;
+}
+@media (min-width: 1024px) {
+  .romance-wizard__shell {
+    grid-template-columns: minmax(380px, 46fr) minmax(420px, 54fr);
+    gap: clamp(24px, 3vw, 40px);
+    width: 100%;
+  }
+}
+@media (min-width: 1440px) {
+  .romance-wizard__shell {
+    grid-template-columns: minmax(420px, 44fr) minmax(520px, 56fr);
+  }
+}
+.romance-wizard__aside {
+  min-width: 0;
+  position: sticky;
+  top: 20px;
+}
+.romance-wizard__aside :deep(.tribute-live-preview) {
+  height: 100%;
+}
+.romance-wizard__aside :deep(.preview-viewport-wrap) {
+  min-height: 100%;
+}
+.romance-wizard__aside :deep(.preview-viewport-frame) {
+  min-height: 420px;
+}
+.romance-wizard__aside :deep(.envelope-frame.flat) {
+  min-height: 100%;
+}
+.romance-wizard__aside :deep(.envelope-frame-inner) {
+  min-height: 100%;
+}
+.romance-wizard__aside :deep(.preview-viewport-wrap--faithful) {
+  min-height: auto;
+  max-height: none;
+  overflow: auto;
+}
+.rom-build-shell__preview :deep(.rom-preview-panel__loading) {
+  display: grid;
+  place-items: center;
+  min-height: 200px;
+}
+.rom-build-shell__preview :deep(.rom-phone-preview) {
+  width: 100%;
+}
+.rom-build-shell__preview :deep(.rom-phone-preview__content) {
+  display: block;
+}
+.rom-build-shell__preview :deep(.rom-wizard-live-preview) {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.rom-build-shell__preview :deep(.rom-wizard-live-preview.tribute-live-preview--faithful) {
+  height: 100%;
+  flex: 1;
+  min-height: 0;
+}
+.rom-build-shell__preview :deep(.rom-wizard-live-preview.tribute-live-preview--contained) {
+  flex: 1;
+  min-height: 0;
+}
+.rom-build-shell__preview :deep(.rom-wizard-live-preview .preview-viewport-wrap--faithful) {
+  flex: 1;
+  max-height: 100%;
+  min-height: 0;
+  overflow: auto;
+  padding: 0;
+  border: none;
+  background: transparent;
+}
+.rom-build-shell__preview :deep(.rom-wizard-live-preview .preview-viewport-frame) {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-height: 0;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+}
+.rom-build-shell__preview :deep(.rom-wizard-live-preview .viewport-seg) {
+  display: none;
+}
+.rom-build-shell__preview :deep(.rom-phone-preview__content .envelope-frame.flat) {
+  min-height: 0;
+  height: 100%;
+}
+.rom-build-shell__preview :deep(.rom-phone-preview__content .envelope-frame-inner) {
+  min-height: 0;
+  height: 100%;
+}
+.rom-build-shell__preview :deep(.rom-phone-preview__content .exp-root) {
+  min-height: 0;
+}
+.rom-build-shell__preview :deep(.rom-live-preview) {
+  width: 100%;
+  height: 100%;
+}
+.rom-build-shell__preview :deep(.tribute-live-preview) {
+  height: 100%;
+}
+.rom-build-shell__preview :deep(.preview-viewport-wrap) {
+  min-height: 0;
+  max-height: 100%;
+}
+.rom-build-shell__preview :deep(.preview-viewport-wrap--faithful) {
+  min-height: 0;
+  max-height: 100%;
+  overflow: auto;
+}
+.rom-build-shell__preview :deep(.preview-viewport-frame) {
+  min-height: 0;
+}
+.romance-wizard__main {
+  width: 100%;
+  min-width: 0;
+}
+
+.romance-wizard__finish {
+  width: 100%;
+}
+
+/* Formulário conversacional (Love Cards style) */
+.rom-form-step {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+.rom-form-step__coach {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+.rom-form-step__coach-name {
+  margin: 0 0 4px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--rom-accent-strong, #be123c);
+}
+.rom-form-step__avatar {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  font-size: 1.5rem;
+  line-height: 1;
+  border-radius: 999px;
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--rom-accent) 14%, var(--surface)),
+    var(--surface)
+  );
+  border: 1.5px solid color-mix(in srgb, var(--rom-accent) 22%, transparent);
+  box-shadow: 0 10px 28px -16px color-mix(in srgb, var(--rom-accent) 50%, transparent);
+}
+.rom-form-step__bubble {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  padding: 14px 16px;
+  border-radius: 6px 18px 18px 18px;
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--rom-accent-soft, #fff1f2) 70%, var(--surface)),
+    var(--surface)
+  );
+  border: 1px solid color-mix(in srgb, var(--rom-accent, #e11d48) 16%, var(--border));
+  box-shadow: 0 16px 40px -30px color-mix(in srgb, var(--rom-accent, #e11d48) 45%, transparent);
+}
+.rom-form-step__bubble::before {
+  content: '';
+  position: absolute;
+  left: -7px;
+  top: 18px;
+  width: 14px;
+  height: 14px;
+  background: inherit;
+  border-left: 1px solid color-mix(in srgb, var(--rom-accent, #e11d48) 16%, var(--border));
+  border-bottom: 1px solid color-mix(in srgb, var(--rom-accent, #e11d48) 16%, var(--border));
+  transform: rotate(45deg);
+  border-radius: 0 0 0 4px;
+}
+.rom-form-step__title {
+  margin: 0 0 4px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--rom-accent, #e11d48);
+}
+.rom-form-step__prompt {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  color: var(--ink);
+  font-weight: 500;
+}
+.rom-form-card {
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid color-mix(in srgb, var(--rom-accent) 10%, var(--border));
+  background: var(--surface);
+  box-shadow: 0 16px 40px -32px color-mix(in srgb, var(--rom-accent) 35%, transparent);
+}
+.rom-form-card--flat {
+  padding-top: 16px;
+}
+.rom-form-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.rom-step-intro {
+  margin-bottom: 24px;
+}
+.rom-step-intro__eyebrow {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--rom-accent, var(--primary));
+  margin: 0 0 8px;
+}
+.rom-step-intro__title {
+  font-size: clamp(1.55rem, 3vw, 2.15rem);
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0 0 8px;
+  line-height: 1.15;
+}
+.rom-step-intro__desc {
+  margin: 0;
+  max-width: 560px;
+  color: var(--muted);
+  font-size: 0.98rem;
+  line-height: 1.55;
+}
+.rom-panel {
+  padding: clamp(18px, 2.5vw, 24px);
+  border-radius: 20px;
+  border: 1px solid color-mix(in srgb, var(--rom-accent, var(--primary)) 12%, var(--border));
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  box-shadow: 0 20px 50px -40px color-mix(in srgb, var(--rom-accent) 35%, transparent);
+}
+.rom-panel__title {
+  margin: 0 0 6px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+.rom-panel__hint {
+  margin: 0 0 16px;
+  font-size: 0.88rem;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.rom-occasion__grid,
+.romance-launcher__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+  gap: 14px;
+}
+.rom-occasion-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 22px 18px;
+  text-align: left;
+  border-radius: 20px;
+  border: 1.5px solid color-mix(in srgb, var(--rom-accent, #e11d48) 18%, var(--border));
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--rom-accent, #e11d48) 6%, var(--surface)),
+    var(--surface)
+  );
+  overflow: hidden;
+  transition:
+    transform 0.25s ease,
+    border-color 0.25s ease,
+    box-shadow 0.25s ease;
+}
+.rom-occasion-card:hover:not(:disabled) {
+  transform: translateY(-3px);
+  border-color: var(--rom-accent, #e11d48);
+}
+.rom-occasion-card:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+.rom-occasion-card--active {
+  border-color: var(--rom-accent, #e11d48);
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--rom-accent, #e11d48) 20%, transparent),
+    0 18px 40px -24px color-mix(in srgb, var(--rom-accent, #e11d48) 45%, transparent);
+}
+.rom-occasion-card__icon {
+  font-size: 2rem;
+  line-height: 1;
+}
+.rom-occasion-card__label {
+  font-size: 1rem;
+  color: var(--ink);
+}
+.rom-occasion-card__desc {
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: var(--muted);
+}
+.rom-occasion__status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 18px;
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+
+.romance-launcher {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: clamp(24px, 4vw, 48px) clamp(16px, 3vw, 24px) 56px;
+}
+.romance-launcher__hero {
+  text-align: center;
+  margin-bottom: 36px;
+}
+.romance-launcher__eyebrow {
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--rom-accent, #e11d48);
+  margin: 0 0 10px;
+}
+.romance-launcher__title {
+  font-size: clamp(2rem, 5vw, 3rem);
+  line-height: 1.1;
+  margin: 0 0 12px;
+  color: var(--ink);
+}
+.romance-launcher__sub {
+  margin: 0 auto;
+  max-width: 560px;
+  color: var(--muted);
+  font-size: 1.02rem;
+  line-height: 1.55;
+}
+.romance-launcher__cards-title {
+  text-align: center;
+  font-size: 1.1rem;
+  margin: 0 0 18px;
+  color: var(--ink);
+}
+.romance-launcher__status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 20px;
+  color: var(--muted);
+}
+.rom-occasion-card__glow {
+  position: absolute;
+  inset: auto -20% -40% -20%;
+  height: 80px;
+  background: radial-gradient(
+    ellipse,
+    color-mix(in srgb, var(--rom-accent, #e11d48) 25%, transparent),
+    transparent 70%
+  );
+  pointer-events: none;
+}
+
+.romance-launcher__grid--experiences {
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+}
+.rom-experience-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 22px 18px;
+  min-height: 168px;
+  text-align: left;
+  border-radius: 20px;
+  border: 1.5px solid color-mix(in srgb, var(--rom-accent, #e11d48) 18%, var(--border));
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--rom-accent, #e11d48) 5%, var(--surface)),
+    var(--surface)
+  );
+  transition:
+    transform 0.25s ease,
+    border-color 0.25s ease,
+    box-shadow 0.25s ease;
+}
+.rom-experience-card:hover:not(:disabled) {
+  transform: translateY(-3px);
+  border-color: var(--rom-accent, #e11d48);
+  box-shadow: 0 16px 40px -28px color-mix(in srgb, var(--rom-accent, #e11d48) 45%, transparent);
+}
+.rom-experience-card:disabled,
+.rom-experience-card--soon {
+  opacity: 0.72;
+  cursor: not-allowed;
+}
+.rom-experience-card__icon {
+  font-size: 2rem;
+  line-height: 1;
+}
+.rom-experience-card__label {
+  font-size: 1rem;
+  color: var(--ink);
+}
+.rom-experience-card__tagline {
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: var(--muted);
+}
+.rom-experience-card__badge {
+  margin-top: auto;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--rom-muted, #9f1239);
+  background: color-mix(in srgb, var(--rom-accent, #e11d48) 10%, var(--surface));
+}
+.rom-experience-card__badge--map {
+  color: #0f766e;
+  background: color-mix(in srgb, #14b8a6 12%, var(--surface));
+}
+.rom-experience-card--picker {
+  flex-direction: row;
+  align-items: center;
+  width: 100%;
+  min-height: auto;
+  padding: 16px 18px;
+  gap: 14px;
+  text-align: left;
+}
+.rom-experience-card--picker .rom-experience-card__icon {
+  font-size: 1.75rem;
+}
+.rom-experience-card__copy {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+.rom-experience-card__chevron {
+  flex-shrink: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--rom-accent, #e11d48);
+  opacity: 0.7;
+}
+.rom-experience-card--picker:hover:not(:disabled) .rom-experience-card__chevron,
+.rom-experience-card--active .rom-experience-card__chevron {
+  opacity: 1;
+  transform: translateX(2px);
+}
+
+.rom-preview-panel {
+  position: sticky;
+  top: 20px;
+  padding: 16px;
+  border-radius: 18px;
+  border: 1px solid color-mix(in srgb, var(--rom-accent, #e11d48) 12%, var(--border));
+  background: color-mix(in srgb, var(--surface) 96%, transparent);
+  box-shadow: 0 20px 50px -36px color-mix(in srgb, var(--rom-accent) 28%, transparent);
+}
+.rom-preview-panel__eyebrow {
+  margin: 0 0 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--rom-muted, #9f1239);
+}
+.rom-preview-panel__experience {
+  margin: 0 0 8px;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+.rom-preview-panel__opening {
+  margin: 0 0 14px;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--muted);
+}
+.rom-preview-panel__loading {
+  display: grid;
+  place-items: center;
+  min-height: 280px;
+}
+
+.rom-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.rom-field__label {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+.rom-field__input {
+  width: 100%;
+  padding: 13px 15px;
+  border-radius: 14px;
+  border: 1.5px solid color-mix(in srgb, var(--border) 80%, var(--rom-accent, #e11d48) 20%);
+  background: color-mix(in srgb, var(--bg) 40%, var(--surface));
+  font-size: 1rem;
+  color: var(--ink);
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease;
+}
+.rom-field__input::placeholder {
+  color: color-mix(in srgb, var(--muted) 75%, transparent);
+}
+.rom-field__input:focus {
+  outline: none;
+  border-color: var(--rom-accent, #e11d48);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--rom-accent, #e11d48) 18%, transparent);
+}
+.rom-field__hint {
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: var(--muted);
+}

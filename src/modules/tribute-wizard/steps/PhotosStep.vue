@@ -1,14 +1,19 @@
 <template>
   <div class="photos-step">
     <WizardStepHeader
+      v-if="!compact"
       title="Fotos da homenagem"
       :description="`Envie pelo menos uma foto. Máximo de ${maxPhotos} neste template.`"
     />
 
-    <div class="ph-context" :class="{ 'ph-context--warn': needsMore }">
+    <div v-if="variant !== 'cover'" class="ph-context" :class="{ 'ph-context--warn': needsMore }">
       <span class="ph-context__emoji" aria-hidden="true">{{ presentationEmoji }}</span>
       <span class="ph-context__text">{{ photoGuidance }}</span>
     </div>
+
+    <p v-else class="ph-cover-tip">
+      Comece com <strong>1 foto de capa</strong>. Você pode enviar mais imagens depois — elas entram na galeria da página.
+    </p>
 
     <div v-if="photos.length" class="photo-grid">
       <figure v-for="(photo, index) in photos" :key="photo.id" class="photo-tile">
@@ -54,8 +59,12 @@
       </span>
       <span v-if="uploading">Enviando {{ uploadLabel }}...</span>
       <template v-else>
-        <span class="ml-dropzone__title">Clique para adicionar fotos</span>
-        <span class="ml-dropzone__hint">JPEG, PNG ou WebP · até {{ maxPhotos }} fotos</span>
+        <span class="ml-dropzone__title">
+          {{ variant === 'cover' && !photos.length ? 'Adicionar foto de capa' : 'Clique para adicionar fotos' }}
+        </span>
+        <span class="ml-dropzone__hint">
+          JPEG, PNG ou WebP · até {{ maxPhotos }} foto{{ maxPhotos === 1 ? '' : 's' }}
+        </span>
       </template>
     </label>
 
@@ -75,16 +84,24 @@ import { resolvePresentationSchema } from '@/templates/presentationSchema'
 import type { TemplateDefinition } from '@/templates/types'
 import WizardStepHeader from '@/components/wizard/WizardStepHeader.vue'
 
-const props = defineProps<{
-  tributeId: string
-  photos: TributeMedia[]
-  maxPhotos: number
-  form: ReturnType<typeof useTributeWizard>['form']
-  definition: TemplateDefinition
-}>()
+const props = withDefaults(
+  defineProps<{
+    tributeId: string
+    photos: TributeMedia[]
+    maxPhotos: number
+    form: ReturnType<typeof useTributeWizard>['form']
+    definition?: TemplateDefinition | null
+    compact?: boolean
+    /** cover = passo Romance (foto de capa); default = galeria completa */
+    variant?: 'default' | 'cover'
+  }>(),
+  { compact: false, definition: null, variant: 'default' },
+)
 
 // O schema da apresentação define como as fotos são usadas e o mínimo recomendado.
-const schema = computed(() => resolvePresentationSchema(props.form.presentation, props.definition))
+const schema = computed(() =>
+  resolvePresentationSchema(props.form.presentation, props.definition ?? undefined),
+)
 const presentationEmoji = computed(() => schema.value.presentationEmoji)
 
 const needsMore = computed(
@@ -189,6 +206,20 @@ async function move(index: number, direction: -1 | 1) {
 .ph-context--warn {
   background: var(--warning-soft, color-mix(in srgb, #f59e0b 14%, transparent));
   border-color: color-mix(in srgb, #f59e0b 45%, var(--border));
+}
+.ph-cover-tip {
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: var(--rom-muted, #9f1239);
+  background: color-mix(in srgb, var(--rom-accent, #e11d48) 8%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--rom-accent, #e11d48) 18%, var(--border));
+}
+.ph-cover-tip strong {
+  font-weight: 700;
+  color: var(--ink);
 }
 
 .photo-grid {

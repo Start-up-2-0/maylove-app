@@ -1,8 +1,8 @@
 <template>
-  <div class="public-page">
+  <div class="public-page" :class="{ 'public-page--memorial': isMemorial }">
     <section v-if="loading" class="public-state">
       <span class="public-spinner" aria-hidden="true" />
-      <p>Carregando livro de memórias...</p>
+      <p>Carregando álbum...</p>
     </section>
 
     <section v-else-if="error" class="public-state public-state--error">
@@ -12,21 +12,33 @@
           <path d="M4 8h16M8 3v5M16 3v5" stroke-linecap="round" />
         </svg>
       </span>
-      <h1>Livro indisponível</h1>
+      <h1>Álbum indisponível</h1>
       <p>{{ error }}</p>
     </section>
 
     <template v-else-if="album && bookModel">
-      <BookRenderer :book="bookModel" mode="full" :share-url="shareUrl" />
+      <BookRenderer
+        :book="bookModel"
+        mode="full"
+        :share-url="shareUrl"
+        :album-slug="album.slug"
+      />
 
-      <audio v-if="album.music?.url" :src="album.music.url" autoplay loop class="public-audio" />
+      <MusicPlayerFloat
+        v-if="album.music?.url"
+        :url="album.music.url"
+        :loop="album.music.loop !== false"
+        :autoplay="album.music.autoplay !== false"
+        :start-at="album.music.start_seconds ?? 0"
+        :end-at="album.music.end_seconds ?? null"
+      />
 
       <footer class="public-foot">
         <RouterLink to="/register" class="public-foot__brand">
           <LogoMark :size="15" variant="mono" class="public-foot__mark" />
           Feito com <strong>MayLov</strong>
         </RouterLink>
-        <RouterLink to="/dashboard/albums/new" class="public-foot__cta">Crie seu livro →</RouterLink>
+        <RouterLink to="/dashboard/albums/new" class="public-foot__cta">Crie seu álbum →</RouterLink>
       </footer>
     </template>
   </div>
@@ -37,9 +49,11 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute, RouterLink } from 'vue-router'
 import { fetchPublicAlbum, recordPublicAlbumView } from '@/api/albums'
 import type { PublicAlbum } from '@/api/types'
-import { buildMemoryBookModel } from '@/modules/album/book/buildModel'
-import BookRenderer from '@/modules/album/book/BookRenderer.vue'
+import MusicPlayerFloat from '@/components/experience/shared/MusicPlayerFloat.vue'
 import LogoMark from '@/components/brand/LogoMark.vue'
+import { buildMemoryBookModelFromDetail } from '@/modules/album/book/buildModel'
+import BookRenderer from '@/modules/album/book/BookRenderer.vue'
+import { isMemorialPresentation } from '@/modules/album/book/presentations'
 
 const route = useRoute()
 const album = ref<PublicAlbum | null>(null)
@@ -48,28 +62,20 @@ const error = ref('')
 
 const bookModel = computed(() => {
   if (!album.value) return null
-  return buildMemoryBookModel({
-    title: album.value.title,
-    subtitle: album.value.subtitle,
-    closing_message: album.value.closing_message,
-    signature: album.value.signature,
-    color_primary: album.value.color_primary,
-    presentation: album.value.presentation,
-    photos_per_page: album.value.photos_per_page,
-    photos: album.value.photos.map((photo) => ({
-      id: photo.id,
-      url: photo.url ?? '',
-      sort_order: photo.sort_order,
-      title: photo.title,
-      caption: photo.caption,
-      memory_date: photo.memory_date,
-    })),
-  })
+  return buildMemoryBookModelFromDetail(album.value)
 })
 
 const shareUrl = computed(() =>
   typeof window !== 'undefined' ? window.location.href : '',
 )
+
+const isMemorial = computed(() => {
+  if (!album.value) return false
+  const presentation =
+    (album.value as { presentation?: string }).presentation ??
+    (album.value.content_json as { presentation?: string } | undefined)?.presentation
+  return isMemorialPresentation(presentation) || album.value.category === 'memorial'
+})
 
 onMounted(async () => {
   const slug = route.params.slug as string
@@ -77,7 +83,7 @@ onMounted(async () => {
     album.value = await fetchPublicAlbum(slug)
     await recordPublicAlbumView(slug, getSessionId())
   } catch {
-    error.value = 'Livro não encontrado ou indisponível no momento.'
+    error.value = 'Álbum não encontrado ou indisponível no momento.'
   } finally {
     loading.value = false
   }
@@ -99,6 +105,24 @@ function getSessionId(): string {
   display: flex;
   flex-direction: column;
   background: var(--bg);
+}
+
+.public-page--memorial {
+  background: #14110f;
+}
+
+.public-page--memorial .public-foot {
+  background: #1c1814;
+  border-top-color: rgba(201, 168, 106, 0.14);
+  color: #a89f94;
+}
+
+.public-page--memorial .public-foot__brand {
+  color: #a89f94;
+}
+
+.public-page--memorial .public-foot__cta {
+  color: #c9a86a;
 }
 
 .public-state {
@@ -141,12 +165,12 @@ function getSessionId(): string {
   }
 }
 
-.public-audio {
-  position: fixed;
-  width: 1px;
-  height: 1px;
-  opacity: 0;
-  pointer-events: none;
+.public-share {
+  display: flex;
+  justify-content: center;
+  padding: clamp(28px, 5vw, 40px) clamp(16px, 4vw, 32px);
+  background: color-mix(in srgb, var(--bg, #fff8fb) 92%, #fff);
+  border-top: 1px solid color-mix(in srgb, var(--border, #eadfe6) 80%, transparent);
 }
 
 .public-foot {

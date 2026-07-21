@@ -70,9 +70,9 @@ defineProps<{ book: MemoryBookModel; mode: BookRenderMode; shareUrl?: string }>(
 }
 .rom-page__media :deep(.book-page-media__figure img) {
   width: 100%;
-  height: 100%;
-  min-height: 280px;
-  object-fit: cover;
+  height: auto;
+  max-height: min(70vh, 760px);
+  object-fit: contain;
 }
 .rom-page__copy {
   padding: 32px;

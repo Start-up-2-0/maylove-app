@@ -13,6 +13,7 @@
     <AlbumWizardStepper
       v-if="isEditable || album?.status !== 'published'"
       :current-step="currentStep"
+      :steps="wizardSteps"
       @go="goToStep"
     />
 
@@ -36,12 +37,18 @@
     <div v-else class="wizard-body" :class="{ 'wizard-body--review': currentStep === 'preview' }">
       <div class="wizard-editor">
         <div class="ml-card wiz-panel" :class="{ 'wiz-panel--review': currentStep === 'preview' }">
-          <AlbumPresentationStep
-            v-if="currentStep === 'presentation'"
+          <AlbumBasicsStep
+            v-if="currentStep === 'basics'"
             :form="form"
             :album="album"
+            :photos="photos"
           />
-          <AlbumBasicsStep v-else-if="currentStep === 'basics'" :form="form" />
+          <AlbumPagesStep
+            v-else-if="currentStep === 'pages'"
+            :form="form"
+            :photos="photos"
+            :album="album"
+          />
           <AlbumPhotosStep
             v-else-if="currentStep === 'photos'"
             ref="photosStepRef"
@@ -54,6 +61,7 @@
             v-else-if="currentStep === 'music'"
             :album-id="albumId"
             :audio="audio"
+            :form="form"
             @changed="onMediaChanged"
           />
           <AlbumPreviewStep
@@ -61,12 +69,15 @@
             :album="album"
             :form="form"
             :refresh-token="previewRefreshToken"
-            @go-publish="goToStep('publish')"
+            :generating="previewGenerating"
+            @go-publish="goToPublish"
+            @regenerate="refreshPreview"
           />
           <AlbumPublishStep
             v-else-if="currentStep === 'publish'"
             :album-id="albumId"
             :album="album"
+            :flush-autosave="flushAutosave"
             @published="onPublished"
           />
         </div>
@@ -77,6 +88,7 @@
       v-if="isEditable"
       :has-previous="hasPrevious"
       :has-next="hasNext"
+      :loading="navigating"
       @previous="previousStep"
       @next="nextStep"
     />
@@ -90,9 +102,9 @@ import { useAlbumWizard } from '@/composables/useAlbumWizard'
 import WizardHeader from '@/components/wizard/WizardHeader.vue'
 import WizardFooter from '@/components/wizard/WizardFooter.vue'
 import AlbumWizardStepper from './AlbumWizardStepper.vue'
-import { ALBUM_WIZARD_STEPS, type AlbumWizardStep } from './albumWizardSteps'
-import AlbumPresentationStep from './components/AlbumPresentationStep.vue'
+import { wizardStepsFor, type AlbumWizardStep } from './albumWizardSteps'
 import AlbumBasicsStep from './components/AlbumBasicsStep.vue'
+import AlbumPagesStep from './components/AlbumPagesStep.vue'
 import AlbumPhotosStep from './components/AlbumPhotosStep.vue'
 import AlbumMusicStep from './components/AlbumMusicStep.vue'
 import AlbumPreviewStep from './components/AlbumPreviewStep.vue'
@@ -102,8 +114,10 @@ const route = useRoute()
 const router = useRouter()
 const albumId = route.params.id as string
 
-const currentStep = ref<AlbumWizardStep>('presentation')
+const currentStep = ref<AlbumWizardStep>('basics')
 const previewRefreshToken = ref(0)
+const previewGenerating = ref(false)
+const navigating = ref(false)
 const photosStepRef = ref<InstanceType<typeof AlbumPhotosStep> | null>(null)
 
 const {
@@ -114,6 +128,7 @@ const {
   saving,
   savedAt,
   saveError,
+  flushAutosave,
   isEditable,
   photos,
   audio,
@@ -121,62 +136,100 @@ const {
   reload,
 } = useAlbumWizard(albumId)
 
+const wizardSteps = computed(() => wizardStepsFor(form.presentation))
+
 onMounted(async () => {
   await load()
   const step = route.query.step
-  if (typeof step === 'string' && ALBUM_WIZARD_STEPS.includes(step as AlbumWizardStep)) {
+  if (typeof step === 'string' && wizardSteps.value.includes(step as AlbumWizardStep)) {
     currentStep.value = step as AlbumWizardStep
+  } else if (step === 'presentation' || step === 'pages') {
+    currentStep.value = 'basics'
   }
 })
 
+watch(
+  () => form.presentation,
+  () => {
+    if (!wizardSteps.value.includes(currentStep.value)) {
+      currentStep.value = 'basics'
+    }
+  },
+)
+
 watch(currentStep, (step, previous) => {
   void router.replace({ query: { ...route.query, step } })
-  if (previous === 'photos' && step !== 'photos') {
-    void reload()
+  if ((previous === 'photos' || previous === 'pages') && step !== previous) {
+    void (async () => {
+      await flushAutosave()
+      await reload()
+    })()
+    return
   }
-  if (step === 'preview') {
+  if (step === 'preview' && previous !== 'preview') {
     void refreshPreview()
   }
 })
 
 const hasPrevious = computed(() => stepIndex(currentStep.value) > 0)
-const hasNext = computed(() => stepIndex(currentStep.value) < ALBUM_WIZARD_STEPS.length - 1)
+const hasNext = computed(() => stepIndex(currentStep.value) < wizardSteps.value.length - 1)
 
 function stepIndex(step: AlbumWizardStep): number {
-  return ALBUM_WIZARD_STEPS.indexOf(step)
+  return wizardSteps.value.indexOf(step)
 }
 
-function goToStep(step: AlbumWizardStep) {
+async function goToStep(step: AlbumWizardStep) {
+  if (!wizardSteps.value.includes(step)) return
+  if (currentStep.value === 'photos' && step !== 'photos') {
+    await flushAutosave()
+  }
   currentStep.value = step
 }
 
-function previousStep() {
-  const index = stepIndex(currentStep.value)
-  if (index > 0) currentStep.value = ALBUM_WIZARD_STEPS[index - 1]
+async function goToPublish() {
+  const ok = await flushAutosave()
+  if (!ok) {
+    // Ainda assim avança: o publish step tenta flushar de novo antes de publicar.
+  }
+  goToStep('publish')
 }
 
-function nextStep() {
-  if (currentStep.value === 'photos') {
-    void (async () => {
-      await photosStepRef.value?.flushPendingCaptionSaves()
-      if (photosStepRef.value?.validateTimelineFields() === false) {
-        return
-      }
-      advanceStep()
-    })()
-    return
+function previousStep() {
+  if (navigating.value) return
+  const index = stepIndex(currentStep.value)
+  if (index > 0) currentStep.value = wizardSteps.value[index - 1]
+}
+
+async function nextStep() {
+  if (navigating.value) return
+  navigating.value = true
+  try {
+    if (currentStep.value === 'preview') {
+      await goToPublish()
+      return
+    }
+    advanceStep()
+  } finally {
+    navigating.value = false
   }
-  advanceStep()
 }
 
 function advanceStep() {
   const index = stepIndex(currentStep.value)
-  if (index < ALBUM_WIZARD_STEPS.length - 1) currentStep.value = ALBUM_WIZARD_STEPS[index + 1]
+  if (index < wizardSteps.value.length - 1) currentStep.value = wizardSteps.value[index + 1]
 }
 
 async function refreshPreview() {
-  await reload()
-  previewRefreshToken.value += 1
+  previewGenerating.value = true
+  try {
+    // Garante que posições Polaroid e ajustes do form
+    // não sejam sobrescritos por um reload antes do autosave.
+    await flushAutosave()
+    await reload()
+    previewRefreshToken.value += 1
+  } finally {
+    previewGenerating.value = false
+  }
 }
 
 async function onMediaChanged() {
@@ -184,10 +237,8 @@ async function onMediaChanged() {
   previewRefreshToken.value += 1
 }
 
-async function onPublished() {
-  await reload()
-  previewRefreshToken.value += 1
-  currentStep.value = 'publish'
+function onPublished() {
+  void router.push(`/dashboard/albums/${albumId}`)
 }
 </script>
 

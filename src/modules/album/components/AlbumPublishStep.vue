@@ -2,7 +2,9 @@
   <div class="publish-step">
     <WizardStepHeader
       title="Publicar"
-      description="Valide os requisitos e publique o livro digital para compartilhar o link."
+      :description="billingEnabled
+        ? 'Valide os requisitos e pague com PIX para publicar o livro digital.'
+        : 'Valide os requisitos e publique o livro digital para compartilhar o link.'"
     />
 
     <div v-if="loadingValidation" class="validation-loading">
@@ -34,10 +36,18 @@
         </button>
       </div>
       <a :href="publicUrl" target="_blank" class="ml-btn ml-btn--secondary">Abrir página</a>
+      <AlbumQrCard
+        v-if="isMemorial"
+        :album-id="albumId"
+        variant="memorial"
+        :headline="memorialHeadline"
+        :subtitle="album?.subtitle"
+      />
     </div>
 
     <div v-else class="publish-actions">
       <button
+        v-if="!billingEnabled"
         class="ml-btn ml-btn--primary ml-btn--lg"
         :disabled="publishBlocked || publishing"
         @click="publish"
@@ -45,7 +55,18 @@
         <span v-if="publishing" class="ml-spinner ml-spinner--sm" />
         Publicar agora
       </button>
+      <button
+        v-else
+        class="ml-btn ml-btn--primary ml-btn--lg"
+        :disabled="publishBlocked || checkingOut"
+        @click="startCheckout"
+      >
+        <span v-if="checkingOut" class="ml-spinner ml-spinner--sm" />
+        Pagar R$ {{ priceLabel }} com PIX
+      </button>
     </div>
+
+    <PixCheckoutPanel :checkout="checkout" @paid="onPixPaid" />
 
     <p v-if="actionError" class="ml-alert ml-alert--danger mt-3">{{ actionError }}</p>
   </div>
@@ -53,14 +74,21 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { publishAlbum, validateAlbum } from '@/api/albums'
-import type { AlbumDetail, AlbumValidation } from '@/api/types'
+import { checkoutAlbum, publishAlbum, validateAlbum } from '@/api/albums'
+import { fetchBillingProduct } from '@/api/billing'
+import { fetchSubscription } from '@/api/tributes'
+import type { AlbumDetail, AlbumValidation, CheckoutResponse } from '@/api/types'
 import { resolveApiError } from '@/api/errors'
 import WizardStepHeader from '@/components/wizard/WizardStepHeader.vue'
+import PixCheckoutPanel from '@/components/billing/PixCheckoutPanel.vue'
+import AlbumQrCard from './AlbumQrCard.vue'
+import { isMemorialCategory } from '../albumModels'
+import { isMemorialPresentation } from '../book/presentations'
 
 const props = defineProps<{
   albumId: string
   album: AlbumDetail | null
+  flushAutosave?: () => Promise<boolean>
 }>()
 
 const emit = defineEmits<{ published: [] }>()
@@ -68,10 +96,34 @@ const emit = defineEmits<{ published: [] }>()
 const validation = ref<AlbumValidation | null>(null)
 const loadingValidation = ref(true)
 const publishing = ref(false)
+const checkingOut = ref(false)
 const actionError = ref('')
 const copied = ref(false)
+const billingEnabled = ref(false)
+const checkout = ref<CheckoutResponse | null>(null)
+const priceLabel = ref('10,99')
 
 const publishBlocked = computed(() => !validation.value?.valid)
+
+const isMemorial = computed(() => {
+  const item = props.album
+  if (!item) return false
+  const presentation =
+    item.presentation ??
+    (item.content_json as { presentation?: string } | undefined)?.presentation
+  return isMemorialPresentation(presentation) || isMemorialCategory(item.category)
+})
+
+const memorialHeadline = computed(() => {
+  const item = props.album
+  if (!item) return null
+  if (item.honoree_names?.trim()) {
+    return item.honoree_names.trim().startsWith('Em memória')
+      ? item.honoree_names.trim()
+      : `Em memória de ${item.honoree_names.trim()}`
+  }
+  return item.title?.trim() || null
+})
 
 const publicUrl = computed(() => {
   const slug = props.album?.slug
@@ -81,7 +133,20 @@ const publicUrl = computed(() => {
 
 onMounted(async () => {
   try {
-    validation.value = await validateAlbum(props.albumId)
+    if (props.flushAutosave) {
+      await props.flushAutosave()
+    }
+    const [result, subscription, product] = await Promise.all([
+      validateAlbum(props.albumId),
+      fetchSubscription().catch(() => ({ billing_enabled: false, has_subscription: false })),
+      fetchBillingProduct().catch(() => null),
+    ])
+    validation.value = result
+    billingEnabled.value = subscription.billing_enabled !== false
+    const albumPrice = product?.prices.find((p) => p.billing_mode === 'per_album')
+    if (albumPrice) {
+      priceLabel.value = (albumPrice.price_cents / 100).toFixed(2).replace('.', ',')
+    }
   } catch {
     actionError.value = 'Não foi possível validar o álbum.'
   } finally {
@@ -93,6 +158,14 @@ async function publish() {
   publishing.value = true
   actionError.value = ''
   try {
+    if (props.flushAutosave) {
+      const saved = await props.flushAutosave()
+      if (!saved) {
+        actionError.value =
+          'Não foi possível salvar o layout do quadro. Aguarde e tente publicar de novo.'
+        return
+      }
+    }
     const result = await validateAlbum(props.albumId)
     validation.value = result
     if (!result.valid) {
@@ -108,10 +181,46 @@ async function publish() {
   }
 }
 
+async function startCheckout() {
+  checkingOut.value = true
+  actionError.value = ''
+  try {
+    if (props.flushAutosave) {
+      const saved = await props.flushAutosave()
+      if (!saved) {
+        actionError.value =
+          'Não foi possível salvar as alterações. Aguarde e tente gerar o PIX de novo.'
+        return
+      }
+    }
+    const result = await validateAlbum(props.albumId)
+    validation.value = result
+    if (!result.valid) {
+      actionError.value = 'Corrija os itens pendentes antes de pagar.'
+      return
+    }
+    checkout.value = await checkoutAlbum(props.albumId)
+    if (!checkout.value.pix?.qr_code && !checkout.value.checkout_url) {
+      actionError.value = 'Checkout PIX indisponível no momento.'
+    }
+  } catch (err) {
+    actionError.value = resolveApiError(err, 'Não foi possível gerar o PIX.')
+  } finally {
+    checkingOut.value = false
+  }
+}
+
+function onPixPaid() {
+  emit('published')
+}
+
 async function copyLink() {
   if (!publicUrl.value) return
   await navigator.clipboard.writeText(publicUrl.value)
   copied.value = true
+  window.setTimeout(() => {
+    copied.value = false
+  }, 2000)
 }
 </script>
 

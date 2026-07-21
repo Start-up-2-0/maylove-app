@@ -75,9 +75,9 @@ defineProps<{ book: MemoryBookModel; mode: BookRenderMode; shareUrl?: string }>(
 }
 .mag-hero :deep(.book-page-media__figure img) {
   width: 100%;
-  height: 100%;
-  min-height: 220px;
-  object-fit: cover;
+  height: auto;
+  max-height: min(72vh, 820px);
+  object-fit: contain;
   display: block;
 }
 .mag-copy {
