@@ -28,14 +28,23 @@ export function validateExperienceStep(
   const experience = getRomanceExperience(experienceId)
 
   switch (step) {
-    case 'recipient':
+    case 'recipient': {
       if (!form.honoree_name?.trim()) {
         return { valid: false, message: 'Informe o nome de quem receberá este presente.' }
       }
-      if (!form.title?.trim() || isLegacyGenericTitle(form.title)) {
-        form.title = defaultRomanceTitle(form.wizard_type_id, experienceId ?? form.romance_experience_id)
+      const optionalDate = experience?.specialDateOptional ?? false
+      const requiresDate = experience?.enableSpecialDateByDefault && !optionalDate
+      if (requiresDate && !form.special_date_config.date?.trim()) {
+        return { valid: false, message: 'Informe a data do início do relacionamento.' }
+      }
+      if (form.special_date_config.date?.trim()) {
+        form.special_date_config.enabled = true
+        if (!form.special_date_config.title?.trim()) {
+          form.special_date_config.title = 'Nosso amor'
+        }
       }
       return { valid: true }
+    }
 
     case 'photos':
       if (photosCount < 1) {
@@ -50,6 +59,9 @@ export function validateExperienceStep(
       return { valid: true }
 
     case 'message':
+      if (!form.title?.trim() || isLegacyGenericTitle(form.title)) {
+        form.title = defaultRomanceTitle(form.wizard_type_id, experienceId ?? form.romance_experience_id)
+      }
       if (!hasPlainMessage(form.message)) {
         return { valid: false, message: 'Escreva a mensagem ou carta antes de continuar.' }
       }
@@ -99,6 +111,12 @@ export function validateExperienceStep(
     }
 
     case 'effects':
+      return { valid: true }
+
+    case 'theme':
+      if (!form.presentation?.trim()) {
+        return { valid: false, message: 'Escolha um tema para continuar.' }
+      }
       return { valid: true }
 
     case 'preview': {

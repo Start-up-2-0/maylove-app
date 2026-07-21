@@ -164,6 +164,8 @@ export interface TributeContentJson {
   style_id?: string | null
   /** Estilo de apresentação (experiência/layout) escolhido pelo usuário. */
   presentation?: string | null
+  /** Tema visual do wizard de romances (Love Cards). */
+  romance_theme_id?: string | null
   /** Pergunta do pedido (usada no estilo "Pedido interativo"). */
   question?: string
   /** Mensagem exibida quando o pedido é aceito. */

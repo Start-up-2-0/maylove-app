@@ -102,6 +102,12 @@
             :photos="photos"
             :experience-id="experienceId"
           />
+          <RomanceThemeStep
+            v-else-if="currentStep === 'theme'"
+            :form="form"
+            :experience-id="experienceId"
+            :definition="definition"
+          />
           <RomanceEffectsStep
             v-else-if="currentStep === 'effects'"
             :form="form"
@@ -123,15 +129,7 @@
     </div>
 
     <template v-if="showPreviewColumn" #preview>
-      <RomancePhonePreview
-        compact
-        :experience-label="experience ? `${experience.icon} ${experience.label}` : ''"
-        :hint="experience?.opening"
-        :experience-name="experience?.label"
-        :experience-icon="experience?.icon"
-        :step-current="stepIndex + 1"
-        :step-total="experienceSteps.length"
-      >
+      <RomancePhonePreview>
         <div v-if="previewGenerating" class="rom-preview-panel__loading">
           <span class="ml-spinner ml-spinner--sm" />
         </div>
@@ -139,8 +137,16 @@
           v-else
           :form="form"
           :experience-id="experienceId"
-          :photo-count="photos.length"
+          :photos="photos"
+          :current-step="currentStep"
         />
+        <template v-if="currentStep === 'theme'" #footer>
+          <div class="rom-theme-preview-dock">
+            <span class="rom-theme-preview-dock__dot" :style="themePreviewDotStyle" />
+            <span>{{ previewTheme.label }}</span>
+            <span class="rom-theme-preview-dock__meta">{{ previewThemeIndex + 1 }} / {{ previewThemeTotal }}</span>
+          </div>
+        </template>
       </RomancePhonePreview>
     </template>
   </RomanceBuildShell>
@@ -179,8 +185,13 @@ import RomanceMusicStep from '@/modules/romance-wizard/steps/RomanceMusicStep.vu
 import RomanceSpecialDateStep from '@/modules/romance-wizard/steps/RomanceSpecialDateStep.vue'
 import RomanceVideoStep from '@/modules/romance-wizard/steps/RomanceVideoStep.vue'
 import RomanceChaptersStep from '@/modules/romance-wizard/steps/RomanceChaptersStep.vue'
+import RomanceThemeStep from '@/modules/romance-wizard/steps/RomanceThemeStep.vue'
 import RomanceEffectsStep from '@/modules/romance-wizard/steps/RomanceEffectsStep.vue'
 import RomanceFinishStep from '@/modules/romance-wizard/steps/RomanceFinishStep.vue'
+import {
+  listRomanceThemes,
+  resolveRomanceTheme,
+} from '@/modules/romance-wizard/romanceThemes'
 import '@/modules/romance-wizard/styles/romance-wizard.css'
 
 const route = useRoute()
@@ -218,6 +229,22 @@ const experienceId = computed((): RomanceExperienceId | null =>
 
 const experience = computed(() => getRomanceExperience(experienceId.value))
 const experienceSteps = computed(() => getExperienceSteps(experienceId.value))
+
+const previewThemes = listRomanceThemes()
+const previewTheme = computed(() =>
+  resolveRomanceTheme({
+    themeId: form.romance_theme_id,
+    presentationId: form.presentation,
+    defaultThemeId: experience.value?.defaultThemeId,
+  }),
+)
+const previewThemeIndex = computed(() =>
+  previewThemes.findIndex((item) => item.id === previewTheme.value.id),
+)
+const previewThemeTotal = previewThemes.length
+const themePreviewDotStyle = computed(() => ({
+  background: previewTheme.value.accent ?? previewTheme.value.gradient[0],
+}))
 
 const shellTitle = computed(() => romanceDisplayTitle(form) || experience.value?.label || 'Nova experiência')
 const shellSubtitle = computed(() =>
@@ -293,7 +320,15 @@ watch(currentStep, (step) => {
 })
 
 watch(
-  () => [form.title, form.honoree_name, form.message, form.presentation, form.effects.length, photos.value.length],
+  () => [
+    form.title,
+    form.honoree_name,
+    form.message,
+    form.presentation,
+    form.romance_theme_id,
+    form.effects.length,
+    photos.value.length,
+  ],
   () => {
     previewRefreshToken.value += 1
   },
@@ -395,5 +430,24 @@ async function onPublished() {
   50% {
     opacity: 0.35;
   }
+}
+.rom-theme-preview-dock {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid color-mix(in srgb, var(--rom-accent, #e11d48) 14%, var(--border));
+  box-shadow: 0 8px 24px -16px rgb(15 23 42 / 35%);
+}
+.rom-theme-preview-dock__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+}
+.rom-theme-preview-dock__meta {
+  color: var(--muted);
+  font-weight: 600;
 }
 </style>

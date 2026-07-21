@@ -14,6 +14,7 @@ export const ROMANCE_BUILD_STEP_LABELS: Record<RomanceExperienceStepId, string> 
   'special-date': 'Data especial',
   video: 'Seu vídeo',
   chapters: 'Capítulos da história',
+  theme: 'Tema da página',
   effects: 'Toque especial',
   preview: 'Pronto para emocionar',
 }
@@ -31,13 +32,14 @@ export function buildProgressLabel(current: number, total: number): string {
 }
 
 const DEFAULT_STEP_PROMPTS: Record<RomanceExperienceStepId, string> = {
-  recipient: 'Me conta: quem são os apaixonados? Você também escolhe o título da página.',
-  photos: 'Agora as fotos — escolha as imagens que emocionam de verdade.',
-  message: 'Escreva do coração. Este é o texto principal do presente.',
-  music: 'Qual trilha embala esse momento? Ela entra automaticamente na experiência.',
+  recipient: 'Me conta: quem são os apaixonados? ❤️',
+  message: 'Que lindo casal! Agora me conta a história de vocês — qual é a mensagem que vai tocar o coração? 💌',
+  photos: 'Maravilha! Adicione as fotos mais especiais de vocês para compor o card 📸',
+  music: 'Tem alguma música ou momento que marca a história de vocês? 🎵',
   'special-date': 'Tem uma data que marca vocês? Pode incluir ou pular este passo.',
   video: 'Quer adicionar um vídeo especial? Fica lindo na abertura.',
   chapters: 'Conte a história em capítulos — data, título, texto e foto de cada marco.',
+  theme: 'Perfeito! Escolha o estilo do card — o preview ao lado já mostra como vai ficar! ✨',
   effects: 'Já deixei o visual pronto. Quer adicionar mais animações?',
   preview: 'Última olhada — veja como ficou e publique quando estiver pronto.',
 }
@@ -47,12 +49,10 @@ const EXPERIENCE_STEP_PROMPTS: Partial<
 > = {
   'pedido-namoro': {
     message: 'Escreva a carta que prepara o convite — depois vem a pergunta especial.',
-    'special-date': 'Qual é a data que marca o início de vocês? Ela aparece na experiência.',
   },
   'pedido-casamento': {
     message: 'Descreva a jornada de vocês até este momento — em seguida, a grande pergunta.',
     video: 'Um vídeo de vocês deixa o pedido ainda mais inesquecível.',
-    'special-date': 'Marque a data especial — pode ser contagem regressiva ou tempo juntos.',
   },
   'carta-amor': {
     photos: 'Quer uma foto de capa? Opcional — a carta funciona linda só com palavras.',

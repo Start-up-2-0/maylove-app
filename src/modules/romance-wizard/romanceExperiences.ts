@@ -7,6 +7,7 @@ export type RomanceExperienceStepId =
   | 'special-date'
   | 'video'
   | 'chapters'
+  | 'theme'
   | 'effects'
   | 'preview'
 
@@ -36,6 +37,8 @@ export interface RomanceExperienceDefinition {
   wizardTypeId?: string
   categorySlug?: string
   defaultTemplateSlug?: string
+  /** Tema padrão no passo "Tema da página" (Love Cards). */
+  defaultThemeId?: string
   lockedPresentationId?: string
   steps: RomanceExperienceStepId[]
   photosMode?: 'cover' | 'gallery'
@@ -57,6 +60,7 @@ export const ROMANCE_EXPERIENCE_STEP_LABELS: Record<RomanceExperienceStepId, str
   'special-date': 'Data',
   video: 'Vídeo',
   chapters: 'Capítulos',
+  theme: 'Tema',
   effects: 'Efeitos',
   preview: 'Publicar',
 }
@@ -73,8 +77,8 @@ export const ROMANCE_EXPERIENCES: RomanceExperienceDefinition[] = [
     wizardTypeId: 'declaracao-amor',
     categorySlug: 'amor',
     defaultTemplateSlug: 'namorados',
-    lockedPresentationId: 'slider-musica',
-    steps: ['recipient', 'photos', 'message', 'music', 'special-date', 'effects', 'preview'],
+    defaultThemeId: 'nossa-serie',
+    steps: ['recipient', 'message', 'photos', 'music', 'theme', 'preview'],
     photosMode: 'cover',
     specialDateOptional: true,
     defaultEffects: ['hearts'],
@@ -90,8 +94,8 @@ export const ROMANCE_EXPERIENCES: RomanceExperienceDefinition[] = [
     wizardTypeId: 'pedido-namoro',
     categorySlug: 'pedido-namoro',
     defaultTemplateSlug: 'pedido-namoro',
-    lockedPresentationId: 'pedido',
-    steps: ['recipient', 'photos', 'message', 'music', 'special-date', 'effects', 'preview'],
+    defaultThemeId: 'cortina-amor',
+    steps: ['recipient', 'message', 'photos', 'music', 'theme', 'preview'],
     photosMode: 'gallery',
     enableSpecialDateByDefault: true,
     defaultEffects: ['hearts', 'confetti'],
@@ -107,8 +111,8 @@ export const ROMANCE_EXPERIENCES: RomanceExperienceDefinition[] = [
     wizardTypeId: 'pedido-casamento',
     categorySlug: 'pedido-casamento',
     defaultTemplateSlug: 'pedido-casamento',
-    lockedPresentationId: 'pedido',
-    steps: ['recipient', 'photos', 'video', 'message', 'music', 'special-date', 'effects', 'preview'],
+    defaultThemeId: 'cortina-amor',
+    steps: ['recipient', 'message', 'photos', 'video', 'music', 'theme', 'preview'],
     photosMode: 'gallery',
     enableSpecialDateByDefault: true,
     allowCountdown: true,
@@ -145,8 +149,8 @@ export const ROMANCE_EXPERIENCES: RomanceExperienceDefinition[] = [
     wizardTypeId: 'declaracao-amor',
     categorySlug: 'amor',
     defaultTemplateSlug: 'carta-digital',
-    lockedPresentationId: 'carta-animada',
-    steps: ['recipient', 'message', 'music', 'special-date', 'effects', 'preview'],
+    defaultThemeId: 'envelope-story',
+    steps: ['recipient', 'message', 'music', 'theme', 'preview'],
     specialDateOptional: true,
     defaultEffects: ['hearts', 'petals'],
   },
@@ -161,8 +165,8 @@ export const ROMANCE_EXPERIENCES: RomanceExperienceDefinition[] = [
     wizardTypeId: 'declaracao-amor',
     categorySlug: 'amor',
     defaultTemplateSlug: 'namorados',
-    lockedPresentationId: 'storytelling',
-    steps: ['recipient', 'chapters', 'effects', 'preview'],
+    defaultThemeId: 'livro',
+    steps: ['recipient', 'chapters', 'theme', 'preview'],
     defaultEffects: ['stars'],
   },
   {
@@ -204,5 +208,5 @@ export function getExperienceSteps(experienceId?: string | null): RomanceExperie
   const experience = getRomanceExperience(experienceId)
   return experience?.steps.length
     ? [...experience.steps]
-    : ['recipient', 'photos', 'message', 'music', 'effects', 'preview']
+    : ['recipient', 'message', 'photos', 'music', 'theme', 'preview']
 }

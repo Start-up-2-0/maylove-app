@@ -21,6 +21,10 @@ import {
   isLegacyGenericTitle,
 } from '@/modules/romance-wizard/romanceCopy'
 import {
+  DEFAULT_ROMANCE_THEME_ID,
+  resolveRomanceTheme,
+} from '@/modules/romance-wizard/romanceThemes'
+import {
   getExperienceSteps,
   getRomanceExperience,
   type RomanceExperienceId,
@@ -39,14 +43,15 @@ export function resolveExperienceStep(
     occasion: 'recipient',
     couple: 'recipient',
     story: 'message',
-    style: 'effects',
-    personalization: 'effects',
-    modules: 'effects',
+    style: 'theme',
+    personalization: 'theme',
+    modules: 'theme',
+    effects: 'theme',
     finish: 'preview',
     publish: 'preview',
     review: 'preview',
     basics: 'recipient',
-    'special-date': 'special-date',
+    'special-date': 'recipient',
   }
   const mapped = legacy[raw]
   if (mapped && steps.includes(mapped)) return mapped
@@ -102,8 +107,12 @@ export async function applyRomanceExperienceDefaults(
   const template = resolveCompatibleTemplate(templates, definition)
   if (!template) return
 
+  const defaultThemeId = experience.defaultThemeId ?? DEFAULT_ROMANCE_THEME_ID
+  const defaultTheme = resolveRomanceTheme({ themeId: defaultThemeId })
   const presentation =
-    experience.lockedPresentationId ?? resolveDefaultPresentationId(option, definition)
+    experience.lockedPresentationId ??
+    defaultTheme.presentationId ??
+    resolveDefaultPresentationId(option, definition)
   const styleId = listStyles()[0]?.id ?? ''
   const flow = experience
 
@@ -112,8 +121,9 @@ export async function applyRomanceExperienceDefaults(
   form.wizard_category_slug = option.categorySlug
   form.template_id = template.id
   form.presentation = presentation
+  form.romance_theme_id = defaultTheme.id
   form.style_id = styleId
-  form.color_primary = definition.theme.primaryColor
+  form.color_primary = defaultTheme.accent ?? definition.theme.primaryColor
 
   if (!form.title?.trim() || isLegacyGenericTitle(form.title)) {
     form.title = defaultRomanceTitle(option.id, experienceId)
@@ -155,6 +165,7 @@ export async function applyRomanceExperienceDefaults(
       wizard_category_slug: option.categorySlug,
       wizard_type_id: option.id,
       presentation,
+      romance_theme_id: defaultTheme.id,
       style_id: styleId,
       effects: form.effects.length ? form.effects : undefined,
       special_date_config: form.special_date_config.enabled ? form.special_date_config : undefined,
@@ -200,17 +211,22 @@ export async function startRomanceExperience(
   const template = resolveCompatibleTemplate(templates, definition)
   if (!template) throw new Error('Nenhum template compatível.')
 
+  const defaultThemeId = experience.defaultThemeId ?? DEFAULT_ROMANCE_THEME_ID
+  const defaultTheme = resolveRomanceTheme({ themeId: defaultThemeId })
   const presentation =
-    experience.lockedPresentationId ?? resolveDefaultPresentationId(option, definition)
+    experience.lockedPresentationId ??
+    defaultTheme.presentationId ??
+    resolveDefaultPresentationId(option, definition)
   const styleId = listStyles()[0]?.id ?? ''
 
   const tribute = await createTribute(apiType.id, template.id)
 
   await updateTribute(tribute.id, {
-    color_primary: definition.theme.primaryColor,
+    color_primary: defaultTheme.accent ?? definition.theme.primaryColor,
     content_json: {
       romance_experience_id: experienceId,
       presentation,
+      romance_theme_id: defaultTheme.id,
       style_id: styleId,
       wizard_category_slug: option.categorySlug,
       wizard_type_id: option.id,

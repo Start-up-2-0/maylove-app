@@ -50,25 +50,14 @@
     </RomanceFormShell>
 
     <template #preview>
-      <RomancePhonePreview
-        compact
-        :experience-label="previewExperience ? `${previewExperience.icon} ${previewExperience.label}` : ''"
-        :hint="previewExperience?.opening"
-        :experience-name="previewExperience?.label"
-        :experience-icon="previewExperience?.icon ?? '✨'"
-        :step-current="1"
-        :step-total="previewExperience?.steps.length ?? 0"
-      >
-        <RomanceCardsLivePreview
-          :experience-id="hoveredExperience"
-        />
+      <RomancePhonePreview>
+        <RomanceCardsLivePreview :experience-id="hoveredExperience" />
       </RomancePhonePreview>
-    </template>
-  </RomanceBuildShell>
+    </template>  </RomanceBuildShell>
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { resolveApiError } from '@/api/errors'
 import RomanceBuildShell from '@/modules/romance-wizard/components/RomanceBuildShell.vue'
@@ -93,8 +82,6 @@ const router = useRouter()
 const creating = ref(false)
 const error = ref('')
 const hoveredExperience = ref<RomanceExperienceId | null>(null)
-
-const previewExperience = computed(() => getRomanceExperience(hoveredExperience.value))
 
 async function startExperience(experienceId: RomanceExperienceId) {
   if (creating.value) return
