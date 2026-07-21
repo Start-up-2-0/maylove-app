@@ -112,6 +112,7 @@ export const ROMANCE_THEMES: RomanceThemeDefinition[] = [
     id: 'caixa-presente',
     label: 'Caixa de Presente',
     presentationId: 'carta-animada',
+    templateSlug: 'namorados',
     previewVariant: 'gift',
     gradient: ['#fff1f2', '#fda4af'],
     accent: '#f43f5e',

@@ -9,11 +9,15 @@ const CinemaThemeLayout = defineAsyncComponent(
 const CurtainThemeLayout = defineAsyncComponent(
   () => import('@/components/experience/romance-themes/CurtainThemeLayout.vue'),
 )
+const GiftBoxThemeLayout = defineAsyncComponent(
+  () => import('@/components/experience/romance-themes/GiftBoxThemeLayout.vue'),
+)
 
 export const ROMANCE_THEME_LAYOUTS: Record<string, Component> = {
   'estilo-spotify': SpotifyThemeLayout,
   'estilo-cinema': CinemaThemeLayout,
   'cortina-amor': CurtainThemeLayout,
+  'caixa-presente': GiftBoxThemeLayout,
 }
 
 export function getRomanceThemeLayout(themeId?: string | null): Component | null {

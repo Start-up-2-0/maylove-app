@@ -166,6 +166,13 @@ const rootStyle = computed<CSSProperties>(() => {
   position: relative;
   min-height: 100%;
 }
+.exp-root--contained :deep(.gift-overlay--embedded) {
+  position: absolute;
+}
+.exp-root--contained :deep(.gift-theme) {
+  position: relative;
+  min-height: 100%;
+}
 .exp-shell {
   position: relative;
   z-index: 2;
