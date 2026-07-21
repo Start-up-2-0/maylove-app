@@ -88,8 +88,9 @@ const stems = computed(() => props.stems)
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 24px;
+  justify-content: flex-start;
+  gap: 0;
+  padding-top: 8px;
 }
 
 .bouquet-preview__empty {
