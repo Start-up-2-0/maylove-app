@@ -11,9 +11,7 @@ export type BouquetFlowerId =
 export type WrapColorId = 'blush' | 'cream' | 'burgundy'
 export type LetterDesignId = 'classic' | 'romantic'
 
-/** PNGs fotorealistas — hospedar em /public/bouquet na F2. */
-const BOUQUET_CDN = 'https://digitalloveletters.com/assets'
-const cdn = (file: string) => `${BOUQUET_CDN}/${file}`
+const bouquetAsset = (file: string) => `/bouquet/${file}`
 
 export interface BouquetFlowerDefinition {
   id: BouquetFlowerId
@@ -24,17 +22,17 @@ export interface BouquetFlowerDefinition {
 
 export const BOUQUET_MAX_STEMS = 7
 
-export const BOUQUET_GREENERY_IMAGE = cdn('greenery-base-aMPcMOwV.png')
+export const BOUQUET_GREENERY_IMAGE = bouquetAsset('greenery-base-aMPcMOwV.png')
 
 export const BOUQUET_FLOWERS: BouquetFlowerDefinition[] = [
-  { id: 'red_rose', label: 'Rosa vermelha', meaning: 'Amor profundo', image: cdn('head-red-rose-DOw4zvrA.png') },
-  { id: 'pink_peony', label: 'Peônia rosa', meaning: 'Romance', image: cdn('head-pink-peony-CHAFwrJR.png') },
-  { id: 'white_lily', label: 'Lírio branco', meaning: 'Devoção', image: cdn('head-white-lily-CsQ_uL1z.png') },
-  { id: 'ranunculus', label: 'Ranúnculo', meaning: 'Charme', image: cdn('head-orange-ranunculus-Ctl3-6Mb.png') },
-  { id: 'lilac_tulip', label: 'Tulipa lilás', meaning: 'Carinho', image: cdn('head-purple-tulip-DJzNUb9f.png') },
-  { id: 'sunflower', label: 'Girassol', meaning: 'Adoração', image: cdn('head-sunflower-Dsvxq3yQ.png') },
-  { id: 'lavender', label: 'Lavanda', meaning: 'Amor sereno', image: cdn('head-lavender-F_JZu-jF.png') },
-  { id: 'babys_breath', label: 'Gipsófila', meaning: 'Coração puro', image: cdn('head-babys-breath-DBtFJ_Qo.png') },
+  { id: 'red_rose', label: 'Rosa vermelha', meaning: 'Amor profundo', image: bouquetAsset('head-red-rose-DOw4zvrA.png') },
+  { id: 'pink_peony', label: 'Peônia rosa', meaning: 'Romance', image: bouquetAsset('head-pink-peony-CHAFwrJR.png') },
+  { id: 'white_lily', label: 'Lírio branco', meaning: 'Devoção', image: bouquetAsset('head-white-lily-CsQ_uL1z.png') },
+  { id: 'ranunculus', label: 'Ranúnculo', meaning: 'Charme', image: bouquetAsset('head-orange-ranunculus-Ctl3-6Mb.png') },
+  { id: 'lilac_tulip', label: 'Tulipa lilás', meaning: 'Carinho', image: bouquetAsset('head-purple-tulip-DJzNUb9f.png') },
+  { id: 'sunflower', label: 'Girassol', meaning: 'Adoração', image: bouquetAsset('head-sunflower-Dsvxq3yQ.png') },
+  { id: 'lavender', label: 'Lavanda', meaning: 'Amor sereno', image: bouquetAsset('head-lavender-F_JZu-jF.png') },
+  { id: 'babys_breath', label: 'Gipsófila', meaning: 'Coração puro', image: bouquetAsset('head-babys-breath-DBtFJ_Qo.png') },
 ]
 
 export const BOUQUET_WRAP_COLORS: Array<{ id: WrapColorId; label: string; swatch: string; glow: string }> = [
