@@ -336,6 +336,10 @@ export function resolveContent(def: TemplateDefinition, opts: ResolveOptions): E
       form?.romance_theme_id ||
       (content.romance_theme_id as string | undefined) ||
       null,
+    retrospectivePaletteId:
+      form?.retrospective_palette_id ||
+      (content.retrospective_palette_id as string | undefined) ||
+      null,
     modules,
   }
 }

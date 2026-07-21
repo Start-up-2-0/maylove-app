@@ -166,6 +166,8 @@ export interface TributeContentJson {
   presentation?: string | null
   /** Tema visual do wizard de romances (Love Cards). */
   romance_theme_id?: string | null
+  /** Paleta de cores do tema Retrospectiva Interativa. */
+  retrospective_palette_id?: string | null
   /** Pergunta do pedido (usada no estilo "Pedido interativo"). */
   question?: string
   /** Mensagem exibida quando o pedido é aceito. */

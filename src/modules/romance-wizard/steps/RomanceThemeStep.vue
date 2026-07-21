@@ -49,6 +49,43 @@
           <span v-if="theme.id === activeTheme.id" class="rom-theme__check" aria-hidden="true">✓</span>
         </button>
       </div>
+
+      <div v-if="activeTheme.id === 'retrospectiva'" class="rom-theme__palette">
+        <header class="rom-theme__palette-head">
+          <span aria-hidden="true">🎨</span>
+          <div>
+            <h4 class="rom-theme__palette-title">Paleta de cores</h4>
+            <p class="rom-theme__palette-sub">Escolha um estilo ou personalize a cor principal</p>
+          </div>
+        </header>
+        <div class="rom-theme__palette-grid">
+          <button
+            v-for="palette in retrospectivePalettes"
+            :key="palette.id"
+            type="button"
+            class="rom-theme__palette-btn"
+            :class="{ 'rom-theme__palette-btn--active': props.form.retrospective_palette_id === palette.id }"
+            @click="selectPalette(palette.id, palette.accent)"
+          >
+            <span class="rom-theme__palette-swatch" :style="paletteSwatchStyle(palette)" />
+            <span>{{ palette.label }}</span>
+          </button>
+          <label
+            class="rom-theme__palette-btn rom-theme__palette-btn--custom"
+            :class="{ 'rom-theme__palette-btn--active': props.form.retrospective_palette_id === 'custom' }"
+          >
+            <span class="rom-theme__palette-swatch rom-theme__palette-swatch--custom">
+              <input
+                type="color"
+                :value="props.form.color_primary"
+                aria-label="Cor personalizada"
+                @input="onCustomColor"
+              />
+            </span>
+            <span>Personalizar</span>
+          </label>
+        </div>
+      </div>
     </div>
   </RomanceFormShell>
 </template>
@@ -67,6 +104,11 @@ import {
   type RomanceThemeDefinition,
 } from '@/modules/romance-wizard/romanceThemes'
 import { applyRomanceThemeToForm } from '@/modules/romance-wizard/romanceThemeFlow'
+import {
+  DEFAULT_RETROSPECTIVE_PALETTE_ID,
+  RETROSPECTIVE_PALETTES,
+  type RetrospectivePalette,
+} from '@/modules/romance-wizard/retrospectivePalettes'
 import type { TemplateDefinition } from '@/templates/types'
 
 const props = defineProps<{
@@ -79,6 +121,7 @@ const props = defineProps<{
 const emit = defineEmits<{ 'theme-changed': [] }>()
 
 const themes = listRomanceThemes()
+const retrospectivePalettes = RETROSPECTIVE_PALETTES
 
 const stepTitle = computed(() => getCoachStepTitle('theme', 'Tema da página'))
 const stepPrompt = computed(() => getCoachPrompt('theme', props.experienceId))
@@ -128,6 +171,33 @@ function shiftTheme(delta: number) {
   const next = (index + delta + themes.length) % themes.length
   void applyTheme(themes[next])
 }
+
+function selectPalette(paletteId: string, accent: string) {
+  props.form.retrospective_palette_id = paletteId
+  props.form.color_primary = accent
+  emit('theme-changed')
+}
+
+function paletteSwatchStyle(palette: RetrospectivePalette) {
+  return { background: palette.buttonGradient }
+}
+
+function onCustomColor(event: Event) {
+  const value = (event.target as HTMLInputElement).value
+  props.form.retrospective_palette_id = 'custom'
+  props.form.color_primary = value
+  emit('theme-changed')
+}
+
+watch(
+  () => activeTheme.value.id,
+  (themeId) => {
+    if (themeId === 'retrospectiva' && !props.form.retrospective_palette_id) {
+      props.form.retrospective_palette_id = DEFAULT_RETROSPECTIVE_PALETTE_ID
+    }
+  },
+  { immediate: true },
+)
 
 watch(
   () => [props.form.romance_theme_id, props.form.presentation] as const,
@@ -278,5 +348,78 @@ watch(
   color: #fff;
   font-size: 0.72rem;
   font-weight: 800;
+}
+.rom-theme__palette {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 16px;
+  border: 1px solid color-mix(in srgb, var(--rom-accent, #e11d48) 14%, var(--border));
+  background: color-mix(in srgb, var(--rom-accent-soft, #fff1f2) 28%, var(--surface));
+}
+.rom-theme__palette-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.rom-theme__palette-title {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: var(--ink);
+}
+.rom-theme__palette-sub {
+  margin: 4px 0 0;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+.rom-theme__palette-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+@media (max-width: 640px) {
+  .rom-theme__palette-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+.rom-theme__palette-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 8px;
+  border-radius: 12px;
+  border: 2px solid transparent;
+  background: var(--surface);
+  cursor: pointer;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--ink);
+  transition: border-color 0.2s ease;
+}
+.rom-theme__palette-btn--active {
+  border-color: var(--rom-accent, #e11d48);
+}
+.rom-theme__palette-swatch {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 8px;
+}
+.rom-theme__palette-swatch--custom {
+  display: grid;
+  place-items: center;
+  background: var(--surface);
+  border: 1px dashed var(--border);
+  overflow: hidden;
+}
+.rom-theme__palette-swatch--custom input {
+  width: 100%;
+  height: 100%;
+  border: none;
+  padding: 0;
+  cursor: pointer;
 }
 </style>

@@ -64,6 +64,7 @@ export function useTributeWizard(tributeId: string) {
     style_id: '' as string,
     presentation: '' as string,
     romance_theme_id: '' as string,
+    retrospective_palette_id: '' as string,
     animation_speed: '' as '' | 'slow' | 'normal' | 'fast',
     entrance: '' as '' | 'fade' | 'slide-up' | 'zoom',
     font: '' as string,
@@ -154,6 +155,7 @@ export function useTributeWizard(tributeId: string) {
       style_id: form.style_id || null,
       presentation: form.presentation || null,
       romance_theme_id: form.romance_theme_id || null,
+      retrospective_palette_id: form.retrospective_palette_id || null,
       font: form.font || null,
       background: form.background || null,
       section_order: [...form.section_order],
@@ -251,6 +253,7 @@ export function useTributeWizard(tributeId: string) {
     form.style_id = data.content_json?.style_id ?? ''
     form.presentation = data.content_json?.presentation ?? ''
     form.romance_theme_id = (data.content_json?.romance_theme_id as string) ?? ''
+    form.retrospective_palette_id = (data.content_json?.retrospective_palette_id as string) ?? ''
     form.animation_speed = data.content_json?.animation_speed ?? ''
     form.entrance = data.content_json?.entrance ?? ''
     form.font = data.content_json?.font ?? ''

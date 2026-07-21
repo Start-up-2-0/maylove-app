@@ -9,6 +9,7 @@ import {
   getRomanceTheme,
   type RomanceThemeDefinition,
 } from '@/modules/romance-wizard/romanceThemes'
+import { DEFAULT_RETROSPECTIVE_PALETTE_ID } from '@/modules/romance-wizard/retrospectivePalettes'
 
 export function templateSlugForTheme(theme: RomanceThemeDefinition): string {
   if (theme.templateSlug) return theme.templateSlug
@@ -45,6 +46,9 @@ export async function applyRomanceThemeToForm(
   form.romance_theme_id = theme.id
   form.presentation = theme.presentationId
   if (theme.accent) form.color_primary = theme.accent
+  if (theme.id === 'retrospectiva' && !form.retrospective_palette_id) {
+    form.retrospective_palette_id = DEFAULT_RETROSPECTIVE_PALETTE_ID
+  }
 
   const themeDefinition = resolveTemplateDefinition(theme)
   const definition = themeDefinition ?? options.definition ?? null
