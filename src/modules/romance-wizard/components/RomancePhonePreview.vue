@@ -75,11 +75,16 @@ withDefaults(
   overflow: hidden;
   background: #0b0b0f;
   border: 2px solid #0b1020;
+  container-type: inline-size;
+  container-name: phone-preview;
 }
 .rom-phone-preview__content {
   flex: 1 1 auto;
   min-height: 0;
-  overflow: hidden;
+  width: 100%;
+  overflow: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 .rom-phone-preview__footer {
   display: flex;

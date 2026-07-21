@@ -7,6 +7,7 @@
       compact
       @changed="$emit('media-changed')"
     />
+    <RomanceMomentsPanel :form="form" />
   </RomanceFormShell>
 </template>
 
@@ -15,6 +16,7 @@ import { computed } from 'vue'
 import type { useTributeWizard } from '@/composables/useTributeWizard'
 import MusicStep from '@/modules/tribute-wizard/steps/MusicStep.vue'
 import RomanceFormShell from '@/modules/romance-wizard/components/RomanceFormShell.vue'
+import RomanceMomentsPanel from '@/modules/romance-wizard/components/RomanceMomentsPanel.vue'
 import { getCoachPrompt, getCoachStepTitle } from '@/modules/romance-wizard/romanceBuildCopy'
 import type { RomanceExperienceId } from '@/modules/romance-wizard/romanceExperiences'
 

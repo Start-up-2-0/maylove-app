@@ -12,5 +12,6 @@ export function getEmotionDisplay(emotionId?: string): EmotionDisplay | null {
   if (!id) return null
   const option = EMOTION_BY_ID.get(id as (typeof STORY_EMOTION_OPTIONS)[number]['id'])
   if (option) return { icon: option.icon, label: option.label }
+  if (id.length <= 4) return { icon: id, label: '' }
   return { icon: '✨', label: id }
 }

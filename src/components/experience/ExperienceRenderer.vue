@@ -2,7 +2,11 @@
   <div
     ref="root"
     class="exp-root"
-    :class="[`exp-root--${theme.mode}`, `exp-entrance--${theme.entrance}`]"
+    :class="[
+      `exp-root--${theme.mode}`,
+      `exp-entrance--${theme.entrance}`,
+      { 'exp-root--contained': contained },
+    ]"
     :style="rootStyle"
   >
     <EffectsLayer :effects="content.effects" :accent="theme.accentColor" />
@@ -24,7 +28,7 @@
     </div>
 
     <MusicPlayerFloat
-      v-if="isFull && content.music.url && musicEnabled"
+      v-if="isFull && content.music.url && musicEnabled && !usesThemePlayer"
       :url="content.music.url"
       :loop="content.music.loop !== false"
       :autoplay="content.music.autoplay !== false"
@@ -45,6 +49,10 @@ import type {
 } from '@/templates/types'
 import { getLayoutComponent } from '@/templates/layouts'
 import { getPresentation } from '@/templates/presentations'
+import {
+  getRomanceThemeLayout,
+  romanceThemeUsesInlinePlayer,
+} from '@/modules/romance-wizard/romanceThemeLayouts'
 import { provideExperienceAudio } from '@/composables/experienceAudio'
 import EffectsLayer from './shared/EffectsLayer.vue'
 import FullscreenToggle from './shared/FullscreenToggle.vue'
@@ -59,8 +67,10 @@ const props = withDefaults(
     shareUrl?: string
     /** Estilo de apresentação escolhido (id). Sobrepõe o layout default do template. */
     presentation?: string | null
+    /** Renderiza dentro de um frame estreito (mockup do wizard), sem unidades de viewport. */
+    contained?: boolean
   }>(),
-  { mode: 'full', shareUrl: '', presentation: null },
+  { mode: 'full', shareUrl: '', presentation: null, contained: false },
 )
 
 const root = ref<HTMLElement | null>(null)
@@ -83,13 +93,21 @@ provideExperienceAudio(
   },
 )
 
-const layoutComponent = computed(() =>
-  getLayoutComponent(presentation.value?.layout ?? props.definition.layout),
-)
+const layoutComponent = computed(() => {
+  const themeLayout = getRomanceThemeLayout(props.content.romanceThemeId)
+  if (themeLayout) return themeLayout
+  return getLayoutComponent(presentation.value?.layout ?? props.definition.layout)
+})
+
+const usesThemePlayer = computed(() => romanceThemeUsesInlinePlayer(props.content.romanceThemeId))
 
 const rootStyle = computed<CSSProperties>(() => {
   const vars: Record<string, string> = { ...props.theme.cssVars }
-  if (props.mode === 'preview') {
+  if (props.contained) {
+    vars['--exp-hero-min'] = '220px'
+    vars['--exp-hero-card-min'] = '180px'
+    vars['--exp-stage'] = 'auto'
+  } else if (props.mode === 'preview') {
     vars['--exp-hero-min'] = '560px'
     vars['--exp-hero-card-min'] = '420px'
     vars['--exp-stage'] = '620px'
@@ -105,6 +123,37 @@ const rootStyle = computed<CSSProperties>(() => {
   position: relative;
   min-height: 100%;
   isolation: isolate;
+}
+.exp-root--contained {
+  min-height: 0;
+  width: 100%;
+  max-width: 100%;
+}
+.exp-root--contained .exp-controls {
+  display: none;
+}
+.exp-root--contained :deep(.env) {
+  min-height: auto;
+  padding: 12px 8px 16px;
+  gap: 12px;
+}
+.exp-root--contained :deep(.env--preview) {
+  min-height: auto;
+}
+.exp-root--contained :deep(.env-stage--animating) {
+  min-height: calc(var(--pack-h) + clamp(100px, 40cqw, 200px));
+}
+.exp-root--contained :deep(.cin-root) {
+  min-height: 0;
+}
+.exp-root--contained :deep(.cin) {
+  min-height: auto;
+  padding: 0;
+}
+.exp-root--contained :deep(.cin__stage) {
+  height: auto;
+  min-height: 280px;
+  max-height: 360px;
 }
 .exp-shell {
   position: relative;

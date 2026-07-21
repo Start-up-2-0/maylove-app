@@ -35,7 +35,7 @@ const DEFAULT_STEP_PROMPTS: Record<RomanceExperienceStepId, string> = {
   recipient: 'Me conta: quem são os apaixonados? ❤️',
   message: 'Que lindo casal! Agora me conta a história de vocês — qual é a mensagem que vai tocar o coração? 💌',
   photos: 'Maravilha! Adicione as fotos mais especiais de vocês para compor o card 📸',
-  music: 'Tem alguma música ou momento que marca a história de vocês? 🎵',
+  music: 'Tem alguma música ou momento que marca a história de vocês? Depois, adicione marcos opcionais. 🎵',
   'special-date': 'Tem uma data que marca vocês? Pode incluir ou pular este passo.',
   video: 'Quer adicionar um vídeo especial? Fica lindo na abertura.',
   chapters: 'Conte a história em capítulos — data, título, texto e foto de cada marco.',

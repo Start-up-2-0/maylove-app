@@ -326,8 +326,11 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .env {
-  --pack-w: clamp(252px, 46vw, 320px);
-  --pack-h: clamp(178px, 32vw, 220px);
+  container-type: inline-size;
+  width: 100%;
+  max-width: 100%;
+  --pack-w: clamp(200px, 92cqw, 320px);
+  --pack-h: clamp(140px, 64cqw, 220px);
   --mail-ease: cubic-bezier(0.25, 0.46, 0.45, 0.94);
   --mail-ease-flap: cubic-bezier(0.42, 0, 0.18, 1);
   --mail-ease-lift: cubic-bezier(0.45, 0.05, 0.22, 1);
@@ -629,7 +632,7 @@ onBeforeUnmount(() => {
   right: auto;
   bottom: auto;
   z-index: 6;
-  width: min(680px, calc(100vw - 48px));
+  width: min(680px, 100%);
   margin: 0 auto;
   opacity: 1;
   pointer-events: auto;
@@ -858,7 +861,7 @@ onBeforeUnmount(() => {
   100% {
     left: 50%;
     right: auto;
-    width: min(680px, calc(100vw - 48px));
+    width: min(680px, 100%);
     transform: translate3d(-50%, calc(var(--pack-h) * -0.58), 0);
   }
 }

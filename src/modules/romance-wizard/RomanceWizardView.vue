@@ -140,7 +140,8 @@
           :refresh-token="previewRefreshToken"
           faithful
           compact
-          :show-viewport-tabs="currentStep === 'preview'"
+          contained
+          :show-viewport-tabs="false"
           :viewport-width="375"
         />
         <template v-if="currentStep === 'preview'" #footer>

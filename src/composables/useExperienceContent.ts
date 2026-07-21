@@ -332,6 +332,10 @@ export function resolveContent(def: TemplateDefinition, opts: ResolveOptions): E
     textStyle,
     slug: detail?.slug || publicData?.slug || tribute?.slug || '',
     viewsCount: publicData ? publicData.views_count : null,
+    romanceThemeId:
+      form?.romance_theme_id ||
+      (content.romance_theme_id as string | undefined) ||
+      null,
     modules,
   }
 }

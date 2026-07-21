@@ -4,6 +4,7 @@
     :class="{
       'tribute-live-preview--compact': compact,
       'tribute-live-preview--faithful': faithful,
+      'tribute-live-preview--contained': contained,
     }"
   >
     <div v-if="showViewportTabs" class="viewport-seg">
@@ -42,6 +43,7 @@
             :theme="theme"
             :presentation="presentationId"
             :mode="faithful ? 'full' : 'preview'"
+            :contained="contained"
           />
         </div>
       </EnvelopeFrame>
@@ -71,6 +73,8 @@ const props = withDefaults(
     compact?: boolean
     /** Prévia fiel (como publicado) — usada na etapa Revisar e Concluir. */
     faithful?: boolean
+    /** Encaixa no mockup do celular (sem 100vw / 100svh). */
+    contained?: boolean
     showViewportTabs?: boolean
     viewportWidth?: number
     refreshToken?: number
@@ -83,6 +87,7 @@ const props = withDefaults(
     readonly: false,
     compact: false,
     faithful: false,
+    contained: false,
     showViewportTabs: true,
     viewportWidth: 375,
     refreshToken: 0,
@@ -102,6 +107,14 @@ const viewportOptions = [
 
 const frameStyle = computed(() => {
   const target = props.showViewportTabs ? Number(activeViewport.value) : props.viewportWidth
+  if (props.contained) {
+    return {
+      width: '100%',
+      maxWidth: '100%',
+      margin: '0 auto',
+      flexShrink: '0',
+    }
+  }
   if (props.faithful) {
     return {
       width: '100%',
@@ -326,6 +339,18 @@ async function loadPreviewData() {
   padding: 0;
   border: none;
   background: transparent;
+}
+
+.tribute-live-preview--contained .preview-viewport-wrap--faithful {
+  min-height: 0;
+  max-height: 100%;
+  overflow: auto;
+}
+
+.tribute-live-preview--contained .preview-viewport-frame {
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
 }
 
 .preview-viewport-wrap--faithful::after {

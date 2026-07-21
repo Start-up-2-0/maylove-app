@@ -200,6 +200,8 @@ export interface ExperienceContent {
   textStyle: TextStyle | null
   slug: string
   viewsCount: number | null
+  /** Tema visual Love Cards (ex.: estilo-spotify). */
+  romanceThemeId?: string | null
   /** Recursos extras ativados no wizard (carta, timeline, QR…). */
   modules: Required<TributeModulesConfig>
 }
