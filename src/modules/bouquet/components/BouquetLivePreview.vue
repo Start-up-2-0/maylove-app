@@ -6,8 +6,6 @@
       { 'bouquet-preview--embedded': embedded },
     ]"
   >
-    <p v-if="!embedded" class="bouquet-preview__label">Prévia ao vivo</p>
-
     <div class="bouquet-preview__stage">
       <div v-if="!stems.length" class="bouquet-preview__empty">
         Seu buquê vai florescer aqui conforme você escolhe as flores.
@@ -112,16 +110,6 @@ const stems = computed(() => props.stems)
 }
 .bouquet-preview--wrap-burgundy {
   --wrap: #6b1f2b;
-}
-
-.bouquet-preview__label {
-  text-align: center;
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--muted);
-  margin: 0 0 16px;
 }
 
 .bouquet-preview__stage {
