@@ -171,6 +171,34 @@ export function getRomanceTheme(id?: string | null): RomanceThemeDefinition | nu
   return ROMANCE_THEME_MAP[id] ?? null
 }
 
+/**
+ * Infere o tema Love Cards quando `romance_theme_id` não foi persistido (homenagens antigas).
+ * Usa cor de destaque quando vários temas compartilham a mesma apresentação.
+ */
+export function inferRomanceThemeId(params: {
+  themeId?: string | null
+  presentationId?: string | null
+  colorPrimary?: string | null
+}): string | null {
+  const direct = getRomanceTheme(params.themeId)
+  if (direct) return direct.id
+
+  const presentationId = params.presentationId?.trim()
+  if (!presentationId) return null
+
+  const matches = ROMANCE_THEMES.filter((item) => item.presentationId === presentationId)
+  if (matches.length === 0) return null
+  if (matches.length === 1) return matches[0].id
+
+  const color = params.colorPrimary?.trim().toLowerCase()
+  if (color) {
+    const byAccent = matches.find((item) => item.accent?.toLowerCase() === color)
+    if (byAccent) return byAccent.id
+  }
+
+  return null
+}
+
 /** Resolve tema salvo, ou infere pelo presentation, ou retorna o padrão. */
 export function resolveRomanceTheme(params: {
   themeId?: string | null

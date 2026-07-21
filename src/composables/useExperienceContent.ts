@@ -27,6 +27,7 @@ import {
   resolveSpecialDateConfig,
   specialDateIso,
 } from '@/utils/specialDate'
+import { inferRomanceThemeId } from '@/modules/romance-wizard/romanceThemes'
 
 type WizardForm = ReturnType<typeof useTributeWizard>['form']
 
@@ -335,7 +336,15 @@ export function resolveContent(def: TemplateDefinition, opts: ResolveOptions): E
     romanceThemeId:
       form?.romance_theme_id ||
       (content.romance_theme_id as string | undefined) ||
-      null,
+      inferRomanceThemeId({
+        presentationId: (content.presentation as string | undefined) ?? null,
+        colorPrimary:
+          form?.color_primary ||
+          detail?.color_primary ||
+          publicData?.color_primary ||
+          tribute?.color_primary ||
+          null,
+      }),
     retrospectivePaletteId:
       form?.retrospective_palette_id ||
       (content.retrospective_palette_id as string | undefined) ||
