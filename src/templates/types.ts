@@ -90,6 +90,8 @@ export interface LayoutConfig {
   minimal?: boolean
   /** Clima mais dramático/cinematográfico (vinheta reforçada). */
   dramatic?: boolean
+  /** Renderizado dentro do mockup do wizard (sem position: fixed). */
+  contained?: boolean
 }
 
 /** Instancia de uma secao dentro de um template (metadados). */

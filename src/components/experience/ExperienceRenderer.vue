@@ -19,7 +19,7 @@
         :theme="theme"
         :mode="mode"
         :share-url="shareUrl"
-        :config="layoutConfig"
+        :config="mergedLayoutConfig"
       />
     </div>
 
@@ -80,6 +80,10 @@ const isFull = computed(() => props.mode === 'full')
 // usa o layout default do template.
 const presentation = computed(() => getPresentation(props.presentation))
 const layoutConfig = computed<LayoutConfig>(() => presentation.value?.config ?? {})
+const mergedLayoutConfig = computed<LayoutConfig>(() => ({
+  ...layoutConfig.value,
+  ...(props.contained ? { contained: true } : {}),
+}))
 const musicEnabled = computed(() => layoutConfig.value.music !== false)
 
 // Áudio único compartilhado com os shells (só quando a apresentação usa música).
@@ -154,6 +158,13 @@ const rootStyle = computed<CSSProperties>(() => {
   height: auto;
   min-height: 280px;
   max-height: 360px;
+}
+.exp-root--contained :deep(.curtain-overlay--embedded) {
+  position: absolute;
+}
+.exp-root--contained :deep(.curtain-theme) {
+  position: relative;
+  min-height: 100%;
 }
 .exp-shell {
   position: relative;

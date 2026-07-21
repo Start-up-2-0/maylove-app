@@ -6,10 +6,14 @@ const SpotifyThemeLayout = defineAsyncComponent(
 const CinemaThemeLayout = defineAsyncComponent(
   () => import('@/components/experience/romance-themes/CinemaThemeLayout.vue'),
 )
+const CurtainThemeLayout = defineAsyncComponent(
+  () => import('@/components/experience/romance-themes/CurtainThemeLayout.vue'),
+)
 
 export const ROMANCE_THEME_LAYOUTS: Record<string, Component> = {
   'estilo-spotify': SpotifyThemeLayout,
   'estilo-cinema': CinemaThemeLayout,
+  'cortina-amor': CurtainThemeLayout,
 }
 
 export function getRomanceThemeLayout(themeId?: string | null): Component | null {
