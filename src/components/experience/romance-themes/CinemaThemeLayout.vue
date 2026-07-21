@@ -138,6 +138,9 @@ function formatDate(value: string) {
 <style scoped>
 .cinema-theme {
   --rom-countdown-accent: #e07a2f;
+  --exp-ink: #fff;
+  --exp-text: rgb(255 255 255 / 82%);
+  --exp-muted: rgb(255 255 255 / 60%);
   min-height: 100%;
   padding: 0 0 28px;
   background: #0f0a12;

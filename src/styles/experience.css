@@ -21,6 +21,14 @@
   line-height: 1.1;
 }
 
+/* Temas Love Cards (spotify-theme, cinema-theme, …) definem paleta localmente. */
+.exp-root :where([class$='-theme']) h1,
+.exp-root :where([class$='-theme']) h2,
+.exp-root :where([class$='-theme']) h3 {
+  color: inherit;
+  font-family: inherit;
+}
+
 .exp-section {
   position: relative;
   padding: clamp(48px, 9vw, 120px) clamp(20px, 5vw, 40px);

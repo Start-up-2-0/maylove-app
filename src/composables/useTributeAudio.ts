@@ -14,6 +14,8 @@ export function useTributeAudio(
 ) {
   const playing = ref(false)
   const blocked = ref(false)
+  const currentTime = ref(0)
+  const duration = ref(0)
   let audio: HTMLAudioElement | null = null
 
   function resolveStartAt(): number {
@@ -46,6 +48,7 @@ export function useTributeAudio(
       })
       audio.addEventListener('playing', onPlaying)
       audio.addEventListener('timeupdate', onTimeUpdate)
+      audio.addEventListener('loadedmetadata', onLoadedMetadata)
     } else if (audio.src !== url) {
       audio.src = url
     }
@@ -62,8 +65,14 @@ export function useTributeAudio(
     }
   }
 
+  function onLoadedMetadata() {
+    if (!audio) return
+    duration.value = Number.isFinite(audio.duration) ? audio.duration : 0
+  }
+
   function onTimeUpdate() {
     if (!audio) return
+    currentTime.value = audio.currentTime
 
     const startAt = resolveStartAt()
     const endAt = resolveEndAt()
@@ -88,6 +97,17 @@ export function useTributeAudio(
 
     audio.pause()
     playing.value = false
+  }
+
+  async function seek(seconds: number) {
+    const element = ensureAudio()
+    if (!element) return
+    try {
+      await seekAudioTo(element, seconds)
+      currentTime.value = element.currentTime
+    } catch {
+      // Mantém posição atual se o seek falhar.
+    }
   }
 
   async function play() {
@@ -165,5 +185,5 @@ export function useTributeAudio(
     },
   )
 
-  return { playing, blocked, play, pause, toggle }
+  return { playing, blocked, currentTime, duration, play, pause, toggle, seek }
 }

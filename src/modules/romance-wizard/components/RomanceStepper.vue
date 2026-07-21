@@ -17,7 +17,12 @@
           'rom-stepper__item--done': index < currentIndex,
         }"
       >
-        <button type="button" class="rom-stepper__btn" @click="$emit('go', step)">
+        <button
+          type="button"
+          class="rom-stepper__btn"
+          :disabled="!canNavigateTo(index)"
+          @click="$emit('go', step)"
+        >
           <span class="rom-stepper__num">
             <svg
               v-if="index < currentIndex"
@@ -58,6 +63,11 @@ const currentIndex = computed(() => props.steps.indexOf(props.currentStep))
 const progressPercent = computed(() =>
   props.steps.length ? Math.round(((currentIndex.value + 1) / props.steps.length) * 100) : 0,
 )
+
+/** Permite voltar a passos anteriores; o passo atual também é clicável (no-op no pai). */
+function canNavigateTo(index: number) {
+  return index <= currentIndex.value
+}
 </script>
 
 <style scoped>
@@ -119,9 +129,13 @@ const progressPercent = computed(() =>
     color 0.2s ease,
     transform 0.2s ease;
 }
-.rom-stepper__btn:hover {
+.rom-stepper__btn:hover:not(:disabled) {
   border-color: var(--rom-accent, var(--primary));
   color: var(--ink);
+}
+.rom-stepper__btn:disabled {
+  opacity: 0.72;
+  cursor: default;
 }
 .rom-stepper__item--active .rom-stepper__btn {
   border-color: var(--rom-accent, var(--primary));

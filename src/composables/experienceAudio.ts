@@ -10,9 +10,12 @@ import { useTributeAudio, type TributeAudioOptions } from './useTributeAudio'
 export interface ExperienceAudioApi {
   playing: Ref<boolean>
   hasAudio: boolean
+  currentTime: Ref<number>
+  duration: Ref<number>
   play: () => void
   pause: () => void
   toggle: () => void
+  seek: (seconds: number) => void
 }
 
 export const EXPERIENCE_AUDIO_KEY: InjectionKey<ExperienceAudioApi> = Symbol('experience-audio')
@@ -25,9 +28,12 @@ export function provideExperienceAudio(
   const api: ExperienceAudioApi = {
     playing: audio.playing,
     hasAudio: Boolean(urlGetter()),
+    currentTime: audio.currentTime,
+    duration: audio.duration,
     play: () => void audio.play(),
     pause: audio.pause,
     toggle: audio.toggle,
+    seek: (seconds: number) => void audio.seek(seconds),
   }
   provide(EXPERIENCE_AUDIO_KEY, api)
   return api

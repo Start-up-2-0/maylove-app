@@ -8,6 +8,7 @@
     <div v-if="summaryItems.length" class="rom-finish__summary">
       <span v-for="item in summaryItems" :key="item" class="rom-finish__chip">{{ item }}</span>
     </div>
+    <p class="rom-finish__edit-hint">Quer ajustar algo? Use <strong>Voltar</strong> ou toque em uma etapa acima.</p>
 
     <section class="rom-form-card rom-finish__publish">
       <PublishStep
@@ -71,6 +72,16 @@ const summaryItems = computed(() =>
   color: var(--rom-muted, #9f1239);
   background: color-mix(in srgb, var(--rom-accent, #e11d48) 8%, var(--surface));
   border: 1px solid color-mix(in srgb, var(--rom-accent, #e11d48) 14%, var(--border));
+}
+.rom-finish__edit-hint {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--muted);
+  line-height: 1.45;
+}
+.rom-finish__edit-hint strong {
+  color: var(--ink);
+  font-weight: 700;
 }
 .rom-finish__publish :deep(.publish-step) {
   padding: 0;

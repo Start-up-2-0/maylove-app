@@ -17,21 +17,17 @@
       root-class="spotify-theme__countdown"
     />
 
-    <section v-if="content.music.url" class="spotify-theme__player">
-      <div class="spotify-theme__player-row">
-        <div class="spotify-theme__player-art" :style="coverStyle" />
-        <div class="spotify-theme__player-meta">
-          <strong>{{ musicTitle }}</strong>
-          <span>{{ coupleLabel }}</span>
-        </div>
-        <span class="spotify-theme__heart" aria-hidden="true">♡</span>
-      </div>
-      <div class="spotify-theme__progress">
-        <span>0:00</span>
-        <div class="spotify-theme__progress-bar"><span /></div>
-        <span>0:00</span>
-      </div>
-    </section>
+    <SpotifyInlinePlayer
+      v-if="content.music.url"
+      :url="content.music.url"
+      :title="musicTitle"
+      :artist="coupleLabel"
+      :cover-style="coverStyle"
+      :start-at="content.music.startAt ?? 0"
+      :end-at="content.music.endAt ?? null"
+      :loop="content.music.loop !== false"
+      :autoplay="content.music.autoplay !== false"
+    />
 
     <section v-if="content.photos.length" class="spotify-theme__section">
       <p class="spotify-theme__eyebrow">Álbum</p>
@@ -72,6 +68,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import RomanceCountdownGrid from '@/components/experience/romance-themes/RomanceCountdownGrid.vue'
+import SpotifyInlinePlayer from '@/components/experience/romance-themes/SpotifyInlinePlayer.vue'
 import type { ExperienceContent, ExperienceTimelineItem, LayoutConfig, ResolvedTheme, TemplateDefinition } from '@/templates/types'
 import { getEmotionDisplay } from '@/utils/timelineEmotions'
 import { plainTimelineText } from '@/utils/timeline'
@@ -130,10 +127,14 @@ function formatDate(value: string) {
 <style scoped>
 .spotify-theme {
   --rom-countdown-accent: #1db954;
+  --exp-ink: #fff;
+  --exp-text: rgb(255 255 255 / 82%);
+  --exp-muted: rgb(255 255 255 / 55%);
   min-height: 100%;
   padding: 20px 16px 28px;
   background: #121212;
   color: #fff;
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 .spotify-theme__hero {
   display: flex;
@@ -156,6 +157,7 @@ function formatDate(value: string) {
   font-size: clamp(1.5rem, 5vw, 2rem);
   font-weight: 800;
   letter-spacing: -0.02em;
+  color: #fff;
 }
 .spotify-theme__since {
   margin: 4px 0 0;
@@ -164,66 +166,6 @@ function formatDate(value: string) {
 }
 .spotify-theme__countdown {
   margin-bottom: 18px;
-}
-.spotify-theme__player {
-  margin-bottom: 22px;
-  padding: 12px;
-  border-radius: 14px;
-  background: #181818;
-}
-.spotify-theme__player-row {
-  display: grid;
-  grid-template-columns: 48px 1fr auto;
-  gap: 10px;
-  align-items: center;
-}
-.spotify-theme__player-art {
-  width: 48px;
-  height: 48px;
-  border-radius: 8px;
-  background-size: cover;
-  background-position: center;
-}
-.spotify-theme__player-meta {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-.spotify-theme__player-meta strong {
-  font-size: 0.88rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.spotify-theme__player-meta span {
-  font-size: 0.76rem;
-  color: rgb(255 255 255 / 55%);
-}
-.spotify-theme__heart {
-  font-size: 1.1rem;
-  color: rgb(255 255 255 / 70%);
-}
-.spotify-theme__progress {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  gap: 8px;
-  align-items: center;
-  margin-top: 10px;
-  font-size: 0.68rem;
-  color: rgb(255 255 255 / 45%);
-}
-.spotify-theme__progress-bar {
-  height: 4px;
-  border-radius: 999px;
-  background: rgb(255 255 255 / 18%);
-  overflow: hidden;
-}
-.spotify-theme__progress-bar span {
-  display: block;
-  width: 18%;
-  height: 100%;
-  background: #fff;
 }
 .spotify-theme__section {
   margin-bottom: 22px;
@@ -240,6 +182,7 @@ function formatDate(value: string) {
   margin: 0 0 12px;
   font-size: 1.25rem;
   font-weight: 800;
+  color: #fff;
 }
 .spotify-theme__photos {
   display: grid;
@@ -276,6 +219,12 @@ function formatDate(value: string) {
 }
 .spotify-theme__timeline-icon {
   font-size: 1.2rem;
+}
+.spotify-theme__timeline strong {
+  color: #fff;
+}
+.spotify-theme__timeline li p {
+  color: rgb(255 255 255 / 68%);
 }
 .spotify-theme__timeline-date {
   margin: 2px 0 0;

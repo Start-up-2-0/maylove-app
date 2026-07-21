@@ -18,10 +18,11 @@
       </span>
     </template>
 
-    <RomanceBuildProgress
-      v-if="(isEditable || tribute?.status !== 'published') && currentStep !== 'preview' && !loading && !error"
+    <RomanceStepper
+      v-if="(isEditable || tribute?.status !== 'published') && !loading && !error"
       :current-step="currentStep"
       :steps="experienceSteps"
+      @go="goToStep"
     />
 
     <section v-if="loading" class="text-muted py-12 text-center">Carregando...</section>
@@ -49,6 +50,15 @@
         :photo-count="photos.length"
         :flush-autosave="flushAutosave"
         @published="onPublished"
+      />
+
+      <RomanceWizardFooter
+        v-if="isEditable"
+        :has-previous="hasPrevious"
+        :has-next="false"
+        :show-preview-button="false"
+        continue-label="Continuar"
+        @previous="previousStep"
       />
     </div>
 
@@ -182,7 +192,7 @@ import {
 import { validateExperienceStep } from '@/modules/romance-wizard/useRomanceWizardValidation'
 import { applyRomanceTitleDefaults, romanceDisplayTitle } from '@/modules/romance-wizard/romanceCopy'
 import { ROMANCE_BUILD_HEADLINE, ROMANCE_LOVE_CARDS_TAGLINE } from '@/modules/romance-wizard/romanceBuildCopy'
-import RomanceBuildProgress from '@/modules/romance-wizard/components/RomanceBuildProgress.vue'
+import RomanceStepper from '@/modules/romance-wizard/components/RomanceStepper.vue'
 import RomanceBuildShell from '@/modules/romance-wizard/components/RomanceBuildShell.vue'
 import RomancePhonePreview from '@/modules/romance-wizard/components/RomancePhonePreview.vue'
 import TributeLivePreview from '@/components/wizard/TributeLivePreview.vue'
@@ -314,6 +324,13 @@ watch(
 function previousStep() {
   const prev = previousExperienceStep(currentStep.value, experienceId.value)
   if (prev) currentStep.value = prev
+}
+
+function goToStep(step: RomanceExperienceStepId) {
+  if (step === currentStep.value) return
+  const targetIndex = experienceSteps.value.indexOf(step)
+  if (targetIndex < 0 || targetIndex > stepIndex.value) return
+  currentStep.value = step
 }
 
 async function nextStep() {
