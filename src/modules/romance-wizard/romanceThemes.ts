@@ -23,6 +23,8 @@ export interface RomanceThemeDefinition {
   label: string
   /** Apresentação real usada na página publicada. */
   presentationId: string
+  /** Template visual base (slug) — define identidade/cores compatíveis com o tema. */
+  templateSlug?: string
   previewVariant: RomanceThemePreviewVariant
   /** Gradiente do card no grid de seleção. */
   gradient: [string, string]
@@ -35,6 +37,7 @@ export const ROMANCE_THEMES: RomanceThemeDefinition[] = [
     id: 'estilo-spotify',
     label: 'Estilo Spotify',
     presentationId: 'slider-musica',
+    templateSlug: 'namorados',
     previewVariant: 'spotify',
     gradient: ['#1db954', '#121212'],
     accent: '#1db954',
@@ -67,6 +70,7 @@ export const ROMANCE_THEMES: RomanceThemeDefinition[] = [
     id: 'envelope-story',
     label: 'Envelope Story',
     presentationId: 'carta-animada',
+    templateSlug: 'carta-digital',
     previewVariant: 'envelope',
     gradient: ['#fef3c7', '#f9a8d4'],
     accent: '#db2777',
@@ -75,6 +79,7 @@ export const ROMANCE_THEMES: RomanceThemeDefinition[] = [
     id: 'cortina-amor',
     label: 'Cortina de Amor',
     presentationId: 'pedido',
+    templateSlug: 'pedido-namoro',
     previewVariant: 'curtain',
     gradient: ['#450a0a', '#be123c'],
     accent: '#be123c',
@@ -147,6 +152,7 @@ export const ROMANCE_THEMES: RomanceThemeDefinition[] = [
     id: 'nossa-serie',
     label: 'Nossa Série',
     presentationId: 'slider-musica',
+    templateSlug: 'namorados',
     previewVariant: 'netflix',
     gradient: ['#450a0a', '#0b0b0f'],
     accent: '#e50914',
@@ -173,9 +179,13 @@ export function resolveRomanceTheme(params: {
   const direct = getRomanceTheme(params.themeId)
   if (direct) return direct
 
-  if (params.presentationId) {
-    const byPresentation = ROMANCE_THEMES.find((item) => item.presentationId === params.presentationId)
-    if (byPresentation) return byPresentation
+  if (params.presentationId && !params.themeId) {
+    const matches = ROMANCE_THEMES.filter((item) => item.presentationId === params.presentationId)
+    const preferred = params.defaultThemeId
+      ? matches.find((item) => item.id === params.defaultThemeId)
+      : null
+    if (preferred) return preferred
+    if (matches[0]) return matches[0]
   }
 
   const fallbackId = params.defaultThemeId ?? DEFAULT_ROMANCE_THEME_ID

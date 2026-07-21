@@ -109,21 +109,27 @@ export async function applyRomanceExperienceDefaults(
 
   const defaultThemeId = experience.defaultThemeId ?? DEFAULT_ROMANCE_THEME_ID
   const defaultTheme = resolveRomanceTheme({ themeId: defaultThemeId })
-  const presentation =
-    experience.lockedPresentationId ??
-    defaultTheme.presentationId ??
-    resolveDefaultPresentationId(option, definition)
+  const hasUserTheme = Boolean(form.romance_theme_id?.trim() || form.presentation?.trim())
+  const presentation = hasUserTheme
+    ? form.presentation || defaultTheme.presentationId
+    : experience.lockedPresentationId ??
+      defaultTheme.presentationId ??
+      resolveDefaultPresentationId(option, definition)
+  const themeId = hasUserTheme
+    ? form.romance_theme_id || defaultTheme.id
+    : defaultTheme.id
   const styleId = listStyles()[0]?.id ?? ''
   const flow = experience
 
   form.romance_experience_id = experienceId
   form.wizard_type_id = option.id
   form.wizard_category_slug = option.categorySlug
-  form.template_id = template.id
-  form.presentation = presentation
-  form.romance_theme_id = defaultTheme.id
-  form.style_id = styleId
-  form.color_primary = defaultTheme.accent ?? definition.theme.primaryColor
+  if (!hasUserTheme) {
+    form.template_id = template.id
+    form.presentation = presentation
+    form.romance_theme_id = themeId
+    form.color_primary = defaultTheme.accent ?? definition.theme.primaryColor
+  }
 
   if (!form.title?.trim() || isLegacyGenericTitle(form.title)) {
     form.title = defaultRomanceTitle(option.id, experienceId)
@@ -154,19 +160,21 @@ export async function applyRomanceExperienceDefaults(
     form.include_opening_message = true
   }
 
-  syncModulesFromPresentation(form.modules, presentation, definition)
+  if (!form.style_id) form.style_id = styleId
+
+  syncModulesFromPresentation(form.modules, form.presentation || presentation, definition)
 
   await updateTribute(tributeId, {
     tribute_type_id: apiType.id,
-    template_id: template.id,
+    template_id: form.template_id || template.id,
     color_primary: form.color_primary,
     content_json: {
       romance_experience_id: experienceId,
       wizard_category_slug: option.categorySlug,
       wizard_type_id: option.id,
-      presentation,
-      romance_theme_id: defaultTheme.id,
-      style_id: styleId,
+      presentation: form.presentation || presentation,
+      romance_theme_id: form.romance_theme_id || themeId,
+      style_id: form.style_id || styleId,
       effects: form.effects.length ? form.effects : undefined,
       special_date_config: form.special_date_config.enabled ? form.special_date_config : undefined,
       question: form.question || undefined,

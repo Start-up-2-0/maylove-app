@@ -55,6 +55,8 @@ import { fetchPreviewData } from '@/api/tributes'
 import type { PublicTribute, TributeDetail } from '@/api/types'
 import type { useTributeWizard } from '@/composables/useTributeWizard'
 import { getTemplateDefinition } from '@/templates/registry'
+import { getRomanceTheme } from '@/modules/romance-wizard/romanceThemes'
+import { templateSlugForTheme } from '@/modules/romance-wizard/romanceThemeFlow'
 import { resolveContent, resolveTheme } from '@/composables/useExperienceContent'
 import EnvelopeFrame from './EnvelopeFrame.vue'
 import ExperienceRenderer from '@/components/experience/ExperienceRenderer.vue'
@@ -114,13 +116,19 @@ const frameStyle = computed(() => {
   }
 })
 
-const templateSlug = computed(
-  () =>
+const templateSlug = computed(() => {
+  const theme = props.form?.romance_theme_id
+    ? getRomanceTheme(props.form.romance_theme_id)
+    : null
+  if (theme) return templateSlugForTheme(theme)
+
+  return (
     props.tribute?.template.slug ||
     props.publicData?.template.slug ||
     apiData.value?.template.slug ||
-    null,
-)
+    null
+  )
+})
 
 const definition = computed(() => getTemplateDefinition(templateSlug.value))
 

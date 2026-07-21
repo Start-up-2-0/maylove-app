@@ -45,13 +45,9 @@
         :tribute-id="tributeId"
         :form="form"
         :tribute="tribute"
-        :definition="definition"
         :experience-id="experienceId"
         :photo-count="photos.length"
-        :refresh-token="previewRefreshToken"
-        :generating="previewGenerating"
         :flush-autosave="flushAutosave"
-        @regenerate="refreshPreview"
         @published="onPublished"
       />
     </div>
@@ -107,6 +103,8 @@
             :form="form"
             :experience-id="experienceId"
             :definition="definition"
+            :tribute-type-id="tribute?.tribute_type.id"
+            @theme-changed="onThemeChanged"
           />
           <RomanceEffectsStep
             v-else-if="currentStep === 'effects'"
@@ -133,19 +131,27 @@
         <div v-if="previewGenerating" class="rom-preview-panel__loading">
           <span class="ml-spinner ml-spinner--sm" />
         </div>
-        <RomanceCardsLivePreview
+        <TributeLivePreview
           v-else
+          class="rom-wizard-live-preview"
+          :tribute-id="tributeId"
           :form="form"
-          :experience-id="experienceId"
-          :photos="photos"
-          :current-step="currentStep"
+          :tribute="tribute"
+          :refresh-token="previewRefreshToken"
+          faithful
+          compact
+          :show-viewport-tabs="currentStep === 'preview'"
+          :viewport-width="375"
         />
-        <template v-if="currentStep === 'theme'" #footer>
-          <div class="rom-theme-preview-dock">
-            <span class="rom-theme-preview-dock__dot" :style="themePreviewDotStyle" />
-            <span>{{ previewTheme.label }}</span>
-            <span class="rom-theme-preview-dock__meta">{{ previewThemeIndex + 1 }} / {{ previewThemeTotal }}</span>
-          </div>
+        <template v-if="currentStep === 'preview'" #footer>
+          <button
+            type="button"
+            class="rom-preview-refresh"
+            :disabled="previewGenerating"
+            @click="refreshPreview"
+          >
+            {{ previewGenerating ? 'Atualizando…' : 'Atualizar prévia' }}
+          </button>
         </template>
       </RomancePhonePreview>
     </template>
@@ -157,6 +163,8 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { useTributeWizard } from '@/composables/useTributeWizard'
 import { getTemplateDefinition } from '@/templates/registry'
+import { getRomanceTheme } from '@/modules/romance-wizard/romanceThemes'
+import { templateSlugForTheme } from '@/modules/romance-wizard/romanceThemeFlow'
 import {
   applyRomanceExperienceDefaults,
   nextExperienceStep,
@@ -176,7 +184,7 @@ import { ROMANCE_BUILD_HEADLINE, ROMANCE_LOVE_CARDS_TAGLINE } from '@/modules/ro
 import RomanceBuildProgress from '@/modules/romance-wizard/components/RomanceBuildProgress.vue'
 import RomanceBuildShell from '@/modules/romance-wizard/components/RomanceBuildShell.vue'
 import RomancePhonePreview from '@/modules/romance-wizard/components/RomancePhonePreview.vue'
-import RomanceCardsLivePreview from '@/modules/romance-wizard/components/RomanceCardsLivePreview.vue'
+import TributeLivePreview from '@/components/wizard/TributeLivePreview.vue'
 import RomanceWizardFooter from '@/modules/romance-wizard/components/RomanceWizardFooter.vue'
 import RomanceRecipientStep from '@/modules/romance-wizard/steps/RomanceRecipientStep.vue'
 import RomancePhotosStep from '@/modules/romance-wizard/steps/RomancePhotosStep.vue'
@@ -188,10 +196,6 @@ import RomanceChaptersStep from '@/modules/romance-wizard/steps/RomanceChaptersS
 import RomanceThemeStep from '@/modules/romance-wizard/steps/RomanceThemeStep.vue'
 import RomanceEffectsStep from '@/modules/romance-wizard/steps/RomanceEffectsStep.vue'
 import RomanceFinishStep from '@/modules/romance-wizard/steps/RomanceFinishStep.vue'
-import {
-  listRomanceThemes,
-  resolveRomanceTheme,
-} from '@/modules/romance-wizard/romanceThemes'
 import '@/modules/romance-wizard/styles/romance-wizard.css'
 
 const route = useRoute()
@@ -218,7 +222,11 @@ const {
   flushAutosave,
 } = useTributeWizard(tributeId)
 
-const definition = computed(() => getTemplateDefinition(tribute.value?.template.slug))
+const definition = computed(() => {
+  const theme = getRomanceTheme(form.romance_theme_id)
+  const slug = theme ? templateSlugForTheme(theme) : tribute.value?.template.slug
+  return getTemplateDefinition(slug)
+})
 
 const experienceId = computed((): RomanceExperienceId | null =>
   resolveRomanceExperienceId({
@@ -230,22 +238,6 @@ const experienceId = computed((): RomanceExperienceId | null =>
 const experience = computed(() => getRomanceExperience(experienceId.value))
 const experienceSteps = computed(() => getExperienceSteps(experienceId.value))
 
-const previewThemes = listRomanceThemes()
-const previewTheme = computed(() =>
-  resolveRomanceTheme({
-    themeId: form.romance_theme_id,
-    presentationId: form.presentation,
-    defaultThemeId: experience.value?.defaultThemeId,
-  }),
-)
-const previewThemeIndex = computed(() =>
-  previewThemes.findIndex((item) => item.id === previewTheme.value.id),
-)
-const previewThemeTotal = previewThemes.length
-const themePreviewDotStyle = computed(() => ({
-  background: previewTheme.value.accent ?? previewTheme.value.gradient[0],
-}))
-
 const shellTitle = computed(() => romanceDisplayTitle(form) || experience.value?.label || 'Nova experiência')
 const shellSubtitle = computed(() =>
   route.query.build === '1' ? `${ROMANCE_LOVE_CARDS_TAGLINE} · ${ROMANCE_BUILD_HEADLINE}` : ROMANCE_LOVE_CARDS_TAGLINE,
@@ -255,8 +247,7 @@ const showPreviewColumn = computed(
   () =>
     !loading.value &&
     !error.value &&
-    (isEditable.value || tribute.value?.status !== 'published') &&
-    currentStep.value !== 'preview',
+    (isEditable.value || tribute.value?.status !== 'published'),
 )
 
 const statusLabel = computed(
@@ -289,16 +280,9 @@ onMounted(async () => {
     wizardTypeId: form.wizard_type_id,
   })
 
-  if (resolvedExperience && !form.romance_experience_id) {
+  if (resolvedExperience && isEditable.value && !form.romance_experience_id) {
     form.romance_experience_id = resolvedExperience
-  }
-
-  if (resolvedExperience && isEditable.value) {
-    const fromQuery = typeof route.query.experience === 'string'
-    if (fromQuery || !form.romance_experience_id) {
-      form.romance_experience_id = resolvedExperience
-      await applyRomanceExperienceDefaults(form, tributeId, resolvedExperience)
-    }
+    await applyRomanceExperienceDefaults(form, tributeId, resolvedExperience)
   }
 
   currentStep.value = resolveExperienceStep(
@@ -320,15 +304,7 @@ watch(currentStep, (step) => {
 })
 
 watch(
-  () => [
-    form.title,
-    form.honoree_name,
-    form.message,
-    form.presentation,
-    form.romance_theme_id,
-    form.effects.length,
-    photos.value.length,
-  ],
+  () => photos.value.length,
   () => {
     previewRefreshToken.value += 1
   },
@@ -376,6 +352,12 @@ async function refreshPreview() {
   } finally {
     previewGenerating.value = false
   }
+}
+
+async function onThemeChanged() {
+  await flushAutosave()
+  await reload()
+  previewRefreshToken.value += 1
 }
 
 async function onMediaChanged() {
@@ -449,5 +431,19 @@ async function onPublished() {
 .rom-theme-preview-dock__meta {
   color: var(--muted);
   font-weight: 600;
+}
+.rom-preview-refresh {
+  padding: 8px 14px;
+  border: 1px solid color-mix(in srgb, var(--rom-accent, #e11d48) 18%, var(--border));
+  border-radius: 999px;
+  background: var(--surface);
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--rom-muted, #9f1239);
+  cursor: pointer;
+}
+.rom-preview-refresh:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 </style>

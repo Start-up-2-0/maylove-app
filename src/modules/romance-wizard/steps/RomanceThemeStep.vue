@@ -66,14 +66,17 @@ import {
   resolveRomanceTheme,
   type RomanceThemeDefinition,
 } from '@/modules/romance-wizard/romanceThemes'
+import { applyRomanceThemeToForm } from '@/modules/romance-wizard/romanceThemeFlow'
 import type { TemplateDefinition } from '@/templates/types'
-import { syncModulesFromPresentation } from '@/utils/tributeModules'
 
 const props = defineProps<{
   form: ReturnType<typeof useTributeWizard>['form']
   experienceId?: RomanceExperienceId | null
   definition?: TemplateDefinition | null
+  tributeTypeId?: string | null
 }>()
+
+const emit = defineEmits<{ 'theme-changed': [] }>()
 
 const themes = listRomanceThemes()
 
@@ -106,23 +109,24 @@ function swatchStyle(theme: RomanceThemeDefinition) {
   }
 }
 
-function applyTheme(theme: RomanceThemeDefinition) {
-  props.form.romance_theme_id = theme.id
-  props.form.presentation = theme.presentationId
-  if (theme.accent) props.form.color_primary = theme.accent
-  syncModulesFromPresentation(props.form.modules, theme.presentationId, props.definition)
+async function applyTheme(theme: RomanceThemeDefinition) {
+  await applyRomanceThemeToForm(props.form, theme.id, {
+    definition: props.definition,
+    tributeTypeId: props.tributeTypeId,
+  })
+  emit('theme-changed')
 }
 
 function selectTheme(themeId: string) {
   const theme = themes.find((item) => item.id === themeId)
   if (!theme) return
-  applyTheme(theme)
+  void applyTheme(theme)
 }
 
 function shiftTheme(delta: number) {
   const index = activeIndex.value >= 0 ? activeIndex.value : 0
   const next = (index + delta + themes.length) % themes.length
-  applyTheme(themes[next])
+  void applyTheme(themes[next])
 }
 
 watch(
