@@ -7,22 +7,7 @@
         Seu buquê vai florescer aqui conforme você escolhe as flores.
       </div>
 
-      <template v-else>
-        <div class="bouquet-preview__greenery" aria-hidden="true" />
-        <div
-          v-for="(stem, index) in positionedStems"
-          :key="`${stem.id}-${index}`"
-          class="bouquet-preview__flower"
-          :style="{
-            left: `${stem.left}%`,
-            top: `${stem.top}%`,
-            transform: `rotate(${stem.rotate}deg) scale(${stem.scale})`,
-          }"
-        >
-          <span class="bouquet-preview__emoji">{{ stem.emoji }}</span>
-        </div>
-        <div class="bouquet-preview__stems-tie" aria-hidden="true" />
-      </template>
+      <BouquetDisplay v-else :stems="stems" :wrap-color="wrapColor" size="lg" />
 
       <button
         v-if="showLetter && letterOpen"
@@ -56,7 +41,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import type { BouquetLetterDesign, BouquetWrapColor } from '@/api/types'
-import { BOUQUET_FLOWERS, getFlower } from '@/modules/bouquet/bouquetCatalog'
+import BouquetDisplay from './BouquetDisplay.vue'
 
 const props = withDefaults(
   defineProps<{
@@ -86,23 +71,6 @@ watch(
   },
 )
 
-const positionedStems = computed(() =>
-  props.stems.map((id, index) => {
-    const flower = getFlower(id)
-    const base = flower?.preview ?? { left: 45, top: 24, rotate: 0, scale: 1 }
-    const offset = (index % 3) * 4 - 4
-    return {
-      id,
-      emoji: flower?.emoji ?? '🌸',
-      left: Math.min(68, Math.max(28, base.left + offset)),
-      top: base.top + Math.floor(index / 3) * 3,
-      rotate: base.rotate + offset,
-      scale: base.scale,
-    }
-  }),
-)
-
-// re-export for template type hints
 const wrapColor = computed(() => props.wrapColor)
 const letterDesign = computed(() => props.letterDesign)
 const recipientName = computed(() => props.recipientName)
@@ -110,8 +78,6 @@ const senderName = computed(() => props.senderName)
 const letterBody = computed(() => props.letterBody)
 const showLetter = computed(() => props.showLetter)
 const stems = computed(() => props.stems)
-
-void BOUQUET_FLOWERS
 </script>
 
 <style scoped>
@@ -146,8 +112,10 @@ void BOUQUET_FLOWERS
   flex: 1;
   min-height: 420px;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 24px;
 }
 
 .bouquet-preview__empty {
@@ -155,46 +123,13 @@ void BOUQUET_FLOWERS
   text-align: center;
   color: #b0a59c;
   line-height: 1.5;
-}
-
-.bouquet-preview__greenery {
-  position: absolute;
-  width: 280px;
-  height: 280px;
-  border-radius: 50%;
-  background:
-    radial-gradient(circle at 50% 60%, rgba(120, 150, 90, 0.25), transparent 70%),
-    radial-gradient(circle at 35% 45%, rgba(90, 130, 70, 0.35), transparent 55%),
-    radial-gradient(circle at 65% 48%, rgba(100, 140, 80, 0.3), transparent 50%);
-  filter: blur(1px);
-}
-
-.bouquet-preview__flower {
-  position: absolute;
-  z-index: 2;
-  font-size: 52px;
-  line-height: 1;
-  filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.12));
-}
-
-.bouquet-preview__emoji {
-  display: block;
-}
-
-.bouquet-preview__stems-tie {
-  position: absolute;
-  bottom: 18%;
-  width: 36px;
-  height: 56px;
-  border-radius: 999px;
-  background: linear-gradient(180deg, #6f8f55, #4f6b3d);
-  box-shadow: inset 0 -8px 0 rgba(0, 0, 0, 0.08);
-  z-index: 1;
+  min-height: 280px;
+  display: flex;
+  align-items: center;
 }
 
 .bouquet-preview__envelope {
-  position: absolute;
-  bottom: 8%;
+  position: relative;
   width: 180px;
   height: 110px;
   border: none;
@@ -225,8 +160,6 @@ void BOUQUET_FLOWERS
 }
 
 .bouquet-preview__letter {
-  position: absolute;
-  bottom: 6%;
   width: min(260px, 90%);
   border: none;
   border-radius: 12px;

@@ -14,7 +14,9 @@
         :disabled="stems.length >= maxStems"
         @click="$emit('add', flower.id)"
       >
-        <span class="flower-card__emoji">{{ flower.emoji }}</span>
+        <div class="flower-card__photo">
+          <img :src="flower.image" :alt="flower.label" loading="lazy" draggable="false" />
+        </div>
         <strong>{{ flower.label }}</strong>
         <span class="flower-card__meaning">{{ flower.meaning }}</span>
       </button>
@@ -24,9 +26,16 @@
       <p class="chosen-list__title">Seu buquê ({{ stems.length }})</p>
       <div class="chosen-list__chips">
         <div v-for="(stemId, index) in stems" :key="`${stemId}-${index}`" class="chosen-chip">
-          <span>{{ getFlower(stemId)?.emoji }}</span>
+          <img
+            v-if="getFlower(stemId)"
+            :src="getFlower(stemId)!.image"
+            :alt="getFlower(stemId)!.label"
+            class="chosen-chip__thumb"
+          />
           <span>{{ getFlower(stemId)?.label ?? stemId }}</span>
-          <button type="button" aria-label="Remover" @click="$emit('remove', index)">🗑</button>
+          <button type="button" class="chosen-chip__remove" aria-label="Remover" @click="$emit('remove', index)">
+            ×
+          </button>
         </div>
       </div>
     </div>
@@ -44,6 +53,7 @@
         >
           <span class="wrap-card__swatch" :style="{ background: wrap.swatch }" />
           <span>{{ wrap.label }}</span>
+          <span v-if="wrapColor === wrap.id" class="wrap-card__check" aria-hidden="true">✓</span>
         </button>
       </div>
     </div>
@@ -93,18 +103,19 @@ const maxStems = BOUQUET_MAX_STEMS
 }
 
 .flower-card {
-  border: 1px solid #eadfd4;
+  border: 2px solid #eadfd4;
   border-radius: 16px;
-  background: white;
-  padding: 12px 10px;
+  background: #fffaf6;
+  padding: 8px;
   text-align: center;
   cursor: pointer;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
 }
 
 .flower-card:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+  border-color: rgba(196, 69, 106, 0.45);
+  box-shadow: 0 8px 20px rgba(196, 69, 106, 0.08);
 }
 
 .flower-card:disabled {
@@ -112,22 +123,31 @@ const maxStems = BOUQUET_MAX_STEMS
   cursor: not-allowed;
 }
 
-.flower-card__emoji {
-  display: block;
-  font-size: 34px;
+.flower-card__photo {
+  aspect-ratio: 3 / 4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
   margin-bottom: 8px;
+}
+
+.flower-card__photo img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
 }
 
 .flower-card strong {
   display: block;
-  font-size: 13px;
+  font-size: 12px;
   color: #3d2b2f;
 }
 
 .flower-card__meaning {
   display: block;
   margin-top: 4px;
-  font-size: 11px;
+  font-size: 10px;
   color: #9a8d84;
 }
 
@@ -151,18 +171,31 @@ const maxStems = BOUQUET_MAX_STEMS
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 10px;
+  padding: 4px 10px 4px 4px;
   border-radius: 999px;
   background: white;
   border: 1px solid #eadfd4;
-  font-size: 13px;
+  font-size: 12px;
 }
 
-.chosen-chip button {
+.chosen-chip__thumb {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+}
+
+.chosen-chip__remove {
   border: none;
   background: transparent;
   cursor: pointer;
-  padding: 0;
+  padding: 0 2px;
+  color: #9a8d84;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.chosen-chip__remove:hover {
+  color: #c4456a;
 }
 
 .wrap-section {
@@ -181,25 +214,37 @@ const maxStems = BOUQUET_MAX_STEMS
 }
 
 .wrap-card {
-  border: 2px solid transparent;
+  position: relative;
+  border: 2px solid #eadfd4;
   border-radius: 14px;
-  padding: 14px;
+  padding: 12px;
   background: white;
   cursor: pointer;
   display: flex;
   flex-direction: column;
   gap: 8px;
   align-items: flex-start;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .wrap-card--active {
   border-color: #c4456a;
+  box-shadow: 0 0 0 1px rgba(196, 69, 106, 0.15);
 }
 
 .wrap-card__swatch {
   width: 100%;
-  height: 42px;
+  height: 48px;
   border-radius: 10px;
+}
+
+.wrap-card__check {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  color: #c4456a;
+  font-size: 12px;
+  font-weight: 700;
 }
 
 @media (max-width: 900px) {
