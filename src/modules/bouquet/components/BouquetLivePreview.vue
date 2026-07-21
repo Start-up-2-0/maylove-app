@@ -1,6 +1,12 @@
 <template>
-  <div class="bouquet-preview" :class="`bouquet-preview--wrap-${wrapColor}`">
-    <p class="bouquet-preview__label">Prévia ao vivo</p>
+  <div
+    class="bouquet-preview"
+    :class="[
+      `bouquet-preview--wrap-${wrapColor}`,
+      { 'bouquet-preview--embedded': embedded },
+    ]"
+  >
+    <p v-if="!embedded" class="bouquet-preview__label">Prévia ao vivo</p>
 
     <div class="bouquet-preview__stage">
       <div v-if="!stems.length" class="bouquet-preview__empty">
@@ -35,6 +41,7 @@ const props = withDefaults(
     letterBody?: string
     letterDesign?: BouquetLetterDesign
     showLetter?: boolean
+    embedded?: boolean
   }>(),
   {
     recipientName: '',
@@ -42,6 +49,7 @@ const props = withDefaults(
     letterBody: '',
     letterDesign: 'classic',
     showLetter: false,
+    embedded: false,
   },
 )
 
@@ -57,12 +65,20 @@ const stems = computed(() => props.stems)
 <style scoped>
 .bouquet-preview {
   --wrap: #f2c4c4;
-  background: linear-gradient(180deg, #faf6f0 0%, #f3ebe1 100%);
-  border-radius: 24px;
+  --preview-bg-top: #faf6f0;
+  --preview-bg-bottom: #f3ebe1;
+  background: linear-gradient(180deg, var(--preview-bg-top) 0%, var(--preview-bg-bottom) 100%);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg, 20px);
   padding: 20px;
   min-height: 520px;
   display: flex;
   flex-direction: column;
+  box-shadow: var(--shadow-sm);
+}
+
+.bouquet-preview--embedded {
+  min-height: 480px;
 }
 
 .bouquet-preview--wrap-cream {
@@ -74,10 +90,11 @@ const stems = computed(() => props.stems)
 
 .bouquet-preview__label {
   text-align: center;
-  font-size: 11px;
-  letter-spacing: 0.14em;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: #9a8d84;
+  color: var(--muted);
   margin: 0 0 16px;
 }
 
@@ -96,7 +113,7 @@ const stems = computed(() => props.stems)
 .bouquet-preview__empty {
   max-width: 220px;
   text-align: center;
-  color: #b0a59c;
+  color: var(--muted);
   line-height: 1.5;
   min-height: 280px;
   display: flex;

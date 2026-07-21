@@ -1,7 +1,7 @@
 <template>
-  <div class="letter-step">
-    <h2 class="letter-step__title">Guarde uma carta</h2>
-    <p class="letter-step__hint">Algumas palavras para florescer ao lado do buquê.</p>
+  <div class="letter-step wiz-step-content">
+    <h2 class="wiz-card__title">Guarde uma carta</h2>
+    <p class="wiz-card__hint">Algumas palavras para florescer ao lado do buquê.</p>
 
     <label class="ml-field">
       <span>Para</span>
@@ -60,7 +60,6 @@
     </div>
 
     <div v-else class="letter-step__actions">
-      <button class="ml-btn ml-btn--secondary" type="button" @click="$emit('back')">Voltar</button>
       <button
         v-if="!billingEnabled"
         class="ml-btn ml-btn--primary ml-btn--lg"
@@ -111,7 +110,6 @@ const emit = defineEmits<{
   'update:senderName': [value: string]
   'update:letterBody': [value: string]
   'update:letterDesign': [value: BouquetLetterDesign]
-  back: []
   published: []
 }>()
 
@@ -225,17 +223,6 @@ async function copyLink() {
 </script>
 
 <style scoped>
-.letter-step__title {
-  font-family: Georgia, 'Times New Roman', serif;
-  font-size: clamp(1.6rem, 3vw, 2rem);
-  margin: 0 0 6px;
-}
-
-.letter-step__hint {
-  margin: 0 0 20px;
-  color: #8a7d74;
-}
-
 .letter-step__textarea {
   resize: vertical;
   min-height: 140px;
@@ -244,6 +231,7 @@ async function copyLink() {
 .letter-step__design-label {
   margin: 18px 0 10px;
   font-weight: 600;
+  color: var(--ink);
 }
 
 .design-grid {
@@ -253,12 +241,13 @@ async function copyLink() {
 }
 
 .design-card {
-  border: 2px solid #eadfd4;
-  border-radius: 16px;
+  border: 2px solid var(--border);
+  border-radius: var(--radius-md);
   padding: 16px;
   text-align: left;
   cursor: pointer;
-  background: #fffaf3;
+  background: var(--surface);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .design-card--romantic {
@@ -267,7 +256,8 @@ async function copyLink() {
 }
 
 .design-card--active {
-  border-color: #c4456a;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary) 15%, transparent);
 }
 
 .design-card__emoji {
@@ -278,9 +268,9 @@ async function copyLink() {
 .premium-note {
   margin-top: 18px;
   padding: 12px 14px;
-  border-radius: 12px;
-  background: #fdecef;
-  color: #7a4050;
+  border-radius: var(--radius-md);
+  background: var(--primary-soft);
+  color: var(--primary-strong);
   font-size: 13px;
 }
 

@@ -1,7 +1,7 @@
 <template>
-  <div class="stems-step">
-    <h2 class="stems-step__title">Escolha as flores</h2>
-    <p class="stems-step__hint">
+  <div class="stems-step wiz-step-content">
+    <h2 class="wiz-card__title">Escolha as flores</h2>
+    <p class="wiz-card__hint">
       Toque para adicionar. {{ stems.length }}/{{ maxStems }} escolhidas.
     </p>
 
@@ -84,18 +84,6 @@ const maxStems = BOUQUET_MAX_STEMS
 </script>
 
 <style scoped>
-.stems-step__title {
-  font-family: Georgia, 'Times New Roman', serif;
-  font-size: clamp(1.6rem, 3vw, 2rem);
-  margin: 0 0 6px;
-  color: #3d2b2f;
-}
-
-.stems-step__hint {
-  margin: 0 0 20px;
-  color: #8a7d74;
-}
-
 .flower-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -103,9 +91,9 @@ const maxStems = BOUQUET_MAX_STEMS
 }
 
 .flower-card {
-  border: 2px solid #eadfd4;
-  border-radius: 16px;
-  background: #fffaf6;
+  border: 2px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
   padding: 8px;
   text-align: center;
   cursor: pointer;
@@ -114,8 +102,8 @@ const maxStems = BOUQUET_MAX_STEMS
 
 .flower-card:hover:not(:disabled) {
   transform: translateY(-2px);
-  border-color: rgba(196, 69, 106, 0.45);
-  box-shadow: 0 8px 20px rgba(196, 69, 106, 0.08);
+  border-color: color-mix(in srgb, var(--primary) 45%, var(--border));
+  box-shadow: 0 8px 20px color-mix(in srgb, var(--primary) 8%, transparent);
 }
 
 .flower-card:disabled {
@@ -141,14 +129,14 @@ const maxStems = BOUQUET_MAX_STEMS
 .flower-card strong {
   display: block;
   font-size: 12px;
-  color: #3d2b2f;
+  color: var(--ink);
 }
 
 .flower-card__meaning {
   display: block;
   margin-top: 4px;
   font-size: 10px;
-  color: #9a8d84;
+  color: var(--muted);
 }
 
 .chosen-list {
@@ -158,7 +146,7 @@ const maxStems = BOUQUET_MAX_STEMS
 .chosen-list__title {
   margin: 0 0 10px;
   font-weight: 600;
-  color: #3d2b2f;
+  color: var(--ink);
 }
 
 .chosen-list__chips {
@@ -173,8 +161,8 @@ const maxStems = BOUQUET_MAX_STEMS
   gap: 6px;
   padding: 4px 10px 4px 4px;
   border-radius: 999px;
-  background: white;
-  border: 1px solid #eadfd4;
+  background: var(--surface);
+  border: 1px solid var(--border);
   font-size: 12px;
 }
 
@@ -189,13 +177,13 @@ const maxStems = BOUQUET_MAX_STEMS
   background: transparent;
   cursor: pointer;
   padding: 0 2px;
-  color: #9a8d84;
+  color: var(--muted);
   font-size: 16px;
   line-height: 1;
 }
 
 .chosen-chip__remove:hover {
-  color: #c4456a;
+  color: var(--primary);
 }
 
 .wrap-section {
@@ -205,6 +193,7 @@ const maxStems = BOUQUET_MAX_STEMS
 .wrap-section__label {
   margin: 0 0 10px;
   font-weight: 600;
+  color: var(--ink);
 }
 
 .wrap-grid {
@@ -215,10 +204,10 @@ const maxStems = BOUQUET_MAX_STEMS
 
 .wrap-card {
   position: relative;
-  border: 2px solid #eadfd4;
-  border-radius: 14px;
+  border: 2px solid var(--border);
+  border-radius: var(--radius-md);
   padding: 12px;
-  background: white;
+  background: var(--surface);
   cursor: pointer;
   display: flex;
   flex-direction: column;
@@ -228,8 +217,8 @@ const maxStems = BOUQUET_MAX_STEMS
 }
 
 .wrap-card--active {
-  border-color: #c4456a;
-  box-shadow: 0 0 0 1px rgba(196, 69, 106, 0.15);
+  border-color: var(--primary);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary) 15%, transparent);
 }
 
 .wrap-card__swatch {
@@ -242,7 +231,7 @@ const maxStems = BOUQUET_MAX_STEMS
   position: absolute;
   top: 8px;
   right: 8px;
-  color: #c4456a;
+  color: var(--primary);
   font-size: 12px;
   font-weight: 700;
 }
