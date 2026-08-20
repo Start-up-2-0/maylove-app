@@ -72,15 +72,16 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, defineAsyncComponent, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import type { MapPlace, PublicCoupleMap } from '@/api/types'
 import CoupleMapCanvas from './components/CoupleMapCanvas.vue'
-import MapGlobeView from './components/MapGlobeView.vue'
 import MapJourneyTimeline from './components/MapJourneyTimeline.vue'
 import MapMemoryExperience from './components/MapMemoryExperience.vue'
 import MapJourneyControls from './components/MapJourneyControls.vue'
 import { delay, sortPlacesChronologically, type MapViewMode } from './mapJourney'
+
+const MapGlobeView = defineAsyncComponent(() => import('./components/MapGlobeView.vue'))
 
 const props = defineProps<{ map: PublicCoupleMap }>()
 

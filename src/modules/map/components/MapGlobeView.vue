@@ -35,6 +35,7 @@ const globeRef = ref<HTMLElement | null>(null)
 const loadState = ref<'loading' | 'ready' | 'error'>('loading')
 const loadError = ref('')
 let mounted = true
+let mountAttempt = 0
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let globe: any = null
 
@@ -62,6 +63,8 @@ function preloadTexture(url: string): Promise<void> {
 
 async function mountGlobe() {
   if (!globeRef.value) return
+  const attempt = ++mountAttempt
+  destroyGlobe()
   loadState.value = 'loading'
   loadError.value = ''
   try {
@@ -70,7 +73,7 @@ async function mountGlobe() {
       preloadTexture(MAP_GLOBE_TEXTURE_URL),
       preloadTexture(MAP_GLOBE_BUMP_URL),
     ])
-    if (!mounted || !globeRef.value) return
+    if (!mounted || attempt !== mountAttempt || !globeRef.value) return
     const Globe = GlobeModule.default
     globe = new Globe(globeRef.value)
       .globeImageUrl(MAP_GLOBE_TEXTURE_URL)
@@ -89,11 +92,19 @@ async function mountGlobe() {
     globe.pointOfView({ lat: 10, lng: -30, altitude: 2.2 })
     loadState.value = 'ready'
   } catch (error) {
-    if (!mounted) return
-    globe = null
+    if (!mounted || attempt !== mountAttempt) return
+    destroyGlobe()
     loadError.value = resolveMapGlobeErrorMessage(error)
     loadState.value = 'error'
   }
+}
+
+function destroyGlobe() {
+  if (typeof globe?._destructor === 'function') {
+    globe._destructor()
+  }
+  globe = null
+  if (globeRef.value) globeRef.value.replaceChildren()
 }
 
 function flyToPlace(place: MapPlace) {
@@ -132,10 +143,8 @@ watch(
 
 onBeforeUnmount(() => {
   mounted = false
-  if (globe?.controls) {
-    globe.controls().autoRotate = false
-  }
-  globe = null
+  mountAttempt += 1
+  destroyGlobe()
 })
 </script>
 
