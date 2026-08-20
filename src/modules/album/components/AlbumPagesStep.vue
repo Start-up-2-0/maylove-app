@@ -11,7 +11,7 @@
       <div v-if="loading" class="text-muted">Carregando memórias…</div>
 
       <div v-else class="chapters">
-        <div v-for="chapter in chapters" :key="chapter.id" class="chapter-card ml-card">
+        <div v-for="(chapter, chapterIndex) in chapters" :key="chapter.id" class="chapter-card ml-card">
           <header class="chapter-card__head">
             <input
               v-model="chapter.title"
@@ -19,6 +19,8 @@
               placeholder="Título do capítulo"
               @blur="updateChapter(chapter)"
             />
+            <button class="ml-icon-btn" :disabled="reordering || chapterIndex === 0" title="Mover capítulo para cima" @click="moveChapter(chapterIndex, -1)">↑</button>
+            <button class="ml-icon-btn" :disabled="reordering || chapterIndex === chapters.length - 1" title="Mover capítulo para baixo" @click="moveChapter(chapterIndex, 1)">↓</button>
             <button
               class="ml-icon-btn ml-icon-btn--danger"
               title="Remover capítulo"
@@ -29,7 +31,7 @@
           </header>
 
           <ul class="memory-list">
-            <li v-for="memory in chapter.memories" :key="memory.id" class="memory-item">
+            <li v-for="(memory, memoryIndex) in chapter.memories" :key="memory.id" class="memory-item">
               <div class="memory-item__thumbs">
                 <span
                   v-for="media in mediaOf(memory).slice(0, 4)"
@@ -67,6 +69,8 @@
                   >
                     Anexar da fototeca
                   </button>
+                  <button class="ml-icon-btn" :disabled="reordering || memoryIndex === 0" title="Mover memória para cima" @click="moveMemory(chapter, memoryIndex, -1)">↑</button>
+                  <button class="ml-icon-btn" :disabled="reordering || memoryIndex === chapter.memories.length - 1" title="Mover memória para baixo" @click="moveMemory(chapter, memoryIndex, 1)">↓</button>
                   <button
                     class="ml-icon-btn ml-icon-btn--danger"
                     title="Remover memória"
@@ -175,6 +179,7 @@ const pickerChapterId = ref('')
 const pickerMemoryId = ref('')
 const selectedIds = ref<string[]>([])
 const saving = ref(false)
+const reordering = ref(false)
 
 function openPicker(chapterId: string, memory: AlbumMemory) {
   pickerChapterId.value = chapterId
@@ -248,6 +253,9 @@ async function updateChapter(chapter: AlbumChapter) {
 }
 
 async function removeChapter(chapterId: string) {
+  const chapter = chapters.value.find((item) => item.id === chapterId)
+  const count = chapter?.memories.length ?? 0
+  if (!window.confirm(`Remover este capítulo${count ? ` e suas ${count} memória(s)` : ''}? Esta ação não pode ser desfeita.`)) return
   try {
     await store.removeChapter(chapterId)
   } catch (err) {
@@ -282,10 +290,45 @@ async function updateMemory(chapterId: string, memory: AlbumMemory) {
 }
 
 async function removeMemory(chapterId: string, memoryId: string) {
+  if (!window.confirm('Remover esta memória? As fotos continuarão disponíveis na fototeca.')) return
   try {
     await store.removeMemory(chapterId, memoryId)
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Falha ao remover memória.'
+  }
+}
+
+async function moveChapter(index: number, direction: -1 | 1) {
+  const target = index + direction
+  if (reordering.value || target < 0 || target >= chapters.value.length) return
+  const ordered = [...chapters.value]
+  ;[ordered[index], ordered[target]] = [ordered[target], ordered[index]]
+  reordering.value = true
+  error.value = ''
+  try {
+    await Promise.all(ordered.map((chapter, sortOrder) => store.updateChapter(chapter.id, { sort_order: sortOrder })))
+    if (props.album) await store.loadChapters(props.album.id)
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : 'Falha ao reordenar capítulos.'
+  } finally {
+    reordering.value = false
+  }
+}
+
+async function moveMemory(chapter: AlbumChapter, index: number, direction: -1 | 1) {
+  const target = index + direction
+  if (reordering.value || target < 0 || target >= chapter.memories.length) return
+  const ordered = [...chapter.memories]
+  ;[ordered[index], ordered[target]] = [ordered[target], ordered[index]]
+  reordering.value = true
+  error.value = ''
+  try {
+    await Promise.all(ordered.map((memory, sortOrder) => store.updateMemory(chapter.id, memory.id, { sort_order: sortOrder })))
+    if (props.album) await store.loadChapters(props.album.id)
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : 'Falha ao reordenar memórias.'
+  } finally {
+    reordering.value = false
   }
 }
 </script>
