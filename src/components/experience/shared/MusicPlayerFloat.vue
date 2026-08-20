@@ -3,6 +3,8 @@
     class="music-float"
     :class="{ 'music-float--playing': playing }"
     :title="playing ? 'Pausar música' : 'Tocar música'"
+    :aria-label="playing ? 'Pausar música' : 'Tocar música'"
+    :aria-pressed="playing"
     @click="toggle"
   >
     <span class="music-float__bars" aria-hidden="true">

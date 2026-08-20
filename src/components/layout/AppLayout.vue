@@ -5,7 +5,13 @@
       <div v-if="drawerOpen" class="app-overlay" @click="drawerOpen = false" />
     </transition>
 
-    <aside class="sidebar" :class="{ 'sidebar--open': drawerOpen }">
+    <aside
+      ref="sidebarRef"
+      class="sidebar"
+      :class="{ 'sidebar--open': drawerOpen }"
+      :inert="!isDesktop && !drawerOpen"
+      :aria-hidden="!isDesktop && !drawerOpen ? 'true' : undefined"
+    >
       <div class="sidebar__brand">
         <Logo to="/dashboard" variant="light" size="md" @click="drawerOpen = false" />
         <button class="sidebar__close" aria-label="Fechar menu" @click="drawerOpen = false">
@@ -29,7 +35,7 @@
           <svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
             <path d="M12 5v14M5 12h14" stroke-linecap="round" />
           </svg>
-          <span>Nova experiência</span>
+          <span>Novo romance</span>
         </RouterLink>
 
         <p class="sidebar__label sidebar__label--spaced">Álbuns</p>
@@ -84,13 +90,13 @@
           </svg>
           <span>Modelos</span>
         </RouterLink>
-        <a class="nav-item nav-item--muted" href="#" @click.prevent>
+        <RouterLink to="/dashboard/ajuda" class="nav-item" active-class="nav-item--active" @click="drawerOpen = false">
           <svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
             <circle cx="12" cy="12" r="9" />
             <path d="M9.5 9.5a2.5 2.5 0 1 1 3.6 2.2c-.7.4-1.1.9-1.1 1.8M12 17h.01" stroke-linecap="round" />
           </svg>
           <span>Ajuda</span>
-        </a>
+        </RouterLink>
       </nav>
 
       <button class="sidebar__theme" @click="toggle">
@@ -125,7 +131,7 @@
 
     <div class="app-main">
       <header class="app-topbar">
-        <button class="app-topbar__menu" aria-label="Abrir menu" @click="drawerOpen = true">
+        <button ref="menuButtonRef" class="app-topbar__menu" aria-label="Abrir menu" @click="drawerOpen = true">
           <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M4 7h16M4 12h16M4 17h16" stroke-linecap="round" />
           </svg>
@@ -140,8 +146,8 @@
             <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z" stroke-linecap="round" stroke-linejoin="round" />
           </svg>
         </button>
-        <RouterLink to="/dashboard/tributes/new" class="ml-btn ml-btn--primary ml-btn--sm">
-          + Nova
+        <RouterLink to="/dashboard/romances/new" class="ml-btn ml-btn--primary ml-btn--sm">
+          + Novo romance
         </RouterLink>
       </header>
 
@@ -157,7 +163,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useTheme } from '@/composables/useTheme'
@@ -169,12 +175,20 @@ const route = useRoute()
 const { isDark, toggle } = useTheme()
 
 const drawerOpen = ref(false)
+const isDesktop = ref(true)
+const sidebarRef = ref<HTMLElement | null>(null)
+const menuButtonRef = ref<HTMLButtonElement | null>(null)
 const DESKTOP_BREAKPOINT = 1024
 
 function closeDrawerIfDesktop() {
-  if (window.innerWidth >= DESKTOP_BREAKPOINT) {
+  isDesktop.value = window.innerWidth >= DESKTOP_BREAKPOINT
+  if (isDesktop.value) {
     drawerOpen.value = false
   }
+}
+
+function handleKeydown(event: KeyboardEvent) {
+  if (event.key === 'Escape' && drawerOpen.value) drawerOpen.value = false
 }
 
 watch(
@@ -184,13 +198,25 @@ watch(
   },
 )
 
+watch(drawerOpen, async (open, wasOpen) => {
+  if (isDesktop.value) return
+  if (open) {
+    await nextTick()
+    sidebarRef.value?.querySelector<HTMLElement>('button, a')?.focus()
+  } else if (wasOpen) {
+    menuButtonRef.value?.focus()
+  }
+})
+
 onMounted(() => {
   closeDrawerIfDesktop()
   window.addEventListener('resize', closeDrawerIfDesktop)
+  window.addEventListener('keydown', handleKeydown)
 })
 
 onUnmounted(() => {
   window.removeEventListener('resize', closeDrawerIfDesktop)
+  window.removeEventListener('keydown', handleKeydown)
 })
 
 const initials = computed(() => {

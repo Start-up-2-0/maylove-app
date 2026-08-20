@@ -41,10 +41,10 @@
       <p class="cinema-theme__section-label">Cenas da galeria</p>
       <div class="cinema-theme__gallery">
         <img
-          v-for="photo in content.photos"
+          v-for="(photo, index) in content.photos"
           :key="photo.id"
           :src="photo.thumbnail || photo.url"
-          alt=""
+          :alt="`Recordação ${index + 1} de ${content.photos.length}`"
           loading="lazy"
         />
       </div>

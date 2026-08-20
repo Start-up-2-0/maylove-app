@@ -77,7 +77,18 @@ export function sanitizeHtml(value?: string | null): string {
 /** Converte texto puro (com quebras de linha) em HTML seguro. */
 export function plainToHtml(value?: string | null): string {
   if (!value) return ''
-  return escapeText(value).replace(/\r?\n/g, '<br>')
+  return renderLegacyMarkdown(escapeText(value)).replace(/\r?\n/g, '<br>')
+}
+
+/**
+ * Conteúdo antigo da timeline aceitava Markdown, enquanto o editor atual salva
+ * HTML. Mantemos somente as marcações inline necessárias para o legado, sempre
+ * depois do escape, para que nenhuma tag fornecida pelo usuário seja executada.
+ */
+function renderLegacyMarkdown(value: string): string {
+  return value
+    .replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>')
+    .replace(/__([^_\n]+)__/g, '<strong>$1</strong>')
 }
 
 /** Retorna HTML pronto para exibição, seja a origem HTML ou texto puro. */

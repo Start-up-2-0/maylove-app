@@ -76,17 +76,57 @@ onMounted(async () => {
 
 <style scoped>
 .public-page {
+  position: relative;
+  isolation: isolate;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background: var(--bg);
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 10% 18%, color-mix(in srgb, var(--primary) 12%, transparent), transparent 28%),
+    radial-gradient(circle at 90% 35%, color-mix(in srgb, #6f9b71 14%, transparent), transparent 30%),
+    linear-gradient(135deg, var(--bg) 0%, var(--primary-softer) 48%, var(--bg) 100%);
 }
+
+.public-page::before,
+.public-page::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  width: clamp(180px, 22vw, 360px);
+  aspect-ratio: 1;
+  border-radius: 52% 48% 64% 36%;
+  background: color-mix(in srgb, #6f9b71 12%, transparent);
+  filter: blur(2px);
+  opacity: .7;
+  transform: rotate(28deg);
+  pointer-events: none;
+}
+.public-page::before { top: 8%; left: -10%; }
+.public-page::after { right: -11%; bottom: 14%; transform: rotate(-34deg); }
 
 .public-bouquet__layout {
   flex: 1;
-  width: min(720px, 100%);
+  width: min(1120px, 100%);
   margin: 0 auto;
   padding: clamp(24px, 4vw, 40px) clamp(16px, 4vw, 24px);
+}
+
+@media (min-width: 960px) {
+  .public-bouquet__layout :deep(.bouquet-preview) {
+    padding: clamp(28px, 4vw, 48px);
+    box-shadow: 0 28px 80px color-mix(in srgb, var(--primary) 14%, transparent);
+  }
+  .public-bouquet__layout :deep(.bouquet-preview__stage) {
+    display: grid;
+    grid-template-columns: minmax(420px, 1fr) minmax(320px, .8fr);
+    align-items: center;
+    gap: clamp(24px, 5vw, 72px);
+  }
+  .public-bouquet__layout :deep(.bouquet-letter) {
+    width: 100%;
+    margin: 0;
+  }
 }
 
 .public-share {

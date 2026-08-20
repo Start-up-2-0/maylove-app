@@ -7,6 +7,15 @@ server {
     gzip on;
     gzip_types text/plain text/css application/json application/javascript text/xml application/xml;
 
+    # O domínio público deve encaminhar /h/* para o serviço Symfony, que injeta
+    # Open Graph no index compilado. Configure MAYLOVE_API_ORIGIN no Railway.
+    location ~ ^/h/[^/]+$ {
+        proxy_pass ${MAYLOVE_API_ORIGIN};
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+
     location / {
         try_files $uri $uri/ /index.html;
     }

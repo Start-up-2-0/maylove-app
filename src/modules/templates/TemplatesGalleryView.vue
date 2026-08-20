@@ -10,6 +10,11 @@
 
     <p v-if="createError" class="tg-error">{{ createError }}</p>
 
+    <label class="tg-search">
+      <span class="sr-only">Buscar modelos</span>
+      <input v-model.trim="search" type="search" placeholder="Buscar por nome, ocasião, efeito ou estilo" />
+    </label>
+
     <div class="tg-filters">
       <button
         v-for="cat in categories"
@@ -23,7 +28,7 @@
       </button>
     </div>
 
-    <div class="tg-grid">
+    <div v-if="filtered.length" class="tg-grid">
       <article v-for="def in filtered" :key="def.slug" class="tg-card">
         <button class="tg-card__banner" :style="bannerStyle(def)" @click="openPreview(def)">
           <span class="tg-card__cat">{{ categoryIcon(def.category) }} {{ categoryLabel(def.category) }}</span>
@@ -49,6 +54,12 @@
           </button>
         </div>
       </article>
+    </div>
+
+    <div v-else class="tg-empty" role="status">
+      <h2>Nenhum modelo encontrado</h2>
+      <p>Tente outro termo ou limpe os filtros.</p>
+      <button type="button" class="ml-btn ml-btn--secondary" @click="clearFilters">Limpar filtros</button>
     </div>
 
     <Teleport to="body">
@@ -88,8 +99,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed, onMounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { listTemplates, listTributeTypes } from '@/api/catalog'
 import { createTribute } from '@/api/tributes'
 import { resolveApiError } from '@/api/errors'
@@ -106,11 +117,13 @@ import { useModalLifecycle } from '@/composables/useModalLifecycle'
 import ExperienceRenderer from '@/components/experience/ExperienceRenderer.vue'
 
 const router = useRouter()
+const route = useRoute()
 
 const definitions = listTemplateDefinitions()
 const catalogTemplates = ref<Template[]>([])
 const types = ref<TributeType[]>([])
-const activeCategory = ref('todos')
+const activeCategory = ref(typeof route.query.categoria === 'string' ? route.query.categoria : 'todos')
+const search = ref(typeof route.query.busca === 'string' ? route.query.busca : '')
 const creatingSlug = ref<string | null>(null)
 const createError = ref('')
 const previewDef = ref<TemplateDefinition | null>(null)
@@ -120,11 +133,34 @@ const categories = computed(() => [
   ...categoriesWithTemplates(definitions),
 ])
 
-const filtered = computed(() =>
-  activeCategory.value === 'todos'
-    ? definitions
-    : definitions.filter((def) => def.category === activeCategory.value),
-)
+const normalize = (value?: string) => (value ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+
+const filtered = computed(() => {
+  const term = normalize(search.value)
+  return definitions.filter((def) => {
+    if (activeCategory.value !== 'todos' && def.category !== activeCategory.value) return false
+    if (!term) return true
+    const haystack = [def.name, def.description, categoryLabel(def.category), layoutLabel(def), ...def.effects]
+      .map(normalize)
+      .join(' ')
+    return haystack.includes(term)
+  })
+})
+
+watch([activeCategory, search], ([category, term]) => {
+  void router.replace({
+    query: {
+      ...route.query,
+      categoria: category === 'todos' ? undefined : category,
+      busca: term || undefined,
+    },
+  })
+})
+
+function clearFilters() {
+  activeCategory.value = 'todos'
+  search.value = ''
+}
 
 const previewTheme = computed(() =>
   previewDef.value ? resolveTheme(previewDef.value) : null,
@@ -224,6 +260,27 @@ onMounted(async () => {
   gap: 8px;
   margin-bottom: 24px;
 }
+.tg-search {
+  display: block;
+  max-width: 560px;
+  margin-bottom: 16px;
+}
+.tg-search input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+}
+.tg-empty {
+  padding: 44px 24px;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-lg);
+  text-align: center;
+}
+.tg-empty p { margin: 8px 0 18px; color: var(--muted); }
 
 .tg-grid {
   display: grid;
@@ -406,6 +463,18 @@ onMounted(async () => {
 }
 
 @media (max-width: 560px) {
+  .tg-filters {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    margin-inline: -16px;
+    padding: 0 16px 8px;
+    scrollbar-width: thin;
+    scroll-snap-type: x proximity;
+  }
+  .tg-filters .ml-chip {
+    flex: 0 0 auto;
+    scroll-snap-align: start;
+  }
   .tg-modal__bar-actions .ml-btn {
     display: none;
   }

@@ -28,6 +28,7 @@ RUN chmod +x /docker-entrypoint.sh
 COPY --from=build /app/dist /usr/share/nginx/html
 
 ENV PORT=8080
+ENV MAYLOVE_API_ORIGIN=http://maylove-api.railway.internal:8080
 EXPOSE 8080
 
 ENTRYPOINT ["/docker-entrypoint.sh"]

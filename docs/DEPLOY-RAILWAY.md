@@ -30,6 +30,9 @@ Configure em cada environment do serviço **maylove-app**:
 | `VITE_AUTH_TOKEN_HEADER` | `x-maylove-token` |
 | `VITE_STORAGE_UPLOAD_URL` | `https://storage-staging.seudominio.com/api/v1` |
 | `VITE_BILLING_ENABLED` | `false` em teste; `true` quando checkout estiver ativo |
+| `MAYLOVE_API_ORIGIN` | URL interna do Symfony, por exemplo `http://maylove-api.railway.internal:8080` |
+
+`MAYLOVE_API_ORIGIN` é usada em runtime pelo nginx para encaminhar `/h/{slug}` ao Symfony. Essa rota injeta os metadados Open Graph no `index.html` compilado antes de entregá-lo ao navegador ou crawler.
 
 ## Build local
 

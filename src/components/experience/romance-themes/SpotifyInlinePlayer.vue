@@ -11,6 +11,7 @@
         class="spotify-player__heart"
         :class="{ 'spotify-player__heart--active': liked }"
         aria-label="Curtir"
+        :aria-pressed="liked"
         @click="liked = !liked"
       >
         {{ liked ? '♥' : '♡' }}
@@ -31,11 +32,11 @@
     </div>
 
     <div class="spotify-player__controls">
-      <button type="button" class="spotify-player__ctrl spotify-player__ctrl--ghost" aria-hidden="true" tabindex="-1">
+      <span class="spotify-player__ctrl spotify-player__ctrl--ghost" aria-hidden="true">
         <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true">
           <path d="M10.59 9.17 5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z" />
         </svg>
-      </button>
+      </span>
       <button
         type="button"
         class="spotify-player__ctrl"
@@ -69,11 +70,11 @@
           <path d="M6 18h2V6H6v12zm3.5-6 8.5 6V6l-8.5 6z" />
         </svg>
       </button>
-      <button type="button" class="spotify-player__ctrl spotify-player__ctrl--ghost" aria-hidden="true" tabindex="-1">
+      <span class="spotify-player__ctrl spotify-player__ctrl--ghost" aria-hidden="true">
         <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true">
           <path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z" />
         </svg>
-      </button>
+      </span>
     </div>
   </section>
 </template>

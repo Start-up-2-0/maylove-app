@@ -8,7 +8,11 @@
           Marque no mapa os lugares da história de vocês — cada pin vira uma mini homenagem para reviver juntos.
         </p>
       </div>
-      <RouterLink to="/dashboard/maps/new" class="ml-btn ml-btn--primary ml-btn--lg">
+      <RouterLink
+        v-if="loading || error || rawMaps.length > 0"
+        to="/dashboard/maps/new"
+        class="ml-btn ml-btn--primary ml-btn--lg"
+      >
         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M12 5v14M5 12h14" stroke-linecap="round" />
         </svg>
@@ -17,6 +21,8 @@
     </header>
 
     <div v-if="!loading && !error && rawMaps.length" class="dash-filters">
+      <label class="dash-search"><span class="sr-only">Buscar mapas</span><input v-model.trim="search" type="search" placeholder="Buscar por título ou casal" /></label>
+      <label class="dash-sort"><span>Ordenar</span><select v-model="sortBy"><option value="created_desc">Mais recentes</option><option value="created_asc">Mais antigos</option><option value="views_desc">Mais visualizados</option><option value="title_asc">Título (A–Z)</option></select></label>
       <button
         v-for="option in filterOptions"
         :key="option.value"
@@ -51,6 +57,15 @@
       <RouterLink to="/dashboard/maps/new" class="ml-btn ml-btn--primary ml-btn--lg">
         Começar agora
       </RouterLink>
+    </div>
+
+    <div v-else-if="filteredMaps.length === 0" class="ml-card empty">
+      <span class="empty__glyph" aria-hidden="true">🔎</span>
+      <h2>Nenhum mapa neste filtro</h2>
+      <p class="text-muted">Tente outro termo ou ajuste o status.</p>
+      <button type="button" class="ml-btn ml-btn--secondary" @click="clearFilters">
+        Limpar filtros
+      </button>
     </div>
 
     <section v-else class="map-grid">
@@ -134,16 +149,20 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
-import { RouterLink } from 'vue-router'
+import { computed, onMounted, ref, watch } from 'vue'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { deleteMap, listMaps } from '@/api/maps'
 import type { CoupleMapStatus, CoupleMapSummary } from '@/api/types'
 import { useModalLifecycle } from '@/composables/useModalLifecycle'
 
 const rawMaps = ref<CoupleMapSummary[]>([])
+const route = useRoute()
+const router = useRouter()
 const loading = ref(true)
 const error = ref('')
-const activeFilter = ref<'all' | 'draft' | 'published'>('all')
+const activeFilter = ref<'all' | 'draft' | 'published'>(route.query.status === 'draft' || route.query.status === 'published' ? route.query.status : 'all')
+const search = ref(typeof route.query.q === 'string' ? route.query.q : '')
+const sortBy = ref(typeof route.query.sort === 'string' ? route.query.sort : 'created_desc')
 const copiedId = ref<string | null>(null)
 const deleteTarget = ref<CoupleMapSummary | null>(null)
 const deletingId = ref<string | null>(null)
@@ -156,12 +175,17 @@ const filterOptions = [
 ]
 
 const filteredMaps = computed(() => {
-  if (activeFilter.value === 'all') return rawMaps.value
-  if (activeFilter.value === 'published') {
-    return rawMaps.value.filter((m) => m.status === 'published')
-  }
-  return rawMaps.value.filter((m) => m.status !== 'published')
+  const term = search.value.toLocaleLowerCase('pt-BR')
+  const result = rawMaps.value.filter((map) => {
+    const status = activeFilter.value === 'all' || (activeFilter.value === 'published' ? map.status === 'published' : map.status !== 'published')
+    const text = [map.title, map.couple_names, map.slug].some((value) => value?.toLocaleLowerCase('pt-BR').includes(term))
+    return status && (!term || text)
+  })
+  return result.sort((a, b) => sortBy.value === 'created_asc' ? a.created_at.localeCompare(b.created_at) : sortBy.value === 'views_desc' ? b.views_count - a.views_count || b.created_at.localeCompare(a.created_at) : sortBy.value === 'title_asc' ? (a.title || '').localeCompare(b.title || '', 'pt-BR') : b.created_at.localeCompare(a.created_at))
 })
+
+watch([activeFilter, search, sortBy], ([status, q, sort]) => void router.replace({ query: { status: status === 'all' ? undefined : status, q: q || undefined, sort: sort === 'created_desc' ? undefined : sort } }))
+function clearFilters() { activeFilter.value = 'all'; search.value = ''; sortBy.value = 'created_desc' }
 
 function countFor(filter: 'all' | 'draft' | 'published') {
   if (filter === 'all') return rawMaps.value.length
@@ -280,6 +304,10 @@ onMounted(load)
   gap: 8px;
   margin-bottom: 20px;
 }
+.dash-search { flex: 1 1 260px; }
+.dash-search input { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface); color: var(--ink); font: inherit; }
+.dash-sort { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: .82rem; }
+.dash-sort select { padding: 10px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface); color: var(--ink); }
 
 .map-grid {
   display: grid;

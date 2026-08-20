@@ -188,7 +188,7 @@ const countdownPillText = computed(() => {
       : Math.max(0, now.value - target.getTime())
 
   const parts = diffToRelationshipParts(diffMs)
-  return `❤️ ${parts.years} anos • ${parts.months} mês${parts.months === 1 ? '' : 'es'} • ${parts.days} dia${parts.days === 1 ? '' : 's'} • ${parts.hours}h • ${parts.minutes}m • ${parts.seconds}s de puro amor`
+  return `❤️ ${parts.years} anos • ${parts.months} ${parts.months === 1 ? 'mês' : 'meses'} • ${parts.days} dia${parts.days === 1 ? '' : 's'} • ${parts.hours}h • ${parts.minutes}m • ${parts.seconds}s de puro amor`
 })
 
 const relationshipLabel = computed(() => {
@@ -199,8 +199,8 @@ const relationshipLabel = computed(() => {
 
   const diffMs = Math.max(0, now.value - target.getTime())
   const parts = diffToRelationshipParts(diffMs)
-  if (parts.years > 0) return `${parts.years} ano${parts.years === 1 ? '' : 's'}, ${parts.months} mês${parts.months === 1 ? '' : 'es'}`
-  if (parts.months > 0) return `${parts.months} mês${parts.months === 1 ? '' : 'es'}, ${parts.days} dia${parts.days === 1 ? '' : 's'}`
+  if (parts.years > 0) return `${parts.years} ano${parts.years === 1 ? '' : 's'}, ${parts.months} ${parts.months === 1 ? 'mês' : 'meses'}`
+  if (parts.months > 0) return `${parts.months} ${parts.months === 1 ? 'mês' : 'meses'}, ${parts.days} dia${parts.days === 1 ? '' : 's'}`
   return `${parts.days} dia${parts.days === 1 ? '' : 's'}`
 })
 

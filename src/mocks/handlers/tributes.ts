@@ -145,6 +145,13 @@ export const tributeHandlers = [
     const stats: TributeStats = {
       status: tribute.status,
       views_count: tribute.views_count,
+      unique_visitors: tribute.views_count,
+      shares_count: 0,
+      daily_views: Array.from({ length: 90 }, (_, index) => {
+        const date = new Date()
+        date.setDate(date.getDate() - (89 - index))
+        return { date: date.toISOString().slice(0, 10), views: index === 89 ? tribute.views_count : 0 }
+      }),
       first_viewed_at: tribute.published_at,
       last_viewed_at: tribute.published_at ? new Date().toISOString() : null,
       photos_count: photos.length,

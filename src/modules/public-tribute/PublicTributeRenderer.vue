@@ -37,7 +37,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRoute, RouterLink } from 'vue-router'
 import { fetchPublicTribute, recordPublicView } from '@/api/tributes'
 import type { PublicTribute } from '@/api/types'
@@ -50,6 +50,7 @@ const route = useRoute()
 const tribute = ref<PublicTribute | null>(null)
 const loading = ref(true)
 const error = ref('')
+const originalDocumentTitle = typeof document !== 'undefined' ? document.title : 'MayLov'
 
 const definition = computed(() =>
   tribute.value ? getTemplateDefinition(tribute.value.template.slug) : null,
@@ -80,6 +81,7 @@ onMounted(async () => {
   const slug = route.params.slug as string
   try {
     tribute.value = await fetchPublicTribute(slug)
+    updateDocumentMetadata(tribute.value)
     const sessionId = getSessionId()
     await recordPublicView(slug, sessionId)
   } catch {
@@ -88,6 +90,56 @@ onMounted(async () => {
     loading.value = false
   }
 })
+
+onBeforeUnmount(() => {
+  if (typeof document !== 'undefined') document.title = originalDocumentTitle
+})
+
+function updateDocumentMetadata(publicTribute: PublicTribute): void {
+  if (typeof document === 'undefined') return
+
+  const title = publicTribute.title?.trim() || publicTribute.honoree_name?.trim() || 'Homenagem especial'
+  const description = toPlainText(publicTribute.message).slice(0, 160) || 'Uma homenagem especial feita com MayLov.'
+  document.title = `${title} | MayLov`
+  setMeta('name', 'description', description)
+  setMeta('property', 'og:title', title)
+  setMeta('property', 'og:description', description)
+  setMeta('property', 'og:url', window.location.href)
+  setMeta('property', 'og:type', 'website')
+  setMeta('name', 'twitter:card', 'summary_large_image')
+  setMeta('name', 'twitter:title', title)
+  setMeta('name', 'twitter:description', description)
+
+  if (publicTribute.og_image_url) {
+    setMeta('property', 'og:image', publicTribute.og_image_url)
+    setMeta('name', 'twitter:image', publicTribute.og_image_url)
+  }
+
+  let canonical = document.querySelector<HTMLLinkElement>('link[rel="canonical"]')
+  if (!canonical) {
+    canonical = document.createElement('link')
+    canonical.rel = 'canonical'
+    document.head.appendChild(canonical)
+  }
+  canonical.href = window.location.href
+}
+
+function setMeta(attribute: 'name' | 'property', key: string, content: string): void {
+  let element = document.head.querySelector<HTMLMetaElement>(`meta[${attribute}="${key}"]`)
+  if (!element) {
+    element = document.createElement('meta')
+    element.setAttribute(attribute, key)
+    document.head.appendChild(element)
+  }
+  element.content = content
+}
+
+function toPlainText(value?: string | null): string {
+  if (!value) return ''
+  const container = document.createElement('div')
+  container.innerHTML = value
+  return (container.textContent || '').replace(/\s+/g, ' ').trim()
+}
 
 function getSessionId(): string {
   const key = 'maylove_view_session'

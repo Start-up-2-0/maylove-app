@@ -243,6 +243,9 @@ export interface TributeSummary {
 export interface TributeStats {
   status: string
   views_count: number
+  unique_visitors: number
+  shares_count: number
+  daily_views: Array<{ date: string; views: number }>
   first_viewed_at: string | null
   last_viewed_at: string | null
   photos_count: number

@@ -25,8 +25,21 @@
       @go="goToStep"
     />
 
-    <section v-if="loading" class="text-muted py-12 text-center">Carregando...</section>
-    <section v-else-if="error" class="ml-alert ml-alert--danger">{{ error }}</section>
+    <section v-if="loading" class="rom-load-state" aria-live="polite">
+      <span class="ml-spinner" aria-hidden="true" />
+      <p>{{ slowLoading ? 'O carregamento está demorando mais que o esperado.' : 'Carregando sua experiência...' }}</p>
+      <div v-if="slowLoading" class="rom-load-state__actions">
+        <button type="button" class="ml-btn ml-btn--secondary" @click="load">Tentar novamente</button>
+        <RouterLink to="/dashboard" class="ml-btn ml-btn--ghost">Voltar ao painel</RouterLink>
+      </div>
+    </section>
+    <section v-else-if="error" class="ml-alert ml-alert--danger rom-load-error">
+      <p>{{ error }}</p>
+      <div class="rom-load-state__actions">
+        <button type="button" class="ml-btn ml-btn--secondary ml-btn--sm" @click="load">Tentar novamente</button>
+        <RouterLink to="/dashboard" class="ml-btn ml-btn--ghost ml-btn--sm">Voltar ao painel</RouterLink>
+      </div>
+    </section>
 
     <div v-else-if="!isEditable && tribute?.status === 'published'" class="rom-panel rom-published">
       <h2>Experiência publicada</h2>
@@ -223,6 +236,7 @@ const {
   tribute,
   form,
   loading,
+  slowLoading,
   error,
   saving,
   savedAt,
@@ -388,6 +402,21 @@ async function onPublished() {
   previewRefreshToken.value += 1
 }
 </script>
+
+<style scoped>
+.rom-load-state {
+  min-height: 320px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  color: var(--muted);
+  text-align: center;
+}
+.rom-load-state__actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+.rom-load-error { display: flex; flex-direction: column; align-items: flex-start; gap: 14px; }
+</style>
 
 <style scoped>
 .romance-wizard__editor-main {

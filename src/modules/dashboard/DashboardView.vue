@@ -5,14 +5,14 @@
         <p class="eyebrow">Seu espaço</p>
         <h1 class="section-title">Seus romances</h1>
         <p class="text-muted dash-head__sub">
-          Olá, {{ firstName }}. Cada presente digital aqui guarda um pedaço de amor para compartilhar.
+          Olá, {{ firstName }}. Cada romance aqui guarda um pedaço da sua história para compartilhar.
         </p>
       </div>
       <RouterLink to="/dashboard/romances/new" class="ml-btn ml-btn--primary ml-btn--lg">
         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M12 5v14M5 12h14" stroke-linecap="round" />
         </svg>
-        Nova experiência
+        Novo romance
       </RouterLink>
     </header>
 
@@ -29,6 +29,19 @@
 
     <!-- Filtros -->
     <div v-if="!loading && !error && rawTributes.length" class="dash-filters">
+      <label class="dash-search">
+        <span class="sr-only">Buscar romances</span>
+        <input v-model.trim="search" type="search" placeholder="Buscar por título, pessoa ou link" />
+      </label>
+      <label class="dash-sort">
+        <span>Ordenar por</span>
+        <select v-model="sortBy">
+          <option value="created_desc">Mais recentes</option>
+          <option value="created_asc">Mais antigos</option>
+          <option value="views_desc">Mais visualizados</option>
+          <option value="title_asc">Título (A–Z)</option>
+        </select>
+      </label>
       <button
         v-for="option in filterOptions"
         :key="option.value"
@@ -74,6 +87,12 @@
     </div>
 
     <!-- Lista -->
+    <div v-else-if="filteredTributes.length === 0" class="ml-card empty">
+      <h2>Nenhum romance encontrado</h2>
+      <p class="text-muted">Tente outro termo ou ajuste o filtro selecionado.</p>
+      <button type="button" class="ml-btn ml-btn--secondary" @click="clearFilters">Limpar filtros</button>
+    </div>
+
     <section v-else class="grid-cards">
       <article
         v-for="tribute in filteredTributes"
@@ -176,8 +195,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
-import { RouterLink } from 'vue-router'
+import { computed, onMounted, ref, watch } from 'vue'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { deleteTribute, listTributes } from '@/api/tributes'
 import type { TributeSummary } from '@/api/types'
 import { useAuthStore } from '@/stores/auth'
@@ -185,11 +204,16 @@ import { formatTributeMeta } from '@/utils/tributeMeta'
 import { useModalLifecycle } from '@/composables/useModalLifecycle'
 
 const auth = useAuthStore()
+const route = useRoute()
+const router = useRouter()
 
 const rawTributes = ref<TributeSummary[]>([])
 const loading = ref(true)
 const error = ref('')
-const activeFilter = ref<'all' | 'draft' | 'published'>('all')
+const routeStatus = route.query.status
+const activeFilter = ref<'all' | 'draft' | 'published'>(routeStatus === 'draft' || routeStatus === 'published' ? routeStatus : 'all')
+const search = ref(typeof route.query.q === 'string' ? route.query.q : '')
+const sortBy = ref(typeof route.query.sort === 'string' ? route.query.sort : 'created_desc')
 const copiedId = ref<string | null>(null)
 const deleteTarget = ref<TributeSummary | null>(null)
 const deletingId = ref<string | null>(null)
@@ -204,12 +228,31 @@ const filterOptions = [
 ]
 
 const filteredTributes = computed(() => {
-  if (activeFilter.value === 'all') return rawTributes.value
-  if (activeFilter.value === 'published') {
-    return rawTributes.value.filter((t) => t.status === 'published')
-  }
-  return rawTributes.value.filter((t) => t.status !== 'published')
+  const term = search.value.toLocaleLowerCase('pt-BR')
+  const result = rawTributes.value.filter((tribute) => {
+    const matchesStatus = activeFilter.value === 'all'
+      || (activeFilter.value === 'published' ? tribute.status === 'published' : tribute.status !== 'published')
+    const matchesSearch = !term || [tribute.title, tribute.honoree_name, tribute.slug]
+      .some((value) => value?.toLocaleLowerCase('pt-BR').includes(term))
+    return matchesStatus && matchesSearch
+  })
+  return [...result].sort((a, b) => {
+    if (sortBy.value === 'created_asc') return a.created_at.localeCompare(b.created_at)
+    if (sortBy.value === 'views_desc') return b.views_count - a.views_count || b.created_at.localeCompare(a.created_at)
+    if (sortBy.value === 'title_asc') return (a.title || a.honoree_name || '').localeCompare(b.title || b.honoree_name || '', 'pt-BR')
+    return b.created_at.localeCompare(a.created_at)
+  })
 })
+
+watch([activeFilter, search, sortBy], ([status, q, sort]) => {
+  void router.replace({ query: { status: status === 'all' ? undefined : status, q: q || undefined, sort: sort === 'created_desc' ? undefined : sort } })
+})
+
+function clearFilters() {
+  activeFilter.value = 'all'
+  search.value = ''
+  sortBy.value = 'created_desc'
+}
 
 const stats = computed(() => {
   const total = rawTributes.value.length
@@ -402,6 +445,19 @@ async function executeDelete() {
   gap: 10px;
   margin-bottom: 22px;
 }
+.dash-search { flex: 1 1 260px; }
+.dash-search input,
+.dash-sort select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+}
+.dash-sort { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: .84rem; }
+.dash-sort select { width: auto; }
 .ml-chip__count {
   display: inline-grid;
   place-items: center;

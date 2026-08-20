@@ -45,6 +45,11 @@ const router = createRouter({
           component: () => import('@/modules/templates/TemplatesGalleryView.vue'),
         },
         {
+          path: 'ajuda',
+          name: 'help',
+          component: () => import('@/modules/help/HelpView.vue'),
+        },
+        {
           path: 'romances/new',
           name: 'romance-new',
           component: () => import('@/modules/romance-wizard/NewRomanceView.vue'),

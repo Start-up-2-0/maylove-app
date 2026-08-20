@@ -14,7 +14,13 @@
 
       <div class="pslider__frame">
         <transition :name="transitionName" mode="out-in">
-          <img :key="active" :src="photos[active].url" class="pslider__img" alt="" loading="lazy" />
+          <img
+            :key="active"
+            :src="photos[active].url"
+            class="pslider__img"
+            :alt="`Recordação ${active + 1} de ${photos.length}`"
+            loading="lazy"
+          />
         </transition>
       </div>
 

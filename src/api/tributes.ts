@@ -135,6 +135,10 @@ export async function recordPublicView(slug: string, sessionId: string): Promise
   await apiClient.post(`/public/tributes/${slug}/view`, { session_id: sessionId })
 }
 
+export async function recordPublicShare(slug: string, sessionId: string): Promise<void> {
+  await apiClient.post(`/public/tributes/${slug}/share`, { session_id: sessionId })
+}
+
 export async function fetchSubscription(): Promise<SubscriptionInfo> {
   const response = await apiClient.get<ApiEnvelope<SubscriptionInfo>>('/billing/subscription')
   return unwrap(response)

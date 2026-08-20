@@ -7,7 +7,13 @@
         <li v-for="(item, index) in items" :key="index" v-reveal="index * 80" class="timeline__item">
           <span class="timeline__marker" />
           <div class="timeline__card">
-            <img v-if="item.photoUrl" :src="item.photoUrl" alt="" class="timeline__photo" loading="lazy" />
+            <img
+              v-if="item.photoUrl"
+              :src="item.photoUrl"
+              :alt="item.title ? `Foto de ${item.title}` : `Recordação ${index + 1}`"
+              class="timeline__photo"
+              loading="lazy"
+            />
             <div class="timeline__body">
               <div v-if="item.date || item.location || emotionFor(item)" class="timeline__meta">
                 <span v-if="item.date" class="timeline__date">{{ item.date }}</span>
@@ -18,7 +24,12 @@
                 </span>
               </div>
               <h3 class="timeline__title">{{ item.title }}</h3>
-              <p v-if="item.description" class="timeline__desc">{{ item.description }}</p>
+              <RichText
+                v-if="item.description"
+                :text="item.description"
+                tag="div"
+                class="timeline__desc"
+              />
             </div>
           </div>
         </li>
@@ -31,6 +42,7 @@
 import type { ExperienceTimelineItem } from '@/templates/types'
 import { vReveal } from '@/composables/useReveal'
 import { getEmotionDisplay } from '@/utils/timelineEmotions'
+import RichText from './RichText.vue'
 
 withDefaults(
   defineProps<{

@@ -45,7 +45,7 @@ const label = computed(() => {
       : Math.max(0, now.value - target.getTime())
 
   const parts = diffToParts(diffMs)
-  return `❤️ ${parts.years} anos • ${parts.months} mês${parts.months === 1 ? '' : 'es'} • ${parts.days} dia${parts.days === 1 ? '' : 's'} • ${parts.hours}h • ${parts.minutes}m • ${parts.seconds}s de puro amor`
+  return `❤️ ${parts.years} anos • ${parts.months} ${parts.months === 1 ? 'mês' : 'meses'} • ${parts.days} dia${parts.days === 1 ? '' : 's'} • ${parts.hours}h • ${parts.minutes}m • ${parts.seconds}s de puro amor`
 })
 
 function parseDate(date: string, time?: string | null): Date | null {

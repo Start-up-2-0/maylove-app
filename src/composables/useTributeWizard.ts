@@ -43,6 +43,7 @@ const DEFAULT_MODULES: TributeModulesConfig = {
 export function useTributeWizard(tributeId: string) {
   const tribute = ref<TributeDetail | null>(null)
   const loading = ref(true)
+  const slowLoading = ref(false)
   const error = ref('')
 
   const form = reactive({
@@ -209,14 +210,20 @@ export function useTributeWizard(tributeId: string) {
 
   async function load() {
     loading.value = true
+    slowLoading.value = false
     error.value = ''
+    const slowTimer = window.setTimeout(() => {
+      slowLoading.value = true
+    }, 8000)
     try {
       tribute.value = await fetchTribute(tributeId)
       syncFormFromTribute(tribute.value)
     } catch {
       error.value = 'Não foi possível carregar a homenagem.'
     } finally {
+      window.clearTimeout(slowTimer)
       loading.value = false
+      slowLoading.value = false
     }
   }
 
@@ -322,6 +329,7 @@ export function useTributeWizard(tributeId: string) {
     tribute,
     form,
     loading,
+    slowLoading,
     error,
     saving,
     savedAt,

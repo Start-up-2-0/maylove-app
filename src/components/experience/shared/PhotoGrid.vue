@@ -6,7 +6,7 @@
       v-reveal="index * 70"
       class="pgrid__item"
     >
-      <img :src="photo.url" alt="" loading="lazy" />
+      <img :src="photo.url" :alt="`Recordação ${index + 1} de ${photos.length}`" loading="lazy" />
     </figure>
   </div>
 </template>

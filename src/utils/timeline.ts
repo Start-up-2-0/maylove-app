@@ -15,7 +15,12 @@ export function timelineItemHasContent(item: {
 }
 
 export function plainTimelineText(value?: string | null): string {
-  return (value || '').replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim()
+  return (value || '')
+    .replace(/<[^>]*>/g, '')
+    .replace(/\*\*([^*\n]+)\*\*/g, '$1')
+    .replace(/__([^_\n]+)__/g, '$1')
+    .replace(/\s+/g, ' ')
+    .trim()
 }
 
 export function fallbackTimelineTitle(description?: string): string {
