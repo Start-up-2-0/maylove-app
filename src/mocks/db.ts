@@ -13,13 +13,33 @@ import {
   mockTributeTypes,
 } from './fixtures'
 
+const MOCK_DB_STORAGE_KEY = 'maylove_mock_tributes'
+
 /**
- * "Banco" em memoria para manter a navegacao coerente entre create/patch/reorder/delete
- * enquanto os mocks estao ativos. O estado reseta a cada reload da pagina.
+ * "Banco" local dos mocks. A sessionStorage preserva rascunhos em reload,
+ * voltar e avancar sem transformar dados de demonstracao em persistencia real.
  */
 const tributes = new Map<string, TributeDetail>()
 
-for (const tribute of initialTributes()) {
+function loadStoredTributes(): TributeDetail[] | null {
+  if (typeof sessionStorage === 'undefined') return null
+  try {
+    const stored = sessionStorage.getItem(MOCK_DB_STORAGE_KEY)
+    if (!stored) return null
+    const parsed = JSON.parse(stored)
+    return Array.isArray(parsed) ? parsed as TributeDetail[] : null
+  } catch {
+    sessionStorage.removeItem(MOCK_DB_STORAGE_KEY)
+    return null
+  }
+}
+
+function persistTributes(): void {
+  if (typeof sessionStorage === 'undefined') return
+  sessionStorage.setItem(MOCK_DB_STORAGE_KEY, JSON.stringify(Array.from(tributes.values())))
+}
+
+for (const tribute of loadStoredTributes() ?? initialTributes()) {
   tributes.set(tribute.id, tribute)
 }
 
@@ -63,7 +83,9 @@ export const db = {
   },
 
   deleteTribute(id: string): boolean {
-    return tributes.delete(id)
+    const deleted = tributes.delete(id)
+    if (deleted) persistTributes()
+    return deleted
   },
 
   getTributeBySlug(slug: string): TributeDetail | undefined {
@@ -90,6 +112,7 @@ export const db = {
       effects: [],
     })
     tributes.set(id, tribute)
+    persistTributes()
     return tribute
   },
 
@@ -135,6 +158,7 @@ export const db = {
     }
 
     touch(tribute)
+    persistTributes()
     return tribute
   },
 
@@ -144,6 +168,7 @@ export const db = {
     tribute.status = 'published'
     tribute.published_at = new Date().toISOString()
     touch(tribute)
+    persistTributes()
     return tribute
   },
 
@@ -154,6 +179,7 @@ export const db = {
     photo.id = mediaId
     tribute.media.push(photo)
     touch(tribute)
+    persistTributes()
     return photo
   },
 
@@ -178,6 +204,7 @@ export const db = {
     tribute.music.source = 'upload'
     tribute.music.media_id = mediaId
     touch(tribute)
+    persistTributes()
     return audio
   },
 
@@ -190,6 +217,7 @@ export const db = {
       item.sort_order = index
     })
     touch(tribute)
+    persistTributes()
     return tribute.media.length !== before
   },
 
@@ -201,6 +229,7 @@ export const db = {
       item.sort_order = index
     })
     touch(tribute)
+    persistTributes()
     return true
   },
 
@@ -208,6 +237,7 @@ export const db = {
     const tribute = this.getTributeBySlug(slug)
     if (tribute) {
       tribute.views_count += 1
+      persistTributes()
     }
   },
 

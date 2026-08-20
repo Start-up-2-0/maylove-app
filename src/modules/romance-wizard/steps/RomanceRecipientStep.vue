@@ -11,35 +11,48 @@
       <label class="rom-field">
         <span class="rom-field__label">Seu nome</span>
         <input
+          id="romance-sender-name"
           v-model="form.sender_name"
+          name="sender_name"
+          type="text"
           class="rom-field__input"
           maxlength="80"
           placeholder="Ex.: Gustavo"
-          autocomplete="off"
+          autocomplete="name"
+          aria-describedby="romance-sender-name-hint"
         />
-        <span class="rom-field__hint">Opcional · {{ form.sender_name.length }}/80</span>
+        <span id="romance-sender-name-hint" class="rom-field__hint">Opcional · {{ form.sender_name.length }}/80</span>
       </label>
 
       <label class="rom-field">
         <span class="rom-field__label">Nome do(a) parceiro(a) *</span>
         <input
+          id="romance-honoree-name"
           v-model="form.honoree_name"
+          name="honoree_name"
+          type="text"
+          required
           class="rom-field__input"
           maxlength="120"
           placeholder="Ex.: Tay"
           autocomplete="off"
+          aria-describedby="romance-honoree-name-hint"
         />
-        <span class="rom-field__hint">{{ form.honoree_name.length }}/120</span>
+        <span id="romance-honoree-name-hint" class="rom-field__hint">{{ form.honoree_name.length }}/120</span>
       </label>
 
       <label v-if="showRelationshipDate" class="rom-field">
         <span class="rom-field__label">{{ relationshipDateLabel }}</span>
         <input
+          id="romance-relationship-date"
           v-model="relationshipDate"
+          name="relationship_date"
           type="date"
+          :required="!dateOptional"
           class="rom-field__input"
+          :aria-describedby="dateOptional ? 'romance-relationship-date-hint' : undefined"
         />
-        <span v-if="dateOptional" class="rom-field__hint">Opcional — aparece na prévia e na experiência.</span>
+        <span v-if="dateOptional" id="romance-relationship-date-hint" class="rom-field__hint">Opcional — aparece na prévia e na experiência.</span>
       </label>
 
       <RomanceRelationshipCounter
