@@ -52,7 +52,19 @@
       </div>
 
       <div v-if="coverPhoto" class="collection__cover-wrap">
-        <img :src="coverPhoto" :alt="`Capa de ${coupleLabel}`" class="collection__cover" />
+        <img
+          v-if="!failedMedia.has(coverMediaKey)"
+          :src="coverPhoto"
+          :alt="`Capa de ${coupleLabel}`"
+          class="collection__cover"
+          decoding="async"
+          fetchpriority="high"
+          @error="markMediaFailed(coverMediaKey)"
+        />
+        <div v-else class="collection__media-fallback collection__media-fallback--cover" role="img" :aria-label="`Foto de capa de ${coupleLabel} indisponível`">
+          <span aria-hidden="true">♡</span>
+          <small>Memória indisponível</small>
+        </div>
       </div>
     </header>
 
@@ -74,10 +86,17 @@
       <div class="collection__gallery">
         <figure v-for="(photo, index) in content.photos" :key="photo.id">
           <img
+            v-if="!failedMedia.has(mediaKey(photo.id, index))"
             :src="photo.thumbnail || photo.url"
             :alt="`Memória ${index + 1} de ${content.photos.length}`"
             loading="lazy"
+            decoding="async"
+            @error="markMediaFailed(mediaKey(photo.id, index))"
           />
+          <div v-else class="collection__media-fallback" role="img" :aria-label="`Memória ${index + 1} indisponível`">
+            <span aria-hidden="true">♡</span>
+            <small>Memória indisponível</small>
+          </div>
           <figcaption>{{ captionFor(index) }}</figcaption>
         </figure>
       </div>
@@ -108,7 +127,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import RomanceCountdownGrid from './RomanceCountdownGrid.vue'
 import type { ExperienceContent, LayoutConfig, ResolvedTheme, TemplateDefinition } from '@/templates/types'
 import { plainTimelineText } from '@/utils/timeline'
@@ -149,9 +168,19 @@ const VARIANTS = {
 const config = computed(() => VARIANTS[props.variant])
 const coupleLabel = computed(() => [props.content.senderName, props.content.honoreeName].filter(Boolean).join(' & ') || props.content.honoreeName || 'Nossa história')
 const coverPhoto = computed(() => props.content.photos[0]?.url || props.content.photos[0]?.thumbnail || '')
+const coverMediaKey = computed(() => mediaKey(props.content.photos[0]?.id, 0, 'cover'))
 const messageText = computed(() => plainTimelineText(props.content.message))
 const timelineItems = computed(() => props.content.timeline.filter((item) => item.title?.trim()))
 const formattedToday = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date())
+const failedMedia = ref(new Set<string>())
+
+function mediaKey(id: string | undefined, index: number, prefix = 'gallery') {
+  return `${prefix}:${id || index}`
+}
+
+function markMediaFailed(key: string) {
+  failedMedia.value = new Set([...failedMedia.value, key])
+}
 
 function captionFor(index: number) {
   const item = timelineItems.value[index]
@@ -165,12 +194,12 @@ function formatDate(value: string) {
 </script>
 
 <style scoped>
-.collection { --c-accent: #db2777; --c-bg: #fff7fb; --c-card: rgb(255 255 255 / 78%); --c-ink: #3f2433; --c-display: var(--c-ink); min-height: 100%; padding: clamp(24px, 6vw, 72px) clamp(16px, 5vw, 56px); background: var(--c-bg); color: var(--c-ink); font-family: var(--exp-font-body, Georgia, serif); overflow: hidden; }
+.collection { --c-accent: #db2777; --c-bg: #fff7fb; --c-card: rgb(255 255 255 / 78%); --c-ink: #3f2433; --c-display: var(--c-ink); min-height: 100%; padding: clamp(24px, 6cqi, 72px) clamp(16px, 5cqi, 56px); background: var(--c-bg); color: var(--c-ink); font-family: var(--exp-font-body, Georgia, serif); font-size:var(--exp-type-body,1rem); overflow: hidden; }
 .collection * { box-sizing: border-box; min-width: 0; }
 .collection__hero, .collection__final { max-width: 820px; margin: 0 auto; text-align: center; }
 .collection__symbol { display: block; color: var(--c-accent); font-size: 2rem; }
 .collection__eyebrow { margin: 8px 0; color: var(--c-accent); font: 800 .72rem/1.2 system-ui; letter-spacing: .16em; text-transform: uppercase; }
-.collection h1 { max-width: 100%; margin: 10px 0; color: var(--c-display); font: 600 clamp(1.8rem, 10cqi, 5.6rem)/.95 var(--exp-font-display, Georgia, serif); overflow-wrap: anywhere; }
+.collection h1 { max-width: 100%; margin: 10px 0; color: var(--c-display); font: 600 var(--exp-type-display,clamp(1.8rem,10cqi,5.6rem))/.95 var(--exp-font-display, Georgia, serif); overflow-wrap: anywhere; }
 .collection__subtitle { color: color-mix(in srgb, var(--c-display) 78%, transparent); font-style: italic; }
 .collection__cassette { width:min(100%,430px); margin:30px auto 8px; padding:18px 24px 16px; border:3px solid #d7a76d; border-radius:18px; background:linear-gradient(155deg,#f0c58e,#b77d43); color:#3b2415; box-shadow:0 20px 45px rgb(0 0 0 / 32%),inset 0 0 0 2px rgb(255 255 255 / 22%); transform:rotate(-1deg); }
 .collection__cassette-label,.collection__cassette-track { display:block; font:700 .7rem/1.2 'Courier New',monospace; letter-spacing:.14em; text-transform:uppercase; }
@@ -209,15 +238,19 @@ function formatDate(value: string) {
 .collection__fairytale-gate span { animation:collection-star 2.8s ease-in-out infinite alternate; }.collection__fairytale-gate b { font-size:2rem; }
 .collection__cover-wrap { width: min(100%, 620px); margin: 30px auto; padding: 12px; background: var(--c-card); box-shadow: 0 24px 70px rgb(49 20 36 / 18%); transform: rotate(-1deg); }
 .collection__cover { display: block; width: 100%; max-height: 62vh; object-fit: cover; }
-.collection__countdown, .collection__message, .collection__memories, .collection__journey { max-width: 920px; margin: 42px auto; }
+.collection__media-fallback { display:grid; place-items:center; align-content:center; gap:8px; width:100%; aspect-ratio:4/5; padding:20px; background:linear-gradient(145deg,color-mix(in srgb,var(--c-accent) 12%,var(--c-card)),var(--c-card)); color:color-mix(in srgb,var(--c-accent) 72%,var(--c-ink)); text-align:center; }
+.collection__media-fallback span { font:normal clamp(1.8rem,8cqi,3.5rem)/1 Georgia,serif; }.collection__media-fallback small { font:700 var(--exp-type-caption,.75rem)/1.3 system-ui; letter-spacing:.08em; text-transform:uppercase; }
+.collection__media-fallback--cover { min-height:clamp(220px,55cqi,560px); aspect-ratio:auto; }
+.collection__countdown, .collection__message, .collection__memories, .collection__journey { max-width: 920px; margin: var(--exp-space-section,42px) auto; }
 .collection__message { padding: clamp(24px, 6vw, 64px); background: var(--c-card); border: 1px solid color-mix(in srgb, var(--c-accent) 22%, transparent); text-align: center; box-shadow: 0 18px 50px rgb(49 20 36 / 10%); }
 .collection__message > span { color: var(--c-accent); font-size: 2rem; }
 .collection__message p { white-space: pre-wrap; font-size: clamp(1.05rem, 2.5vw, 1.35rem); line-height: 1.8; }
-.collection h2 { margin: 6px 0 22px; font: 600 clamp(1.55rem, 6cqi, 3rem)/1 var(--exp-font-display, Georgia, serif); overflow-wrap: anywhere; }
+.collection h2 { margin: 6px 0 22px; font: 600 var(--exp-type-title,clamp(1.55rem,6cqi,3rem))/1 var(--exp-font-display, Georgia, serif); overflow-wrap: anywhere; }
 .collection__gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(180px, 100%), 1fr)); gap: 18px; }
 .collection__gallery figure { margin: 0; padding: 10px 10px 18px; background: var(--c-card); box-shadow: 0 14px 35px rgb(49 20 36 / 12%); }
 .collection__gallery figure:nth-child(even) { transform: rotate(1.5deg); }
-.collection__gallery img { width: 100%; aspect-ratio: 4/5; object-fit: cover; }
+.collection__gallery img { width: 100%; aspect-ratio: 4/5; object-fit: cover; transition:transform var(--exp-motion-base,420ms) var(--exp-ease-standard,ease); }
+.collection__gallery figure:hover img { transform:scale(1.025); }
 .collection__gallery figcaption { padding-top: 10px; text-align: center; font-style: italic; overflow-wrap: anywhere; }
 .collection__journey ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
 .collection__journey li { display: grid; grid-template-columns: 38px minmax(0, 1fr); gap: 14px; padding: 18px; background: var(--c-card); border-radius: 14px; overflow-wrap: anywhere; }

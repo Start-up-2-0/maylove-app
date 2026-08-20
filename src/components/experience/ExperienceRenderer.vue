@@ -143,6 +143,15 @@ const rootStyle = computed<CSSProperties>(() => {
 
 <style scoped>
 .exp-root {
+  --exp-type-display: clamp(2rem, 8cqi, 5.5rem);
+  --exp-type-title: clamp(1.5rem, 5cqi, 3rem);
+  --exp-type-body: clamp(1rem, 2.2cqi, 1.2rem);
+  --exp-type-caption: clamp(0.72rem, 1.7cqi, 0.88rem);
+  --exp-space-section: clamp(36px, 8cqi, 88px);
+  --exp-motion-fast: 180ms;
+  --exp-motion-base: 420ms;
+  --exp-motion-slow: 800ms;
+  --exp-ease-standard: cubic-bezier(0.22, 1, 0.36, 1);
   position: relative;
   min-height: 100%;
   isolation: isolate;
@@ -204,5 +213,12 @@ const rootStyle = computed<CSSProperties>(() => {
   z-index: 60;
   display: flex;
   gap: 10px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .exp-root {
+    --exp-motion-fast: 1ms;
+    --exp-motion-base: 1ms;
+    --exp-motion-slow: 1ms;
+  }
 }
 </style>
