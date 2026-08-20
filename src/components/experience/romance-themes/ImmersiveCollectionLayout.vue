@@ -26,6 +26,31 @@
         <span>para guardar</span>
       </div>
 
+      <div v-else-if="variant === 'book'" class="collection__book-cover" aria-hidden="true">
+        <span>Volume I</span>
+        <i>❦</i>
+        <b>{{ coupleLabel }}</b>
+        <small>Uma edição MayLov</small>
+      </div>
+
+      <div v-else-if="variant === 'bouquet'" class="collection__bouquet-art" aria-hidden="true">
+        <i v-for="flower in 7" :key="flower">✿</i>
+        <span></span>
+      </div>
+
+      <div v-else-if="variant === 'treasure'" class="collection__compass" aria-hidden="true">
+        <span>N</span><span>L</span><i>◆</i><span>S</span><span>O</span>
+      </div>
+
+      <div v-else-if="variant === 'diary'" class="collection__diary-tab" aria-hidden="true">
+        <span>{{ formattedToday }}</span>
+        <b>confidencial</b>
+      </div>
+
+      <div v-else-if="variant === 'fairytale'" class="collection__fairytale-gate" aria-hidden="true">
+        <span>✦</span><i></i><b>✧</b><i></i><span>✦</span>
+      </div>
+
       <div v-if="coverPhoto" class="collection__cover-wrap">
         <img :src="coverPhoto" :alt="`Capa de ${coupleLabel}`" class="collection__cover" />
       </div>
@@ -126,6 +151,7 @@ const coupleLabel = computed(() => [props.content.senderName, props.content.hono
 const coverPhoto = computed(() => props.content.photos[0]?.url || props.content.photos[0]?.thumbnail || '')
 const messageText = computed(() => plainTimelineText(props.content.message))
 const timelineItems = computed(() => props.content.timeline.filter((item) => item.title?.trim()))
+const formattedToday = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date())
 
 function captionFor(index: number) {
   const item = timelineItems.value[index]
@@ -157,6 +183,30 @@ function formatDate(value: string) {
 .collection__series-meta span:last-child { color:#d1d5db; }
 .collection__polaroid-note { display:flex; justify-content:center; align-items:center; gap:12px; margin:20px auto 4px; color:#57534e; font:600 .76rem/1.2 'Courier New',monospace; letter-spacing:.08em; transform:rotate(-1deg); }
 .collection__polaroid-note i { color:#be123c; font:normal 1.1rem/1 Georgia,serif; }
+.collection__book-cover { width:min(82%,390px); min-height:250px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; margin:28px auto 8px; padding:34px 30px; border:1px solid #d8bd72; outline:4px double #9d772d; outline-offset:-16px; border-radius:3px 14px 14px 3px; background:linear-gradient(90deg,#10291e 0 18px,#234c39 19px 24px,#183628 25px); color:#fff7df; box-shadow:14px 18px 0 #0d2118,0 30px 60px rgb(0 0 0 / 30%); }
+.collection__book-cover span,.collection__book-cover small { font:700 .68rem/1.2 system-ui; letter-spacing:.18em; text-transform:uppercase; }
+.collection__book-cover i { color:#e7bc62; font:normal 2.2rem/1 Georgia,serif; }
+.collection__book-cover b { font:600 clamp(1.4rem,6cqi,2.4rem)/1.1 var(--exp-font-display,Georgia,serif); overflow-wrap:anywhere; }
+.collection__bouquet-art { position:relative; width:220px; height:180px; margin:22px auto 0; }
+.collection__bouquet-art i { position:absolute; left:50%; top:48%; color:#e11d74; font:normal 3.2rem/1 Georgia,serif; filter:drop-shadow(0 8px 12px rgb(190 24 93 / 20%)); transform-origin:50% 120px; }
+.collection__bouquet-art i:nth-child(1) { transform:translate(-50%,-50%) rotate(-45deg) translateY(-48px); color:#fb7185; }
+.collection__bouquet-art i:nth-child(2) { transform:translate(-50%,-50%) rotate(-30deg) translateY(-56px); color:#f9a8d4; }
+.collection__bouquet-art i:nth-child(3) { transform:translate(-50%,-50%) rotate(-15deg) translateY(-62px); color:#e11d74; }
+.collection__bouquet-art i:nth-child(4) { transform:translate(-50%,-50%) translateY(-66px); color:#fda4af; }
+.collection__bouquet-art i:nth-child(5) { transform:translate(-50%,-50%) rotate(15deg) translateY(-62px); color:#be185d; }
+.collection__bouquet-art i:nth-child(6) { transform:translate(-50%,-50%) rotate(30deg) translateY(-56px); color:#f472b6; }
+.collection__bouquet-art i:nth-child(7) { transform:translate(-50%,-50%) rotate(45deg) translateY(-48px); color:#fb7185; }
+.collection__bouquet-art span { position:absolute; left:50%; bottom:8px; width:70px; height:72px; border-radius:8px 8px 50% 50%; background:linear-gradient(145deg,#f8cddd,#d96b94); clip-path:polygon(0 0,100% 0,72% 100%,28% 100%); transform:translateX(-50%); }
+.collection__compass { position:relative; display:grid; grid-template-columns:repeat(3,1fr); grid-template-rows:repeat(3,1fr); place-items:center; width:170px; aspect-ratio:1; margin:26px auto 8px; border:2px solid #79521d; border-radius:50%; background:radial-gradient(circle,#f8e7b9 0 34%,#d8b76c 35% 38%,#f2d99c 39%); color:#533713; box-shadow:0 18px 38px rgb(91 62 22 / 24%); transform:rotate(-4deg); }
+.collection__compass::before,.collection__compass::after { content:''; position:absolute; background:#9a6700; }
+.collection__compass::before { width:2px; height:82%; }
+.collection__compass::after { width:82%; height:2px; }
+.collection__compass span:nth-child(1) { grid-column:2; grid-row:1; }.collection__compass span:nth-child(2) { grid-column:3; grid-row:2; }.collection__compass i { z-index:1; grid-column:2; grid-row:2; color:#9a1e1e; font-size:2.2rem; transform:rotate(45deg); }.collection__compass span:nth-child(4) { grid-column:2; grid-row:3; }.collection__compass span:nth-child(5) { grid-column:1; grid-row:2; }
+.collection__diary-tab { display:flex; justify-content:space-between; align-items:center; width:min(100%,560px); margin:24px auto 4px; padding:10px 16px 10px 54px; border-bottom:2px solid #a78bfa; background:linear-gradient(90deg,#fda4af 0 38px,transparent 39px); color:#5b477a; font:700 .7rem/1.2 'Courier New',monospace; letter-spacing:.1em; text-transform:uppercase; transform:rotate(-.7deg); }
+.collection__diary-tab b { padding:5px 8px; border:1px solid #7c3aed; transform:rotate(2deg); }
+.collection__fairytale-gate { display:flex; align-items:center; justify-content:center; gap:10px; width:min(100%,430px); margin:28px auto 4px; color:#ffd978; }
+.collection__fairytale-gate i { width:90px; height:55px; border-top:2px solid currentColor; border-radius:50% 50% 0 0; box-shadow:0 -12px 28px rgb(255 217 120 / 16%); }
+.collection__fairytale-gate span { animation:collection-star 2.8s ease-in-out infinite alternate; }.collection__fairytale-gate b { font-size:2rem; }
 .collection__cover-wrap { width: min(100%, 620px); margin: 30px auto; padding: 12px; background: var(--c-card); box-shadow: 0 24px 70px rgb(49 20 36 / 18%); transform: rotate(-1deg); }
 .collection__cover { display: block; width: 100%; max-height: 62vh; object-fit: cover; }
 .collection__countdown, .collection__message, .collection__memories, .collection__journey { max-width: 920px; margin: 42px auto; }
@@ -193,10 +243,26 @@ function formatDate(value: string) {
 .collection[data-variant='polaroid'] .collection__gallery figure:nth-child(3n) { transform:rotate(-1deg); }
 .collection[data-variant='book'] { --c-accent:#e7bc62; --c-bg:#183628; --c-card:#f5eedc; --c-ink:#f8edcf; --c-display:#fff7df; }
 .collection[data-variant='book'] .collection__message, .collection[data-variant='book'] .collection__memories, .collection[data-variant='book'] .collection__journey { color:#2f2619; }
+.collection[data-variant='book'] .collection__message { border-radius:2px; box-shadow:8px 10px 0 #d8ccb0; text-align:left; }
+.collection[data-variant='book'] .collection__gallery { grid-template-columns:repeat(auto-fit,minmax(min(230px,100%),1fr)); }
+.collection[data-variant='book'] .collection__gallery figure { border:1px solid #ded2b8; box-shadow:6px 8px 0 #d8ccb0; transform:none; }
+.collection[data-variant='book'] .collection__journey li { border-radius:0; border-left:4px double #b68a3a; }
 .collection[data-variant='bouquet'] { --c-accent:#e11d74; --c-bg:radial-gradient(circle at top,#fff,#ffe4ef); --c-card:rgb(255 255 255 / 82%); --c-ink:#5b213d; }
+.collection[data-variant='bouquet'] .collection__message { border-radius:48% 52% 44% 56% / 12% 14% 10% 13%; }
+.collection[data-variant='bouquet'] .collection__gallery figure { border-radius:50% 50% 8px 8px; overflow:hidden; transform:none; }
+.collection[data-variant='bouquet'] .collection__gallery img { border-radius:50% 50% 3px 3px; }
 .collection[data-variant='treasure'] { --c-accent:#9a6700; --c-bg:#ead39b; --c-card:#f5e5b8; --c-ink:#4b3215; background-image:repeating-linear-gradient(12deg,transparent 0 30px,rgb(91 62 22 / 5%) 31px); }
+.collection[data-variant='treasure'] .collection__message,.collection[data-variant='treasure'] .collection__journey li { border:1px dashed #8a642b; border-radius:2px; box-shadow:4px 6px 0 rgb(91 62 22 / 12%); }
+.collection[data-variant='treasure'] .collection__journey ol { position:relative; }.collection[data-variant='treasure'] .collection__journey ol::before { content:''; position:absolute; left:18px; top:20px; bottom:20px; border-left:2px dashed #9a6700; }
 .collection[data-variant='diary'] { --c-accent:#7c3aed; --c-bg:repeating-linear-gradient(#faf5ff 0 31px,#ddd6fe 32px); --c-card:rgb(255 255 255 / 88%); --c-ink:#3b2558; }
+.collection[data-variant='diary'] .collection__message { position:relative; padding-left:clamp(44px,8vw,76px); border:0; border-left:2px solid #fda4af; box-shadow:none; text-align:left; transform:rotate(-.4deg); }
+.collection[data-variant='diary'] .collection__gallery figure { box-shadow:3px 4px 0 rgb(91 71 122 / 14%); }
+.collection[data-variant='diary'] .collection__journey li { border-radius:0; border-bottom:1px solid #c4b5fd; background:rgb(255 255 255 / 68%); }
 .collection[data-variant='fairytale'] { --c-accent:#ffd978; --c-bg:radial-gradient(circle at top,#31347c,#11132f 70%); --c-card:rgb(255 255 255 / 12%); --c-ink:#f8f8ff; --c-display:#fff; }
+.collection[data-variant='fairytale'] .collection__cover-wrap { border:1px solid #ffd978; border-radius:50% 50% 8px 8px; overflow:hidden; box-shadow:0 0 60px rgb(255 217 120 / 20%); transform:none; }
+.collection[data-variant='fairytale'] .collection__gallery figure { border:1px solid rgb(255 217 120 / 32%); border-radius:120px 120px 8px 8px; overflow:hidden; transform:none; }
+.collection[data-variant='fairytale'] .collection__gallery img { border-radius:110px 110px 0 0; }
+.collection[data-variant='fairytale'] .collection__journey li { border:1px solid rgb(255 217 120 / 24%); }
 .collection[data-variant='series'] { --c-accent:#ff3340; --c-bg:#080808; --c-card:#181818; --c-ink:#f5f5f5; --c-display:#fff; font-family:Inter,system-ui,sans-serif; }
 .collection[data-variant='series'] h1 { text-transform:uppercase; letter-spacing:-.04em; }
 .collection[data-variant='series'] .collection__hero { position:relative; max-width:1100px; min-height:min(76vh,720px); display:flex; flex-direction:column; justify-content:flex-end; padding:clamp(140px,28vh,300px) clamp(12px,5vw,64px) 44px; text-align:left; }
@@ -211,11 +277,12 @@ function formatDate(value: string) {
 .collection[data-variant='series'] .collection__gallery img { aspect-ratio:16/9; }
 .collection[data-variant='series'] .collection__gallery figcaption { padding:12px; text-align:left; font-style:normal; }
 @keyframes collection-reel { to { transform:rotate(1turn); } }
+@keyframes collection-star { to { opacity:.42; transform:translateY(-4px) scale(.8); } }
 @container (max-width: 420px) {
   .collection { width: 100%; max-width: 100%; padding: 24px 14px; }
   .collection__message { padding: 24px 18px; }
   .collection__gallery figure { transform: none; }
 }
 @media (max-width:600px) { .collection { padding-inline:14px; } .collection__message { padding:24px 18px; } .collection__gallery { grid-template-columns:repeat(2,minmax(0,1fr)); } }
-@media (prefers-reduced-motion:reduce) { .collection__cassette-window i { animation:none; } }
+@media (prefers-reduced-motion:reduce) { .collection__cassette-window i,.collection__fairytale-gate span { animation:none; } }
 </style>
