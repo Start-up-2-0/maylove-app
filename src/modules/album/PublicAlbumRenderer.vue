@@ -17,12 +17,27 @@
     </section>
 
     <template v-else-if="album && bookModel">
+      <button v-if="slideshowPhotos.length" class="slideshow-launch" type="button" @click="openSlideshow" aria-label="Iniciar apresentação de fotos">▶ Apresentação</button>
       <BookRenderer
         :book="bookModel"
         mode="full"
         :share-url="shareUrl"
         :album-slug="album.slug"
       />
+
+      <div v-if="slideshowOpen" class="slideshow" role="dialog" aria-modal="true" aria-label="Apresentação de fotos" @keydown.esc="closeSlideshow" @keydown.left="previousSlide" @keydown.right="nextSlide">
+        <button class="slideshow__close" type="button" aria-label="Fechar apresentação" @click="closeSlideshow">×</button>
+        <button class="slideshow__nav slideshow__nav--prev" type="button" aria-label="Foto anterior" @click="previousSlide">‹</button>
+        <figure class="slideshow__figure">
+          <img :src="slideshowPhotos[slideIndex]!.url" :alt="slideshowPhotos[slideIndex]!.title || `Foto ${slideIndex + 1}`" />
+          <figcaption v-if="slideshowPhotos[slideIndex]!.title || slideshowPhotos[slideIndex]!.caption">
+            <strong>{{ slideshowPhotos[slideIndex]!.title }}</strong>
+            <span>{{ slideshowPhotos[slideIndex]!.caption }}</span>
+          </figcaption>
+        </figure>
+        <button class="slideshow__nav slideshow__nav--next" type="button" aria-label="Próxima foto" @click="nextSlide">›</button>
+        <button class="slideshow__play" type="button" :aria-pressed="playing" @click="togglePlayback">{{ playing ? 'Pausar' : 'Reproduzir' }} · {{ slideIndex + 1 }}/{{ slideshowPhotos.length }}</button>
+      </div>
 
       <MusicPlayerFloat
         v-if="album.music?.url"
@@ -45,7 +60,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRoute, RouterLink } from 'vue-router'
 import { fetchPublicAlbum, recordPublicAlbumView } from '@/api/albums'
 import type { PublicAlbum } from '@/api/types'
@@ -59,6 +74,10 @@ const route = useRoute()
 const album = ref<PublicAlbum | null>(null)
 const loading = ref(true)
 const error = ref('')
+const slideshowOpen = ref(false)
+const slideIndex = ref(0)
+const playing = ref(false)
+let slideTimer: number | null = null
 
 const bookModel = computed(() => {
   if (!album.value) return null
@@ -76,6 +95,40 @@ const isMemorial = computed(() => {
     (album.value.content_json as { presentation?: string } | undefined)?.presentation
   return isMemorialPresentation(presentation) || album.value.category === 'memorial'
 })
+
+const slideshowPhotos = computed(() =>
+  (album.value?.photos ?? []).filter((photo): photo is typeof photo & { url: string } => Boolean(photo.url)),
+)
+
+function openSlideshow() {
+  slideIndex.value = 0
+  slideshowOpen.value = true
+  document.body.style.overflow = 'hidden'
+  nextTick(() => document.querySelector<HTMLElement>('.slideshow__close')?.focus())
+}
+
+function closeSlideshow() {
+  slideshowOpen.value = false
+  playing.value = false
+  stopTimer()
+  document.body.style.overflow = ''
+}
+
+function nextSlide() { slideIndex.value = (slideIndex.value + 1) % slideshowPhotos.value.length }
+function previousSlide() { slideIndex.value = (slideIndex.value - 1 + slideshowPhotos.value.length) % slideshowPhotos.value.length }
+function togglePlayback() {
+  playing.value = !playing.value
+  if (playing.value) startTimer()
+  else stopTimer()
+}
+function startTimer() {
+  stopTimer()
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+  slideTimer = window.setInterval(nextSlide, 4500)
+}
+function stopTimer() { if (slideTimer !== null) window.clearInterval(slideTimer); slideTimer = null }
+
+onBeforeUnmount(() => { stopTimer(); document.body.style.overflow = '' })
 
 onMounted(async () => {
   const slug = route.params.slug as string
@@ -123,6 +176,36 @@ function getSessionId(): string {
 
 .public-page--memorial .public-foot__cta {
   color: #c9a86a;
+}
+
+.slideshow-launch {
+  position: fixed;
+  z-index: 20;
+  right: 18px;
+  top: 18px;
+  border: 1px solid rgba(255,255,255,.35);
+  border-radius: 999px;
+  padding: 10px 16px;
+  color: #fff;
+  background: rgba(20,17,15,.78);
+  backdrop-filter: blur(10px);
+  cursor: pointer;
+}
+
+.slideshow { position: fixed; inset: 0; z-index: 1000; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; background: rgba(8,7,7,.96); color: #fff; }
+.slideshow__figure { margin: 0; min-width: 0; display: grid; justify-items: center; gap: 14px; }
+.slideshow__figure img { max-width: 100%; max-height: 82vh; object-fit: contain; border-radius: 4px; }
+.slideshow__figure figcaption { display: grid; gap: 3px; max-width: 720px; text-align: center; }
+.slideshow__figure figcaption span { color: #c9c3bd; }
+.slideshow__close, .slideshow__nav, .slideshow__play { border: 0; color: #fff; background: rgba(255,255,255,.1); cursor: pointer; }
+.slideshow__close { position: absolute; right: 18px; top: 18px; width: 44px; height: 44px; border-radius: 50%; font-size: 1.8rem; }
+.slideshow__nav { margin: 12px; width: 48px; height: 64px; border-radius: 12px; font-size: 2.5rem; }
+.slideshow__play { position: absolute; bottom: 18px; left: 50%; transform: translateX(-50%); padding: 10px 16px; border-radius: 999px; }
+
+@media (max-width: 600px) {
+  .slideshow { grid-template-columns: 44px minmax(0, 1fr) 44px; }
+  .slideshow__nav { width: 40px; margin: 2px; background: transparent; }
+  .slideshow__figure img { max-height: 72vh; }
 }
 
 .public-state {

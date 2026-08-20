@@ -24,6 +24,12 @@
           <li v-for="issue in validation.errors" :key="issue.field + issue.code">{{ issue.message }}</li>
         </ul>
       </div>
+      <div v-if="validation?.warnings.length" class="ml-alert ml-alert--warning">
+        <strong>Sugestões antes de publicar:</strong>
+        <ul class="issue-list">
+          <li v-for="issue in validation.warnings" :key="issue.field + issue.code">{{ issue.message }}</li>
+        </ul>
+      </div>
     </section>
 
     <div v-if="album?.status === 'published'" class="ml-card published-card">
@@ -37,9 +43,8 @@
       </div>
       <a :href="publicUrl" target="_blank" class="ml-btn ml-btn--secondary">Abrir página</a>
       <AlbumQrCard
-        v-if="isMemorial"
         :album-id="albumId"
-        variant="memorial"
+        :variant="isMemorial ? 'memorial' : 'default'"
         :headline="memorialHeadline"
         :subtitle="album?.subtitle"
       />
