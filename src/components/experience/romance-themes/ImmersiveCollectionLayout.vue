@@ -119,6 +119,7 @@ function formatDate(value: string) {
 
 <style scoped>
 .collection { --c-accent: #db2777; --c-bg: #fff7fb; --c-card: rgb(255 255 255 / 78%); --c-ink: #3f2433; min-height: 100%; padding: clamp(24px, 6vw, 72px) clamp(16px, 5vw, 56px); background: var(--c-bg); color: var(--c-ink); font-family: var(--exp-font-body, Georgia, serif); overflow: hidden; }
+.collection * { box-sizing: border-box; min-width: 0; }
 .collection__hero, .collection__final { max-width: 820px; margin: 0 auto; text-align: center; }
 .collection__symbol { display: block; color: var(--c-accent); font-size: 2rem; }
 .collection__eyebrow { margin: 8px 0; color: var(--c-accent); font: 800 .72rem/1.2 system-ui; letter-spacing: .16em; text-transform: uppercase; }
@@ -130,14 +131,14 @@ function formatDate(value: string) {
 .collection__message { padding: clamp(24px, 6vw, 64px); background: var(--c-card); border: 1px solid color-mix(in srgb, var(--c-accent) 22%, transparent); text-align: center; box-shadow: 0 18px 50px rgb(49 20 36 / 10%); }
 .collection__message > span { color: var(--c-accent); font-size: 2rem; }
 .collection__message p { white-space: pre-wrap; font-size: clamp(1.05rem, 2.5vw, 1.35rem); line-height: 1.8; }
-.collection h2 { margin: 6px 0 22px; font: 600 clamp(1.8rem, 5vw, 3rem)/1 var(--exp-font-display, Georgia, serif); }
+.collection h2 { margin: 6px 0 22px; font: 600 clamp(1.55rem, 5vw, 3rem)/1 var(--exp-font-display, Georgia, serif); overflow-wrap: anywhere; }
 .collection__gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(180px, 100%), 1fr)); gap: 18px; }
 .collection__gallery figure { margin: 0; padding: 10px 10px 18px; background: var(--c-card); box-shadow: 0 14px 35px rgb(49 20 36 / 12%); }
 .collection__gallery figure:nth-child(even) { transform: rotate(1.5deg); }
 .collection__gallery img { width: 100%; aspect-ratio: 4/5; object-fit: cover; }
-.collection__gallery figcaption { padding-top: 10px; text-align: center; font-style: italic; }
+.collection__gallery figcaption { padding-top: 10px; text-align: center; font-style: italic; overflow-wrap: anywhere; }
 .collection__journey ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
-.collection__journey li { display: grid; grid-template-columns: 42px 1fr; gap: 14px; padding: 18px; background: var(--c-card); border-radius: 14px; }
+.collection__journey li { display: grid; grid-template-columns: 38px minmax(0, 1fr); gap: 14px; padding: 18px; background: var(--c-card); border-radius: 14px; overflow-wrap: anywhere; }
 .collection__journey li > span { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; background: var(--c-accent); color: white; font-weight: 800; }
 .collection__journey h3, .collection__journey p { margin: 3px 0; }
 .collection__journey small, .collection__journey em { opacity: .66; }
@@ -155,5 +156,10 @@ function formatDate(value: string) {
 .collection[data-variant='fairytale'] { --c-accent:#f6c453; --c-bg:radial-gradient(circle at top,#31347c,#11132f 70%); --c-card:rgb(255 255 255 / 10%); --c-ink:#fff; }
 .collection[data-variant='series'] { --c-accent:#e50914; --c-bg:#080808; --c-card:#181818; --c-ink:#fff; font-family:Inter,system-ui,sans-serif; }
 .collection[data-variant='series'] h1 { text-transform:uppercase; letter-spacing:-.04em; }
+@container (max-width: 420px) {
+  .collection { width: 100%; max-width: 100%; padding: 24px 14px; }
+  .collection__message { padding: 24px 18px; }
+  .collection__gallery figure { transform: none; }
+}
 @media (max-width:600px) { .collection { padding-inline:14px; } .collection__message { padding:24px 18px; } .collection__gallery { grid-template-columns:repeat(2,minmax(0,1fr)); } }
 </style>

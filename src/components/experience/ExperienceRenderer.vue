@@ -195,6 +195,7 @@ const rootStyle = computed<CSSProperties>(() => {
 .exp-shell {
   position: relative;
   z-index: 2;
+  container-type: inline-size;
 }
 .exp-controls {
   position: fixed;
