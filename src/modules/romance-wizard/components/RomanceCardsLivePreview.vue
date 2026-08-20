@@ -68,6 +68,7 @@ import { romanceDisplayTitle } from '@/modules/romance-wizard/romanceCopy'
 import type { RomanceExperienceId, RomanceExperienceStepId } from '@/modules/romance-wizard/romanceExperiences'
 import { getRomanceExperience } from '@/modules/romance-wizard/romanceExperiences'
 import { resolveRomanceTheme } from '@/modules/romance-wizard/romanceThemes'
+import { resolveSpecialDateCounterState } from '@/utils/specialDate'
 
 const props = withDefaults(
   defineProps<{
@@ -182,13 +183,15 @@ const countdownPillText = computed(() => {
   const target = parseDate(cfg.date, cfg.time)
   if (!target) return '❤️ Data especial'
 
-  const diffMs =
-    cfg.counter_mode === 'countdown'
-      ? Math.max(0, target.getTime() - now.value)
-      : Math.max(0, now.value - target.getTime())
+  const state = resolveSpecialDateCounterState(
+    target.getTime(),
+    cfg.counter_mode ?? 'since',
+    now.value,
+  )
 
-  const parts = diffToRelationshipParts(diffMs)
-  return `❤️ ${parts.years} anos • ${parts.months} ${parts.months === 1 ? 'mês' : 'meses'} • ${parts.days} dia${parts.days === 1 ? '' : 's'} • ${parts.hours}h • ${parts.minutes}m • ${parts.seconds}s de puro amor`
+  const parts = diffToRelationshipParts(state.diffMs)
+  const suffix = state.effectiveMode === 'countdown' ? 'até o grande dia' : 'desde esse momento'
+  return `❤️ ${parts.years} anos • ${parts.months} ${parts.months === 1 ? 'mês' : 'meses'} • ${parts.days} dia${parts.days === 1 ? '' : 's'} • ${parts.hours}h • ${parts.minutes}m • ${parts.seconds}s ${suffix}`
 })
 
 const relationshipLabel = computed(() => {

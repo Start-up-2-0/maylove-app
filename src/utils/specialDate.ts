@@ -12,6 +12,29 @@ export interface ResolvedSpecialDateConfig {
   kind?: string
 }
 
+export interface SpecialDateCounterState {
+  effectiveMode: 'countdown' | 'since' | 'none'
+  diffMs: number
+  completedCountdown: boolean
+}
+
+/** Countdown vencido passa a contar o tempo desde o evento, em vez de ficar zerado. */
+export function resolveSpecialDateCounterState(
+  targetMs: number,
+  mode: 'countdown' | 'since' | 'none',
+  nowMs = Date.now(),
+): SpecialDateCounterState {
+  if (mode === 'none') return { effectiveMode: 'none', diffMs: 0, completedCountdown: false }
+  if (mode === 'countdown' && targetMs > nowMs) {
+    return { effectiveMode: 'countdown', diffMs: targetMs - nowMs, completedCountdown: false }
+  }
+  return {
+    effectiveMode: 'since',
+    diffMs: Math.max(0, nowMs - targetMs),
+    completedCountdown: mode === 'countdown',
+  }
+}
+
 export function buildSpecialDateIso(date: string, time?: string | null): string | null {
   if (!date?.trim()) return null
   const normalized = date.trim()

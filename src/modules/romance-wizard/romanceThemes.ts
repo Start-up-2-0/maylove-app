@@ -1,4 +1,5 @@
 import { PRESENTATION_MAP } from '@/templates/presentations'
+import type { RomanceExperienceId } from '@/modules/romance-wizard/romanceExperiences'
 
 /** Variante visual da prévia ao vivo (mockup estilo Love Cards). */
 export type RomanceThemePreviewVariant =
@@ -29,18 +30,27 @@ export interface RomanceThemeDefinition {
   /** Gradiente do card no grid de seleção. */
   gradient: [string, string]
   accent?: string
+  /** Nome honesto da estrutura publicada compartilhada por variantes. */
+  baseModelLabel: string
+  /** Conteúdos que mais valorizam este tema. */
+  mediaRequirements: string[]
+  /** Experiências nas quais o tema deve aparecer primeiro. */
+  recommendedExperienceIds: RomanceExperienceId[]
 }
 
 /** Catálogo inspirado no Love Cards — https://www.lovecards.com.br/page-creator */
 export const ROMANCE_THEMES: RomanceThemeDefinition[] = [
   {
     id: 'estilo-spotify',
-    label: 'Estilo Spotify',
+    label: 'Player Musical',
     presentationId: 'slider-musica',
     templateSlug: 'namorados',
     previewVariant: 'spotify',
     gradient: ['#1db954', '#121212'],
     accent: '#1db954',
+    baseModelLabel: 'Player musical',
+    mediaRequirements: ['Música', 'Foto'],
+    recommendedExperienceIds: ['declaracao-amor', 'pedido-namoro'],
   },
   {
     id: 'estilo-cinema',
@@ -49,6 +59,9 @@ export const ROMANCE_THEMES: RomanceThemeDefinition[] = [
     previewVariant: 'cinema',
     gradient: ['#1a1208', '#c9a227'],
     accent: '#c9a227',
+    baseModelLabel: 'Cinema',
+    mediaRequirements: ['Foto', 'Texto'],
+    recommendedExperienceIds: ['declaracao-amor', 'pedido-casamento'],
   },
   {
     id: 'poesia-floral',
@@ -57,6 +70,9 @@ export const ROMANCE_THEMES: RomanceThemeDefinition[] = [
     previewVariant: 'floral',
     gradient: ['#fce7f3', '#fda4af'],
     accent: '#e11d48',
+    baseModelLabel: 'Carta',
+    mediaRequirements: ['Texto'],
+    recommendedExperienceIds: ['declaracao-amor', 'carta-amor'],
   },
   {
     id: 'retro-cassete',
@@ -65,6 +81,9 @@ export const ROMANCE_THEMES: RomanceThemeDefinition[] = [
     previewVariant: 'cassette',
     gradient: ['#f97316', '#78350f'],
     accent: '#f97316',
+    baseModelLabel: 'Player musical',
+    mediaRequirements: ['Música', 'Foto'],
+    recommendedExperienceIds: ['declaracao-amor', 'pedido-namoro'],
   },
   {
     id: 'envelope-story',
@@ -74,6 +93,9 @@ export const ROMANCE_THEMES: RomanceThemeDefinition[] = [
     previewVariant: 'envelope',
     gradient: ['#fef3c7', '#f9a8d4'],
     accent: '#db2777',
+    baseModelLabel: 'Revelação animada',
+    mediaRequirements: ['Carta'],
+    recommendedExperienceIds: ['carta-amor', 'pedido-namoro'],
   },
   {
     id: 'cortina-amor',
@@ -83,6 +105,9 @@ export const ROMANCE_THEMES: RomanceThemeDefinition[] = [
     previewVariant: 'curtain',
     gradient: ['#450a0a', '#be123c'],
     accent: '#be123c',
+    baseModelLabel: 'Pedido interativo',
+    mediaRequirements: ['Pergunta', 'Foto'],
+    recommendedExperienceIds: ['pedido-namoro', 'pedido-casamento'],
   },
   {
     id: 'polaroid',
@@ -91,6 +116,9 @@ export const ROMANCE_THEMES: RomanceThemeDefinition[] = [
     previewVariant: 'polaroid',
     gradient: ['#f8fafc', '#cbd5e1'],
     accent: '#64748b',
+    baseModelLabel: 'Álbum',
+    mediaRequirements: ['Galeria'],
+    recommendedExperienceIds: ['declaracao-amor', 'nossa-historia'],
   },
   {
     id: 'livro',
@@ -99,6 +127,9 @@ export const ROMANCE_THEMES: RomanceThemeDefinition[] = [
     previewVariant: 'book',
     gradient: ['#14532d', '#166534'],
     accent: '#22c55e',
+    baseModelLabel: 'Álbum',
+    mediaRequirements: ['Capítulos', 'Fotos'],
+    recommendedExperienceIds: ['nossa-historia'],
   },
   {
     id: 'buque',
@@ -107,6 +138,9 @@ export const ROMANCE_THEMES: RomanceThemeDefinition[] = [
     previewVariant: 'bouquet',
     gradient: ['#fce7f3', '#fbcfe8'],
     accent: '#ec4899',
+    baseModelLabel: 'Rolagem',
+    mediaRequirements: ['Texto', 'Foto'],
+    recommendedExperienceIds: ['declaracao-amor', 'carta-amor'],
   },
   {
     id: 'caixa-presente',
@@ -116,6 +150,9 @@ export const ROMANCE_THEMES: RomanceThemeDefinition[] = [
     previewVariant: 'gift',
     gradient: ['#fff1f2', '#fda4af'],
     accent: '#f43f5e',
+    baseModelLabel: 'Revelação animada',
+    mediaRequirements: ['Carta', 'Pergunta'],
+    recommendedExperienceIds: ['pedido-namoro', 'pedido-casamento'],
   },
   {
     id: 'mapa-tesouro',
@@ -124,6 +161,9 @@ export const ROMANCE_THEMES: RomanceThemeDefinition[] = [
     previewVariant: 'treasure',
     gradient: ['#fef08a', '#ca8a04'],
     accent: '#ca8a04',
+    baseModelLabel: 'História guiada',
+    mediaRequirements: ['Capítulos', 'Fotos'],
+    recommendedExperienceIds: ['nossa-historia'],
   },
   {
     id: 'diario',
@@ -132,14 +172,20 @@ export const ROMANCE_THEMES: RomanceThemeDefinition[] = [
     previewVariant: 'diary',
     gradient: ['#ede9fe', '#c4b5fd'],
     accent: '#8b5cf6',
+    baseModelLabel: 'Carta',
+    mediaRequirements: ['Texto'],
+    recommendedExperienceIds: ['carta-amor', 'nossa-historia'],
   },
   {
     id: 'disney',
-    label: 'Disney',
+    label: 'Conto Encantado',
     presentationId: 'cinematografico',
     previewVariant: 'disney',
     gradient: ['#312e81', '#6366f1'],
     accent: '#818cf8',
+    baseModelLabel: 'Cinema',
+    mediaRequirements: ['Foto', 'Texto'],
+    recommendedExperienceIds: ['declaracao-amor', 'pedido-casamento'],
   },
   {
     id: 'retrospectiva',
@@ -148,6 +194,9 @@ export const ROMANCE_THEMES: RomanceThemeDefinition[] = [
     previewVariant: 'retrospective',
     gradient: ['#0f172a', '#334155'],
     accent: '#94a3b8',
+    baseModelLabel: 'História guiada',
+    mediaRequirements: ['Capítulos', 'Fotos'],
+    recommendedExperienceIds: ['nossa-historia'],
   },
   {
     id: 'nossa-serie',
@@ -157,6 +206,9 @@ export const ROMANCE_THEMES: RomanceThemeDefinition[] = [
     previewVariant: 'netflix',
     gradient: ['#450a0a', '#0b0b0f'],
     accent: '#e50914',
+    baseModelLabel: 'Player musical',
+    mediaRequirements: ['Música', 'Foto'],
+    recommendedExperienceIds: ['declaracao-amor', 'nossa-historia'],
   },
 ]
 
@@ -223,6 +275,32 @@ export function resolveRomanceTheme(params: {
 
 export function listRomanceThemes(): RomanceThemeDefinition[] {
   return ROMANCE_THEMES.filter((theme) => Boolean(PRESENTATION_MAP[theme.presentationId]))
+}
+
+export function listRomanceThemesForExperience(
+  experienceId?: RomanceExperienceId | null,
+  defaultThemeId?: string | null,
+): RomanceThemeDefinition[] {
+  return listRomanceThemes()
+    .map((theme, index) => ({
+      theme,
+      index,
+      rank:
+        theme.id === defaultThemeId
+          ? 0
+          : experienceId && theme.recommendedExperienceIds.includes(experienceId)
+            ? 1
+            : 2,
+    }))
+    .sort((a, b) => a.rank - b.rank || a.index - b.index)
+    .map(({ theme }) => theme)
+}
+
+export function isThemeRecommendedForExperience(
+  theme: RomanceThemeDefinition,
+  experienceId?: RomanceExperienceId | null,
+): boolean {
+  return Boolean(experienceId && theme.recommendedExperienceIds.includes(experienceId))
 }
 
 export function themeIndex(themeId: string): number {

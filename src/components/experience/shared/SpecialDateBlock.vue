@@ -32,6 +32,7 @@ import { vReveal } from '@/composables/useReveal'
 import {
   defaultSpecialDateTitle,
   formatSpecialDateLabel,
+  resolveSpecialDateCounterState,
   type ResolvedSpecialDateConfig,
 } from '@/utils/specialDate'
 
@@ -59,6 +60,11 @@ const displayFormat = computed(() => config.value?.displayFormat ?? 'card')
 const counterMode = computed(() => config.value?.counterMode ?? 'since')
 const showCounter = computed(() => counterMode.value !== 'none')
 const showDateOnly = computed(() => counterMode.value === 'none')
+const counterState = computed(() =>
+  targetDate.value
+    ? resolveSpecialDateCounterState(targetDate.value.getTime(), counterMode.value, now.value)
+    : null,
+)
 
 const blockClasses = computed(() => [
   `special-date-block--${displayFormat.value}`,
@@ -80,22 +86,19 @@ const formattedDate = computed(() => formatSpecialDateLabel(config.value as Reso
 
 const eyebrow = computed(() => {
   if (displayFormat.value === 'inline') return ''
-  return counterMode.value === 'countdown' ? 'Contagem regressiva' : 'Desde o evento'
+  if (counterState.value?.completedCountdown) return 'O grande dia chegou'
+  return counterState.value?.effectiveMode === 'countdown' ? 'Contagem regressiva' : 'Desde o evento'
 })
 
 const counterCaption = computed(() => {
   if (counterMode.value === 'none') return ''
-  if (counterMode.value === 'countdown') return formattedDate.value ? `Até ${formattedDate.value}` : ''
+  if (counterState.value?.effectiveMode === 'countdown') return formattedDate.value ? `Até ${formattedDate.value}` : ''
   return formattedDate.value ? `Desde ${formattedDate.value}` : ''
 })
 
 const units = computed(() => {
   if (!targetDate.value || !showCounter.value) return []
-  const diffMs =
-    counterMode.value === 'since'
-      ? now.value - targetDate.value.getTime()
-      : targetDate.value.getTime() - now.value
-  const total = Math.max(0, Math.floor(diffMs / 1000))
+  const total = Math.max(0, Math.floor((counterState.value?.diffMs ?? 0) / 1000))
   const days = Math.floor(total / 86400)
   const hours = Math.floor((total % 86400) / 3600)
   const minutes = Math.floor((total % 3600) / 60)

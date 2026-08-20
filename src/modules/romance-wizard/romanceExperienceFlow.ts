@@ -30,6 +30,7 @@ import {
   type RomanceExperienceId,
   type RomanceExperienceStepId,
 } from '@/modules/romance-wizard/romanceExperiences'
+import { getProposalDefaults } from '@/modules/romance-wizard/proposalCopy'
 
 export function resolveExperienceStep(
   raw: string | undefined | null,
@@ -147,13 +148,15 @@ export async function applyRomanceExperienceDefaults(
     }
   }
 
-  if (option.id === 'pedido-namoro' && !form.question?.trim()) {
-    form.question = 'Quer namorar comigo?'
-    form.celebration = 'Você disse SIM! 💞'
+  const proposal = getProposalDefaults(experienceId)
+  if (!form.question?.trim() && proposal?.question) form.question = proposal.question
+  if (!form.celebration?.trim() && proposal?.celebration) form.celebration = proposal.celebration
+
+  if (experienceId === 'pedido-namoro') {
+    form.special_date_config.kind = 'dating_proposal'
   }
-  if (option.id === 'pedido-casamento' && !form.question?.trim()) {
-    form.question = 'Você aceita casar comigo?'
-    form.celebration = 'Disse sim! 💍'
+  if (experienceId === 'pedido-casamento') {
+    form.special_date_config.kind = 'wedding'
   }
 
   if (experienceId === 'carta-amor') {
@@ -190,7 +193,9 @@ export interface StartRomanceExperienceResult {
   firstStep: RomanceExperienceStepId
 }
 
-export async function startRomanceExperience(
+const startsInFlight = new Map<RomanceExperienceId, Promise<StartRomanceExperienceResult>>()
+
+async function startRomanceExperienceRequest(
   experienceId: RomanceExperienceId,
 ): Promise<StartRomanceExperienceResult> {
   const experience = getRomanceExperience(experienceId)
@@ -231,6 +236,19 @@ export async function startRomanceExperience(
   const styleId = listStyles()[0]?.id ?? ''
 
   const tribute = await createTribute(apiType.id, template.id)
+  const proposal = getProposalDefaults(experienceId)
+  const specialDateConfig = experience.enableSpecialDateByDefault
+    ? {
+        enabled: true,
+        kind:
+          experienceId === 'pedido-namoro'
+            ? ('dating_proposal' as const)
+            : ('wedding' as const),
+        title: experienceId === 'pedido-namoro' ? 'Nosso pedido' : 'Nosso grande dia',
+        counter_mode: experience.allowCountdown ? ('countdown' as const) : ('since' as const),
+        display_format: 'card' as const,
+      }
+    : undefined
 
   await updateTribute(tribute.id, {
     color_primary: defaultTheme.accent ?? definition.theme.primaryColor,
@@ -242,6 +260,9 @@ export async function startRomanceExperience(
       wizard_category_slug: option.categorySlug,
       wizard_type_id: option.id,
       effects: definition.effects?.length ? definition.effects : undefined,
+      question: proposal?.question,
+      celebration: proposal?.celebration,
+      special_date_config: specialDateConfig,
     },
   })
 
@@ -250,4 +271,18 @@ export async function startRomanceExperience(
     tributeId: tribute.id,
     firstStep: experience.steps[0] ?? 'recipient',
   }
+}
+
+/** Reaproveita a mesma criação enquanto uma tentativa estiver em andamento. */
+export function startRomanceExperience(
+  experienceId: RomanceExperienceId,
+): Promise<StartRomanceExperienceResult> {
+  const current = startsInFlight.get(experienceId)
+  if (current) return current
+
+  const request = startRomanceExperienceRequest(experienceId).finally(() => {
+    startsInFlight.delete(experienceId)
+  })
+  startsInFlight.set(experienceId, request)
+  return request
 }

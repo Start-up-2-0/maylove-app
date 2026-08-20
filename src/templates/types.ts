@@ -204,6 +204,8 @@ export interface ExperienceContent {
   viewsCount: number | null
   /** Tema visual Love Cards (ex.: estilo-spotify). */
   romanceThemeId?: string | null
+  /** Experiência do catálogo usada para fallbacks retrocompatíveis. */
+  romanceExperienceId?: string | null
   /** Paleta do tema Retrospectiva Interativa (ex.: cosmic, custom). */
   retrospectivePaletteId?: string | null
   /** Recursos extras ativados no wizard (carta, timeline, QR…). */

@@ -10,9 +10,10 @@ export const ROMANCE_BUILD_STEP_LABELS: Record<RomanceExperienceStepId, string> 
   recipient: 'Quem ama quem',
   photos: 'Suas fotos',
   message: 'Sua mensagem',
+  proposal: 'A pergunta especial',
   music: 'Trilha sonora',
   'special-date': 'Data especial',
-  video: 'Seu vídeo',
+  video: 'Seu vídeo (opcional)',
   chapters: 'Capítulos da história',
   theme: 'Tema da página',
   effects: 'Toque especial',
@@ -36,6 +37,7 @@ const DEFAULT_STEP_PROMPTS: Record<RomanceExperienceStepId, string> = {
   message: 'Que lindo casal! Agora me conta a história de vocês — qual é a mensagem que vai tocar o coração? 💌',
   photos: 'Maravilha! Adicione as fotos mais especiais de vocês para compor o card 📸',
   music: 'Tem alguma música ou momento que marca a história de vocês? Depois, adicione marcos opcionais. 🎵',
+  proposal: 'Agora escreva a pergunta que vai transformar este momento em uma lembrança inesquecível. 💍',
   'special-date': 'Tem uma data que marca vocês? Pode incluir ou pular este passo.',
   video: 'Quer adicionar um vídeo especial? Fica lindo na abertura.',
   chapters: 'Conte a história em capítulos — data, título, texto e foto de cada marco.',
@@ -49,9 +51,11 @@ const EXPERIENCE_STEP_PROMPTS: Partial<
 > = {
   'pedido-namoro': {
     message: 'Escreva a carta que prepara o convite — depois vem a pergunta especial.',
+    proposal: 'Personalize a pergunta e a mensagem que aparece depois do “sim”.',
   },
   'pedido-casamento': {
     message: 'Descreva a jornada de vocês até este momento — em seguida, a grande pergunta.',
+    proposal: 'Escreva a grande pergunta com as palavras de vocês e prepare a celebração do “sim”.',
     video: 'Um vídeo de vocês deixa o pedido ainda mais inesquecível.',
   },
   'carta-amor': {

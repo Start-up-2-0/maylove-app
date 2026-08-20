@@ -23,6 +23,20 @@ export function plainTimelineText(value?: string | null): string {
     .trim()
 }
 
+/** Regra narrativa mínima para capítulos de "Nossa História". */
+export function timelineItemIsComplete(item: {
+  title?: string
+  description?: string
+  photo_url?: string
+  photo_media_id?: string
+}): boolean {
+  const hasTitle = Boolean(item.title?.trim())
+  const hasBody = Boolean(
+    item.description?.trim() || item.photo_url?.trim() || item.photo_media_id?.trim(),
+  )
+  return hasTitle && hasBody
+}
+
 export function fallbackTimelineTitle(description?: string): string {
   const plain = plainTimelineText(description)
   if (!plain) return 'Momento'

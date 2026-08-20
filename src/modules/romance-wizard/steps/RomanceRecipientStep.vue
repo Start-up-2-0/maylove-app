@@ -4,6 +4,10 @@
     :prompt="stepPrompt"
   >
     <div class="rom-form-stack">
+      <div v-if="experience?.id === 'nossa-historia'" class="rom-story-date-note" role="note">
+        <span aria-hidden="true">📖</span>
+        <span>As datas e lugares serão adicionados separadamente em cada capítulo da história.</span>
+      </div>
       <label class="rom-field">
         <span class="rom-field__label">Seu nome</span>
         <input
@@ -13,6 +17,7 @@
           placeholder="Ex.: Gustavo"
           autocomplete="off"
         />
+        <span class="rom-field__hint">Opcional · {{ form.sender_name.length }}/80</span>
       </label>
 
       <label class="rom-field">
@@ -24,6 +29,7 @@
           placeholder="Ex.: Tay"
           autocomplete="off"
         />
+        <span class="rom-field__hint">{{ form.honoree_name.length }}/120</span>
       </label>
 
       <label v-if="showRelationshipDate" class="rom-field">
@@ -42,9 +48,12 @@
       />
 
       <label v-if="allowCountdown" class="rom-inline-toggle">
-        <input v-model="countdownMode" type="checkbox" />
-        <span>Contagem regressiva até a data</span>
+        <input v-model="countdownMode" type="checkbox" :disabled="selectedDateIsPast" />
+        <span>Contagem regressiva até a data futura</span>
       </label>
+      <p v-if="showRelationshipDate && relationshipDate" class="rom-date-behavior">
+        {{ dateBehaviorHint }}
+      </p>
     </div>
   </RomanceFormShell>
 </template>
@@ -71,10 +80,26 @@ const showRelationshipDate = computed(() => experience.value?.id !== 'nossa-hist
 
 const dateOptional = computed(() => experience.value?.specialDateOptional ?? false)
 const allowCountdown = computed(() => experience.value?.allowCountdown ?? false)
-
-const relationshipDateLabel = computed(() =>
-  dateOptional.value ? 'Data do início do relacionamento (opcional)' : 'Data do início do relacionamento *',
+const selectedDateIsPast = computed(() => {
+  if (!relationshipDate.value) return false
+  const target = new Date(`${relationshipDate.value}T23:59:59`)
+  return !Number.isNaN(target.getTime()) && target.getTime() < Date.now()
+})
+const dateBehaviorHint = computed(() =>
+  selectedDateIsPast.value
+    ? 'Como a data já passou, a página mostrará quanto tempo se passou desde esse momento.'
+    : countdownMode.value
+      ? 'A página mostrará quanto falta e mudará automaticamente para tempo decorrido depois da data.'
+      : 'A página mostrará a data escolhida e o tempo decorrido quando ela chegar.',
 )
+
+const relationshipDateLabel = computed(() => {
+  if (experience.value?.id === 'pedido-namoro') return 'Data do pedido *'
+  if (experience.value?.id === 'pedido-casamento') return 'Data do pedido ou cerimônia *'
+  return dateOptional.value
+    ? 'Data do início do relacionamento (opcional)'
+    : 'Data do início do relacionamento *'
+})
 
 const relationshipDate = computed({
   get: () => props.form.special_date_config.date ?? '',
@@ -105,6 +130,12 @@ const countdownMode = computed({
   },
 })
 
+watch(selectedDateIsPast, (isPast) => {
+  if (isPast && props.form.special_date_config.counter_mode === 'countdown') {
+    props.form.special_date_config.counter_mode = 'since'
+  }
+})
+
 watch(
   () => props.experienceId,
   () => {
@@ -131,5 +162,24 @@ watch(
 }
 .rom-inline-toggle input {
   accent-color: var(--rom-accent, #e11d48);
+}
+.rom-inline-toggle input:disabled { opacity: 0.55; cursor: not-allowed; }
+.rom-date-behavior {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+.rom-story-date-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: 0.84rem;
+  line-height: 1.45;
 }
 </style>

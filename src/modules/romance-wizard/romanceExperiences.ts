@@ -3,6 +3,7 @@ export type RomanceExperienceStepId =
   | 'recipient'
   | 'photos'
   | 'message'
+  | 'proposal'
   | 'music'
   | 'special-date'
   | 'video'
@@ -42,6 +43,7 @@ export interface RomanceExperienceDefinition {
   lockedPresentationId?: string
   steps: RomanceExperienceStepId[]
   photosMode?: 'cover' | 'gallery'
+  photosOptional?: boolean
   /** Data especial habilitada por padrão (pedidos). */
   enableSpecialDateByDefault?: boolean
   /** Se true, o passo de data pode ser pulado sem preencher. */
@@ -50,15 +52,18 @@ export interface RomanceExperienceDefinition {
   allowCountdown?: boolean
   /** Efeitos sugeridos ao criar — o usuário pode adicionar mais no passo Efeitos. */
   defaultEffects?: TributeEffect[]
+  /** Checklist curto exibido antes de criar ou abrir o produto. */
+  requirements?: string[]
 }
 
 export const ROMANCE_EXPERIENCE_STEP_LABELS: Record<RomanceExperienceStepId, string> = {
   recipient: 'Vocês',
   photos: 'Fotos',
   message: 'Carta',
+  proposal: 'O pedido',
   music: 'Música',
   'special-date': 'Data',
-  video: 'Vídeo',
+  video: 'Vídeo (opcional)',
   chapters: 'Capítulos',
   theme: 'Tema',
   effects: 'Efeitos',
@@ -82,6 +87,7 @@ export const ROMANCE_EXPERIENCES: RomanceExperienceDefinition[] = [
     photosMode: 'cover',
     specialDateOptional: true,
     defaultEffects: ['hearts'],
+    requirements: ['Nome do destinatário', '1 foto de capa', 'Carta', 'Música'],
   },
   {
     id: 'pedido-namoro',
@@ -95,10 +101,11 @@ export const ROMANCE_EXPERIENCES: RomanceExperienceDefinition[] = [
     categorySlug: 'pedido-namoro',
     defaultTemplateSlug: 'pedido-namoro',
     defaultThemeId: 'cortina-amor',
-    steps: ['recipient', 'message', 'photos', 'music', 'theme', 'preview'],
+    steps: ['recipient', 'message', 'proposal', 'photos', 'music', 'theme', 'preview'],
     photosMode: 'gallery',
     enableSpecialDateByDefault: true,
     defaultEffects: ['hearts', 'confetti'],
+    requirements: ['Nomes do casal', 'Data do pedido', 'Pergunta', 'Fotos', 'Música'],
   },
   {
     id: 'pedido-casamento',
@@ -112,11 +119,12 @@ export const ROMANCE_EXPERIENCES: RomanceExperienceDefinition[] = [
     categorySlug: 'pedido-casamento',
     defaultTemplateSlug: 'pedido-casamento',
     defaultThemeId: 'cortina-amor',
-    steps: ['recipient', 'message', 'photos', 'video', 'music', 'theme', 'preview'],
+    steps: ['recipient', 'message', 'proposal', 'photos', 'video', 'music', 'theme', 'preview'],
     photosMode: 'gallery',
     enableSpecialDateByDefault: true,
     allowCountdown: true,
     defaultEffects: ['hearts', 'fireworks'],
+    requirements: ['Nomes do casal', 'Data especial', 'Pergunta', 'Fotos', 'Música', 'Vídeo opcional'],
   },
   {
     id: 'mapa-casal',
@@ -127,16 +135,18 @@ export const ROMANCE_EXPERIENCES: RomanceExperienceDefinition[] = [
     opening: 'Mapa sendo desenhado automaticamente, ponto a ponto.',
     product: 'map',
     steps: [],
+    requirements: ['Lugares marcantes', 'Datas', 'Fotos opcionais'],
   },
   {
     id: 'buque-digital',
     icon: '💐',
     label: 'Buquê Digital',
     tagline: 'Monte flor por flor, com significado',
-    description: 'Escolha o modelo, monte o arranjo e escreva o cartão — como um presente físico.',
+    description: 'Escolha as flores, monte o arranjo e escreva o cartão — tudo em uma experiência digital.',
     opening: 'Flores desabrochando enquanto o buquê ganha forma.',
     product: 'bouquet',
     steps: [],
+    requirements: ['Flores digitais', 'Arranjo', 'Cartão personalizado'],
   },
   {
     id: 'carta-amor',
@@ -153,6 +163,7 @@ export const ROMANCE_EXPERIENCES: RomanceExperienceDefinition[] = [
     steps: ['recipient', 'message', 'music', 'theme', 'preview'],
     specialDateOptional: true,
     defaultEffects: ['hearts', 'petals'],
+    requirements: ['Nome do destinatário', 'Carta', 'Música'],
   },
   {
     id: 'nossa-historia',
@@ -166,8 +177,11 @@ export const ROMANCE_EXPERIENCES: RomanceExperienceDefinition[] = [
     categorySlug: 'amor',
     defaultTemplateSlug: 'namorados',
     defaultThemeId: 'livro',
-    steps: ['recipient', 'chapters', 'theme', 'preview'],
+    steps: ['recipient', 'photos', 'chapters', 'theme', 'preview'],
+    photosMode: 'gallery',
+    photosOptional: true,
     defaultEffects: ['stars'],
+    requirements: ['Nomes do casal', '1 ou mais capítulos', 'Textos e datas', 'Fotos opcionais'],
   },
   {
     id: 'playlist-casal',
@@ -178,6 +192,7 @@ export const ROMANCE_EXPERIENCES: RomanceExperienceDefinition[] = [
     opening: 'Disco de vinil iniciando a trilha sentimental.',
     product: 'coming_soon',
     steps: [],
+    requirements: ['Nome da playlist', 'Faixas', 'Memórias por música'],
   },
 ]
 

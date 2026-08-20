@@ -5,6 +5,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import type { TributeSpecialDateConfig } from '@/api/types'
+import { resolveSpecialDateCounterState } from '@/utils/specialDate'
 
 const props = withDefaults(
   defineProps<{
@@ -39,13 +40,15 @@ const label = computed(() => {
   const target = parseDate(cfg.date, cfg.time)
   if (!target) return '❤️ Data especial'
 
-  const diffMs =
-    cfg.counter_mode === 'countdown'
-      ? Math.max(0, target.getTime() - now.value)
-      : Math.max(0, now.value - target.getTime())
+  const state = resolveSpecialDateCounterState(
+    target.getTime(),
+    cfg.counter_mode ?? 'since',
+    now.value,
+  )
 
-  const parts = diffToParts(diffMs)
-  return `❤️ ${parts.years} anos • ${parts.months} ${parts.months === 1 ? 'mês' : 'meses'} • ${parts.days} dia${parts.days === 1 ? '' : 's'} • ${parts.hours}h • ${parts.minutes}m • ${parts.seconds}s de puro amor`
+  const parts = diffToParts(state.diffMs)
+  const suffix = state.effectiveMode === 'countdown' ? 'até o grande dia' : 'desde esse momento'
+  return `❤️ ${parts.years} anos • ${parts.months} ${parts.months === 1 ? 'mês' : 'meses'} • ${parts.days} dia${parts.days === 1 ? '' : 's'} • ${parts.hours}h • ${parts.minutes}m • ${parts.seconds}s ${suffix}`
 })
 
 function parseDate(date: string, time?: string | null): Date | null {

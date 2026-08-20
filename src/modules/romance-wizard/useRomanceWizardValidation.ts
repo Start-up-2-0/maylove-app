@@ -4,7 +4,8 @@ import {
   firstIssueMessage,
 } from '@/modules/tribute-wizard/presentationValidation'
 import type { TemplateDefinition } from '@/templates/types'
-import { timelineItemHasContent } from '@/utils/timeline'
+import { timelineItemHasContent, timelineItemIsComplete } from '@/utils/timeline'
+import { isSupportedVideoUrl } from '@/utils/videoUrl'
 import type { RomanceExperienceStepId } from './romanceExperiences'
 import { getRomanceExperience } from './romanceExperiences'
 import { defaultRomanceTitle, isLegacyGenericTitle } from './romanceCopy'
@@ -48,6 +49,7 @@ export function validateExperienceStep(
 
     case 'photos':
       if (photosCount < 1) {
+        if (experience?.photosOptional) return { valid: true }
         return {
           valid: false,
           message:
@@ -64,6 +66,15 @@ export function validateExperienceStep(
       }
       if (!hasPlainMessage(form.message)) {
         return { valid: false, message: 'Escreva a mensagem ou carta antes de continuar.' }
+      }
+      return { valid: true }
+
+    case 'proposal':
+      if (!form.question?.trim()) {
+        return { valid: false, message: 'Escreva a pergunta especial antes de continuar.' }
+      }
+      if (!form.celebration?.trim()) {
+        return { valid: false, message: 'Escreva a mensagem que aparece depois do aceite.' }
       }
       return { valid: true }
 
@@ -100,12 +111,25 @@ export function validateExperienceStep(
     }
 
     case 'video':
+      if (form.video_url?.trim() && !isSupportedVideoUrl(form.video_url)) {
+        return {
+          valid: false,
+          message: 'Use uma URL HTTPS válida do YouTube, Vimeo ou de um arquivo MP4/WebM.',
+        }
+      }
       return { valid: true }
 
     case 'chapters': {
       const chapters = form.timeline.filter((item) => timelineItemHasContent(item))
       if (chapters.length < 1) {
         return { valid: false, message: 'Adicione pelo menos um capítulo da história.' }
+      }
+      const incompleteIndex = chapters.findIndex((item) => !timelineItemIsComplete(item))
+      if (incompleteIndex >= 0) {
+        return {
+          valid: false,
+          message: `Complete o capítulo ${incompleteIndex + 1} com título e texto ou foto.`,
+        }
       }
       return { valid: true }
     }

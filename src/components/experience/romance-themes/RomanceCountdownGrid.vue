@@ -10,6 +10,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import type { ExperienceContent } from '@/templates/types'
+import { resolveSpecialDateCounterState } from '@/utils/specialDate'
 
 const props = withDefaults(
   defineProps<{
@@ -41,10 +42,11 @@ const targetDate = computed(() => {
 const units = computed(() => {
   if (!targetDate.value) return []
   const mode = props.content.specialDateConfig?.counterMode ?? 'since'
-  const diffMs =
-    mode === 'countdown'
-      ? Math.max(0, targetDate.value.getTime() - now.value)
-      : Math.max(0, now.value - targetDate.value.getTime())
+  const diffMs = resolveSpecialDateCounterState(
+    targetDate.value.getTime(),
+    mode,
+    now.value,
+  ).diffMs
 
   const totalSeconds = Math.floor(diffMs / 1000)
   const seconds = totalSeconds % 60

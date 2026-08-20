@@ -61,6 +61,7 @@ import { computed, ref } from 'vue'
 import type { CSSProperties } from 'vue'
 import type { ExperienceMediaItem, LayoutComponentProps } from '@/templates/types'
 import type { TributeEffect } from '@/api/types'
+import { resolveProposalCopy } from '@/modules/romance-wizard/proposalCopy'
 import { useExperienceAudio } from '@/composables/experienceAudio'
 import EffectsLayer from '../shared/EffectsLayer.vue'
 import ShareBar from '../shared/ShareBar.vue'
@@ -110,12 +111,15 @@ const steps = computed<Step[]>(() => {
 const isQuestion = computed(() => index.value >= steps.value.length)
 const current = computed(() => steps.value[Math.min(index.value, steps.value.length - 1)])
 
-const question = computed(() => {
-  if (props.content.question) return props.content.question
-  return 'Você aceita casar comigo?'
-})
-
-const celebration = computed(() => props.content.celebration || 'Ela disse SIM! 🎉')
+const proposal = computed(() =>
+  resolveProposalCopy(
+    props.content.romanceExperienceId,
+    props.content.question,
+    props.content.celebration,
+  ),
+)
+const question = computed(() => proposal.value.question)
+const celebration = computed(() => proposal.value.celebration)
 
 const celebrationEffects = computed<TributeEffect[]>(() => {
   const base = props.content.effects.length ? props.content.effects : []

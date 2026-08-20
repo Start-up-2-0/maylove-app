@@ -11,7 +11,7 @@
       <p class="eyebrow">Começar</p>
       <h1 class="section-title">Novo buquê digital</h1>
       <p class="text-muted">
-        Monte flor por flor, escolha o embrulho e escreva a carta — como um presente físico.
+        {{ NEW_BOUQUET_DESCRIPTION }}
       </p>
     </header>
 
@@ -42,6 +42,7 @@ import { ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { createBouquet } from '@/api/bouquets'
 import { resolveApiError } from '@/api/errors'
+import { NEW_BOUQUET_DESCRIPTION } from './bouquetCopy'
 
 const router = useRouter()
 const creating = ref(false)

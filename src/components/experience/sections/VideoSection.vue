@@ -22,20 +22,13 @@
 import { computed } from 'vue'
 import type { SectionComponentProps } from '@/templates/types'
 import { vReveal } from '@/composables/useReveal'
+import { resolveSupportedVideoEmbed } from '@/utils/videoUrl'
 
 const props = defineProps<SectionComponentProps>()
 
 const title = computed(() => (props.section.config?.title as string) || 'Vídeo especial')
 
-const embed = computed(() => {
-  const url = props.content.videoUrl
-  if (!url) return null
-  const yt = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]+)/)
-  if (yt) return { type: 'iframe' as const, src: `https://www.youtube.com/embed/${yt[1]}` }
-  const vimeo = url.match(/vimeo\.com\/(\d+)/)
-  if (vimeo) return { type: 'iframe' as const, src: `https://player.vimeo.com/video/${vimeo[1]}` }
-  return { type: 'video' as const, src: url }
-})
+const embed = computed(() => resolveSupportedVideoEmbed(props.content.videoUrl))
 </script>
 
 <style scoped>

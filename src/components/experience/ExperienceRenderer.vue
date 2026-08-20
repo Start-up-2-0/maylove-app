@@ -21,6 +21,13 @@
         :share-url="shareUrl"
         :config="mergedLayoutConfig"
       />
+      <ProposalMoment
+        v-if="themeLayout && showProposalMoment"
+        :content="content"
+        :theme="theme"
+        :mode="mode"
+        :share-url="shareUrl"
+      />
     </div>
 
     <div v-if="isFull" class="exp-controls">
@@ -57,6 +64,7 @@ import { provideExperienceAudio } from '@/composables/experienceAudio'
 import EffectsLayer from './shared/EffectsLayer.vue'
 import FullscreenToggle from './shared/FullscreenToggle.vue'
 import MusicPlayerFloat from './shared/MusicPlayerFloat.vue'
+import ProposalMoment from './shared/ProposalMoment.vue'
 
 const props = withDefaults(
   defineProps<{
@@ -98,10 +106,21 @@ provideExperienceAudio(
 )
 
 const layoutComponent = computed(() => {
-  const themeLayout = getRomanceThemeLayout(props.content.romanceThemeId)
-  if (themeLayout) return themeLayout
+  if (themeLayout.value) return themeLayout.value
   return getLayoutComponent(presentation.value?.layout ?? props.definition.layout)
 })
+
+const themeLayout = computed(() => getRomanceThemeLayout(props.content.romanceThemeId))
+
+const showProposalMoment = computed(() =>
+  Boolean(
+    props.content.question ||
+    props.content.romanceExperienceId === 'pedido-namoro' ||
+    props.content.romanceExperienceId === 'pedido-casamento' ||
+    presentation.value?.layout === 'proposal' ||
+    props.definition.layout === 'proposal',
+  ),
+)
 
 const usesThemePlayer = computed(() => romanceThemeUsesInlinePlayer(props.content.romanceThemeId))
 

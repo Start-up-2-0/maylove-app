@@ -10,14 +10,45 @@
           :placeholder="titlePlaceholder"
           autocomplete="off"
         />
+        <span class="rom-field__hint">{{ form.title.length }}/120</span>
+      </label>
+
+      <label v-if="isLetter" class="rom-field">
+        <span class="rom-field__label">Saudação</span>
+        <input
+          v-model="form.subtitle"
+          class="rom-field__input"
+          maxlength="160"
+          placeholder="Ex.: Meu amor,"
+          autocomplete="off"
+        />
+        <span class="rom-field__hint">Opcional · {{ form.subtitle.length }}/160</span>
       </label>
 
       <label class="rom-field">
         <span class="rom-field__label">Sua mensagem especial *</span>
         <RichTextEditor v-model="form.message" :placeholder="messagePlaceholder" />
       </label>
+
+      <label v-if="isLetter" class="rom-field">
+        <span class="rom-field__label">Assinatura</span>
+        <input
+          v-model="form.signature"
+          class="rom-field__input"
+          maxlength="120"
+          :placeholder="signaturePlaceholder"
+          autocomplete="off"
+        />
+        <span class="rom-field__hint">
+          Opcional · se ficar vazia, usamos seu nome · {{ form.signature.length }}/120
+        </span>
+      </label>
     </div>
-    <p class="rom-field__hint">A plataforma cuida da tipografia, animação e abertura.</p>
+    <p class="rom-field__hint">
+      {{ isLetter
+        ? 'A saudação, o corpo e a assinatura aparecem na leitura da carta. Confira a abertura na prévia ao lado.'
+        : 'A plataforma cuida da tipografia, animação e abertura.' }}
+    </p>
   </RomanceFormShell>
 </template>
 
@@ -39,13 +70,17 @@ const stepTitle = computed(() =>
   getCoachStepTitle('message', props.experienceId === 'carta-amor' ? 'Escreva a carta' : 'Mensagem especial'),
 )
 const stepPrompt = computed(() => getCoachPrompt('message', props.experienceId))
+const isLetter = computed(() => props.experienceId === 'carta-amor')
+const signaturePlaceholder = computed(() => props.form.sender_name?.trim() || 'Ex.: Com amor, Gustavo')
 
 const titlePlaceholder = computed(() =>
   defaultRomanceTitle(props.form.wizard_type_id, props.experienceId),
 )
 
 const messagePlaceholder = computed(() =>
-  props.experienceId === 'pedido-namoro'
+  props.experienceId === 'carta-amor'
+    ? 'Escreva o que você sente, uma lembrança especial e aquilo que deseja dizer sem pressa...'
+    : props.experienceId === 'pedido-namoro'
     ? 'Conta a história de vocês — como se conheceram, o que torna esse amor tão especial...'
     : props.experienceId === 'pedido-casamento'
       ? 'Descreva a jornada de vocês até este momento...'

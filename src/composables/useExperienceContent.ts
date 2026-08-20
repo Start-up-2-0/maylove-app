@@ -345,6 +345,10 @@ export function resolveContent(def: TemplateDefinition, opts: ResolveOptions): E
           tribute?.color_primary ||
           null,
       }),
+    romanceExperienceId:
+      form?.romance_experience_id ||
+      (content.romance_experience_id as string | undefined) ||
+      null,
     retrospectivePaletteId:
       form?.retrospective_palette_id ||
       (content.retrospective_palette_id as string | undefined) ||

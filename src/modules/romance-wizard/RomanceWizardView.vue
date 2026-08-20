@@ -98,6 +98,11 @@
             :form="form"
             :experience-id="experienceId"
           />
+          <RomanceProposalStep
+            v-else-if="currentStep === 'proposal'"
+            :form="form"
+            :experience-id="experienceId"
+          />
           <RomanceMusicStep
             v-else-if="currentStep === 'music'"
             :form="form"
@@ -205,6 +210,7 @@ import {
 import { validateExperienceStep } from '@/modules/romance-wizard/useRomanceWizardValidation'
 import { applyRomanceTitleDefaults, romanceDisplayTitle } from '@/modules/romance-wizard/romanceCopy'
 import { ROMANCE_BUILD_HEADLINE, ROMANCE_LOVE_CARDS_TAGLINE } from '@/modules/romance-wizard/romanceBuildCopy'
+import { hydrateProposalCopy } from '@/modules/romance-wizard/proposalCopy'
 import RomanceStepper from '@/modules/romance-wizard/components/RomanceStepper.vue'
 import RomanceBuildShell from '@/modules/romance-wizard/components/RomanceBuildShell.vue'
 import RomancePhonePreview from '@/modules/romance-wizard/components/RomancePhonePreview.vue'
@@ -213,6 +219,7 @@ import RomanceWizardFooter from '@/modules/romance-wizard/components/RomanceWiza
 import RomanceRecipientStep from '@/modules/romance-wizard/steps/RomanceRecipientStep.vue'
 import RomancePhotosStep from '@/modules/romance-wizard/steps/RomancePhotosStep.vue'
 import RomanceMessageStep from '@/modules/romance-wizard/steps/RomanceMessageStep.vue'
+import RomanceProposalStep from '@/modules/romance-wizard/steps/RomanceProposalStep.vue'
 import RomanceMusicStep from '@/modules/romance-wizard/steps/RomanceMusicStep.vue'
 import RomanceSpecialDateStep from '@/modules/romance-wizard/steps/RomanceSpecialDateStep.vue'
 import RomanceVideoStep from '@/modules/romance-wizard/steps/RomanceVideoStep.vue'
@@ -308,6 +315,10 @@ onMounted(async () => {
   if (resolvedExperience && isEditable.value && !form.romance_experience_id) {
     form.romance_experience_id = resolvedExperience
     await applyRomanceExperienceDefaults(form, tributeId, resolvedExperience)
+  }
+
+  if (resolvedExperience && isEditable.value) {
+    hydrateProposalCopy(form, resolvedExperience)
   }
 
   currentStep.value = resolveExperienceStep(

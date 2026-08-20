@@ -1,6 +1,6 @@
 <template>
   <RomanceFormShell :title="stepTitle" :prompt="stepPrompt" flat>
-    <StoryStep :form="form" :photos="photos" />
+    <StoryStep :form="form" :photos="photos" chapter-mode />
   </RomanceFormShell>
 </template>
 

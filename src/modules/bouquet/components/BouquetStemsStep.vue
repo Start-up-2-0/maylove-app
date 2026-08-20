@@ -2,8 +2,30 @@
   <div class="stems-step wiz-step-content">
     <h2 class="wiz-card__title">Escolha as flores</h2>
     <p class="wiz-card__hint">
-      Toque para adicionar. {{ stems.length }}/{{ maxStems }} escolhidas.
+      Cada flor comunica um sentimento. Toque para adicionar até {{ maxStems }} flores digitais.
+      {{ stems.length }}/{{ maxStems }} escolhidas.
     </p>
+
+    <section class="combination-guide" aria-labelledby="combination-guide-title">
+      <div>
+        <h3 id="combination-guide-title">Combinações sugeridas</h3>
+        <p>Use como ponto de partida ou monte uma mensagem só sua.</p>
+      </div>
+      <div class="combination-guide__list">
+        <button
+          v-for="combination in BOUQUET_COMBINATIONS"
+          :key="combination.id"
+          type="button"
+          class="combination-card"
+          :disabled="!canApplyCombination(combination.flowerIds)"
+          @click="applyCombination(combination.flowerIds)"
+        >
+          <strong>{{ combination.label }}</strong>
+          <span>{{ combination.description }}</span>
+          <small>{{ combination.flowerIds.map(flowerLabel).join(' + ') }}</small>
+        </button>
+      </div>
+    </section>
 
     <div class="flower-grid">
       <button
@@ -64,26 +86,92 @@
 import type { BouquetWrapColor } from '@/api/types'
 import {
   BOUQUET_FLOWERS,
+  BOUQUET_COMBINATIONS,
   BOUQUET_MAX_STEMS,
   BOUQUET_WRAP_COLORS,
   getFlower,
+  type BouquetFlowerId,
 } from '@/modules/bouquet/bouquetCatalog'
 
-defineProps<{
+const props = defineProps<{
   stems: string[]
   wrapColor: BouquetWrapColor
 }>()
 
-defineEmits<{
+const emit = defineEmits<{
   add: [flowerId: string]
   remove: [index: number]
   'update:wrapColor': [value: BouquetWrapColor]
 }>()
 
 const maxStems = BOUQUET_MAX_STEMS
+
+function flowerLabel(flowerId: BouquetFlowerId): string {
+  return getFlower(flowerId)?.label ?? flowerId
+}
+
+function canApplyCombination(flowerIds: BouquetFlowerId[]): boolean {
+  return props.stems.length + flowerIds.length <= maxStems
+}
+
+function applyCombination(flowerIds: BouquetFlowerId[]) {
+  if (!canApplyCombination(flowerIds)) return
+  flowerIds.forEach((flowerId) => emit('add', flowerId))
+}
 </script>
 
 <style scoped>
+.combination-guide {
+  padding: 14px;
+  margin: 16px 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--primary-soft, #fce7f0) 35%, var(--surface));
+}
+.combination-guide h3,
+.combination-guide p {
+  margin: 0;
+}
+.combination-guide p {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+.combination-guide__list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+.combination-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 11px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+}
+.combination-card:hover:not(:disabled),
+.combination-card:focus-visible {
+  border-color: var(--primary);
+  outline: none;
+}
+.combination-card:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+.combination-card span,
+.combination-card small {
+  color: var(--muted);
+}
+.combination-card small {
+  margin-top: 3px;
+  font-size: 0.68rem;
+}
 .flower-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -237,6 +325,9 @@ const maxStems = BOUQUET_MAX_STEMS
 }
 
 @media (max-width: 900px) {
+  .combination-guide__list {
+    grid-template-columns: 1fr;
+  }
   .flower-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }

@@ -20,6 +20,13 @@ export interface BouquetFlowerDefinition {
   image: string
 }
 
+export interface BouquetCombination {
+  id: string
+  label: string
+  description: string
+  flowerIds: BouquetFlowerId[]
+}
+
 export const BOUQUET_MAX_STEMS = 7
 
 export const BOUQUET_GREENERY_IMAGE = bouquetAsset('greenery-base-aMPcMOwV.png')
@@ -34,6 +41,31 @@ export const BOUQUET_FLOWERS: BouquetFlowerDefinition[] = [
   { id: 'lavender', label: 'Lavanda', meaning: 'Amor sereno', image: bouquetAsset('head-lavender-F_JZu-jF.png') },
   { id: 'babys_breath', label: 'Gipsófila', meaning: 'Coração puro', image: bouquetAsset('head-babys-breath-DBtFJ_Qo.png') },
 ]
+
+export const BOUQUET_COMBINATIONS: BouquetCombination[] = [
+  {
+    id: 'passionate',
+    label: 'Amor intenso',
+    description: 'Paixão, romance e devoção.',
+    flowerIds: ['red_rose', 'pink_peony', 'white_lily'],
+  },
+  {
+    id: 'joyful',
+    label: 'Alegria e admiração',
+    description: 'Uma composição luminosa, carinhosa e cheia de encanto.',
+    flowerIds: ['sunflower', 'ranunculus', 'lilac_tulip'],
+  },
+  {
+    id: 'serene',
+    label: 'Amor sereno',
+    description: 'Delicadeza, pureza e afeto tranquilo.',
+    flowerIds: ['lavender', 'babys_breath', 'white_lily'],
+  },
+]
+
+export function getBouquetCombination(id: string): BouquetCombination | undefined {
+  return BOUQUET_COMBINATIONS.find((combination) => combination.id === id)
+}
 
 export const BOUQUET_WRAP_COLORS: Array<{ id: WrapColorId; label: string; swatch: string; glow: string }> = [
   {

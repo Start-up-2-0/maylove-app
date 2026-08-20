@@ -5,6 +5,25 @@
       description="Busque um endereço, clique no mapa ou selecione um pin para montar cada mini-homenagem."
     />
 
+    <section class="narrative-suggestions" aria-labelledby="map-suggestions-title">
+      <div>
+        <h3 id="map-suggestions-title">Por onde começar?</h3>
+        <p>Escolha um marco para preparar o texto. Depois, localize o endereço no mapa e revise antes de salvar.</p>
+      </div>
+      <div class="narrative-suggestions__list">
+        <button
+          v-for="suggestion in MAP_NARRATIVE_SUGGESTIONS"
+          :key="suggestion.id"
+          type="button"
+          class="narrative-suggestion"
+          @click="applyNarrativeSuggestion(suggestion)"
+        >
+          <span aria-hidden="true">{{ suggestion.emoji }}</span>
+          {{ suggestion.label }}
+        </button>
+      </div>
+    </section>
+
     <div class="places-layout">
       <div class="places-map">
         <div class="address-search">
@@ -169,6 +188,7 @@ import CoupleMapCanvas from './CoupleMapCanvas.vue'
 import { buildPlaceContentPayload, parsePlaceContent } from '../mapPlaceContent'
 import { searchAddress, type GeocodeResult } from '../geocoding'
 import { MAP_PLACE_TYPE_LABELS, MAP_PLACE_TYPE_OPTIONS, SENTIMENT_OPTIONS, getPlaceEmoji } from '../mapPlaceTypes'
+import { MAP_NARRATIVE_SUGGESTIONS, type MapNarrativeSuggestion } from '../mapNarrativeSuggestions'
 
 const props = defineProps<{ map: CoupleMapDetail }>()
 const emit = defineEmits<{ changed: [] }>()
@@ -208,6 +228,16 @@ const selectedPlace = computed(() =>
 
 function placeTypeLabel(type: MapPlaceType): string {
   return MAP_PLACE_TYPE_LABELS[type]
+}
+
+function applyNarrativeSuggestion(suggestion: MapNarrativeSuggestion) {
+  if (draft.id) {
+    resetDraft()
+  }
+  draft.place_type = suggestion.placeType
+  draft.title = suggestion.title
+  draft.description = suggestion.descriptionPrompt
+  error.value = ''
 }
 
 function resetDraft() {
@@ -405,6 +435,46 @@ async function removeMedia(mediaId: string) {
 </script>
 
 <style scoped>
+.narrative-suggestions {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.45fr) minmax(0, 1fr);
+  gap: 16px;
+  padding: 16px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--primary-soft, #fce7f0) 35%, var(--surface));
+}
+.narrative-suggestions h3,
+.narrative-suggestions p {
+  margin: 0;
+}
+.narrative-suggestions p {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.narrative-suggestions__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.narrative-suggestion {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 8px 12px;
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+.narrative-suggestion:hover,
+.narrative-suggestion:focus-visible {
+  border-color: var(--primary);
+  outline: none;
+}
 .places-layout {
   display: grid;
   grid-template-columns: minmax(0, 1.4fr) minmax(280px, 0.8fr);
@@ -498,6 +568,9 @@ async function removeMedia(mediaId: string) {
   color: #fff;
 }
 @media (max-width: 900px) {
+  .narrative-suggestions {
+    grid-template-columns: 1fr;
+  }
   .places-layout {
     grid-template-columns: 1fr;
   }

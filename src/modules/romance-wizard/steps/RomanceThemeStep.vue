@@ -22,7 +22,11 @@
         <div class="rom-theme__carousel-center">
           <span class="rom-theme__carousel-dot" :style="carouselDotStyle" aria-hidden="true" />
           <strong>{{ activeTheme.label }}</strong>
-          <span class="rom-theme__carousel-meta">{{ activeIndex + 1 }} de {{ themes.length }}</span>
+          <span class="rom-theme__carousel-meta">Selecionado · {{ activeIndex + 1 }} de {{ themes.length }}</span>
+          <span class="rom-theme__carousel-base">Modelo-base: {{ activeTheme.baseModelLabel }}</span>
+          <span class="rom-theme__carousel-requirements">
+            Ideal com {{ activeTheme.mediaRequirements.join(' + ') }}
+          </span>
         </div>
         <button
           type="button"
@@ -35,9 +39,14 @@
         </button>
       </div>
 
-      <div class="rom-theme__grid">
+      <section v-if="recommendedThemes.length" class="rom-theme__group">
+        <div class="rom-theme__group-head">
+          <strong>Recomendados para {{ experienceLabel }}</strong>
+          <span>Combinam melhor com os campos desta experiência.</span>
+        </div>
+        <div class="rom-theme__grid">
         <button
-          v-for="theme in themes"
+          v-for="theme in recommendedThemes"
           :key="theme.id"
           type="button"
           class="rom-theme__card"
@@ -46,9 +55,36 @@
         >
           <span class="rom-theme__swatch" :style="swatchStyle(theme)" />
           <span class="rom-theme__card-label">{{ theme.label }}</span>
+          <span class="rom-theme__card-base">{{ theme.baseModelLabel }}</span>
+          <span class="rom-theme__card-tags">{{ theme.mediaRequirements.join(' · ') }}</span>
+          <span class="rom-theme__recommended">Recomendado</span>
           <span v-if="theme.id === activeTheme.id" class="rom-theme__check" aria-hidden="true">✓</span>
         </button>
-      </div>
+        </div>
+      </section>
+
+      <section v-if="otherThemes.length" class="rom-theme__group">
+        <div class="rom-theme__group-head">
+          <strong>Outros estilos</strong>
+          <span>Também funcionam, mas podem aproveitar menos os conteúdos preenchidos.</span>
+        </div>
+        <div class="rom-theme__grid">
+          <button
+            v-for="theme in otherThemes"
+            :key="theme.id"
+            type="button"
+            class="rom-theme__card"
+            :class="{ 'rom-theme__card--active': theme.id === activeTheme.id }"
+            @click="selectTheme(theme.id)"
+          >
+            <span class="rom-theme__swatch" :style="swatchStyle(theme)" />
+            <span class="rom-theme__card-label">{{ theme.label }}</span>
+            <span class="rom-theme__card-base">{{ theme.baseModelLabel }}</span>
+            <span class="rom-theme__card-tags">{{ theme.mediaRequirements.join(' · ') }}</span>
+            <span v-if="theme.id === activeTheme.id" class="rom-theme__check" aria-hidden="true">✓</span>
+          </button>
+        </div>
+      </section>
 
       <div v-if="activeTheme.id === 'retrospectiva'" class="rom-theme__palette">
         <header class="rom-theme__palette-head">
@@ -99,7 +135,8 @@ import type { RomanceExperienceId } from '@/modules/romance-wizard/romanceExperi
 import { getRomanceExperience } from '@/modules/romance-wizard/romanceExperiences'
 import {
   DEFAULT_ROMANCE_THEME_ID,
-  listRomanceThemes,
+  isThemeRecommendedForExperience,
+  listRomanceThemesForExperience,
   resolveRomanceTheme,
   type RomanceThemeDefinition,
 } from '@/modules/romance-wizard/romanceThemes'
@@ -120,7 +157,6 @@ const props = defineProps<{
 
 const emit = defineEmits<{ 'theme-changed': [] }>()
 
-const themes = listRomanceThemes()
 const retrospectivePalettes = RETROSPECTIVE_PALETTES
 
 const stepTitle = computed(() => getCoachStepTitle('theme', 'Tema da página'))
@@ -128,6 +164,16 @@ const stepPrompt = computed(() => getCoachPrompt('theme', props.experienceId))
 
 const experienceDefaultThemeId = computed(
   () => getRomanceExperience(props.experienceId)?.defaultThemeId ?? DEFAULT_ROMANCE_THEME_ID,
+)
+const experienceLabel = computed(() => getRomanceExperience(props.experienceId)?.label ?? 'esta experiência')
+const themes = computed(() =>
+  listRomanceThemesForExperience(props.experienceId, experienceDefaultThemeId.value),
+)
+const recommendedThemes = computed(() =>
+  themes.value.filter((theme) => isThemeRecommendedForExperience(theme, props.experienceId)),
+)
+const otherThemes = computed(() =>
+  themes.value.filter((theme) => !isThemeRecommendedForExperience(theme, props.experienceId)),
 )
 
 const activeTheme = computed(() =>
@@ -139,7 +185,7 @@ const activeTheme = computed(() =>
 )
 
 const activeIndex = computed(() =>
-  themes.findIndex((item) => item.id === activeTheme.value.id),
+  themes.value.findIndex((item) => item.id === activeTheme.value.id),
 )
 
 const carouselDotStyle = computed(() => ({
@@ -161,15 +207,15 @@ async function applyTheme(theme: RomanceThemeDefinition) {
 }
 
 function selectTheme(themeId: string) {
-  const theme = themes.find((item) => item.id === themeId)
+  const theme = themes.value.find((item) => item.id === themeId)
   if (!theme) return
   void applyTheme(theme)
 }
 
 function shiftTheme(delta: number) {
   const index = activeIndex.value >= 0 ? activeIndex.value : 0
-  const next = (index + delta + themes.length) % themes.length
-  void applyTheme(themes[next])
+  const next = (index + delta + themes.value.length) % themes.value.length
+  void applyTheme(themes.value[next])
 }
 
 function selectPalette(paletteId: string, accent: string) {
@@ -289,6 +335,16 @@ watch(
   font-size: 0.78rem;
   color: var(--muted);
 }
+.rom-theme__carousel-base,
+.rom-theme__carousel-requirements {
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+.rom-theme__carousel-base { font-weight: 700; color: var(--ink); }
+.rom-theme__group { display: grid; gap: 10px; }
+.rom-theme__group-head { display: grid; gap: 2px; }
+.rom-theme__group-head strong { font-size: 0.88rem; color: var(--ink); }
+.rom-theme__group-head span { font-size: 0.76rem; color: var(--muted); }
 .rom-theme__grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -334,6 +390,22 @@ watch(
   font-weight: 700;
   line-height: 1.25;
   color: var(--ink);
+}
+.rom-theme__card-base,
+.rom-theme__card-tags {
+  font-size: 0.68rem;
+  line-height: 1.3;
+  color: var(--muted);
+}
+.rom-theme__card-base { font-weight: 700; color: var(--ink); }
+.rom-theme__recommended {
+  align-self: flex-start;
+  padding: 3px 6px;
+  border-radius: 999px;
+  background: var(--rom-accent-soft, var(--primary-softer));
+  color: var(--rom-accent-strong, var(--primary-strong));
+  font-size: 0.62rem;
+  font-weight: 800;
 }
 .rom-theme__check {
   position: absolute;

@@ -9,6 +9,10 @@
         {{ photos.length }} foto{{ photos.length === 1 ? '' : 's' }}
       </span>
     </div>
+    <div class="rom-photo-requirement" role="note">
+      <strong>{{ requirementTitle }}</strong>
+      <span>{{ requirementDescription }}</span>
+    </div>
     <PhotosStep
       :tribute-id="tributeId"
       :photos="photos"
@@ -51,6 +55,7 @@ const catalogTemplates = ref<{ id: string; max_photos?: number }[]>([])
 
 const experience = computed(() => getRomanceExperience(props.experienceId))
 const photosMode = computed(() => experience.value?.photosMode ?? 'gallery')
+const photosOptional = computed(() => experience.value?.photosOptional ?? false)
 
 const stepTitle = computed(() =>
   getCoachStepTitle('photos', photosMode.value === 'cover' ? 'Foto de capa' : 'Fotos de vocês'),
@@ -60,6 +65,20 @@ const maxPhotos = computed(() => {
   const tpl = catalogTemplates.value.find((item) => item.id === props.form.template_id)
   return tpl?.max_photos ?? 20
 })
+const requirementTitle = computed(() =>
+  photosOptional.value
+    ? 'Fotos opcionais para os capítulos'
+    : photosMode.value === 'cover'
+      ? '1 foto de capa obrigatória'
+      : 'Pelo menos 1 foto obrigatória',
+)
+const requirementDescription = computed(() =>
+  photosOptional.value
+    ? `Envie agora as fotos que deseja associar aos capítulos. Você também pode continuar sem fotos (máximo de ${maxPhotos.value}).`
+    : photosMode.value === 'cover'
+    ? `JPEG, PNG ou WebP. Você pode adicionar até ${maxPhotos.value - 1} fotos extras para a galeria.`
+    : `JPEG, PNG ou WebP. Para uma narrativa mais completa, recomendamos de 3 a 6 fotos (máximo de ${maxPhotos.value}).`,
+)
 
 onMounted(async () => {
   try {
@@ -84,4 +103,15 @@ onMounted(async () => {
   color: var(--rom-accent, #e11d48);
   background: color-mix(in srgb, var(--rom-accent, #e11d48) 10%, var(--surface));
 }
+.rom-photo-requirement {
+  display: grid;
+  gap: 3px;
+  margin-bottom: 14px;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--rom-accent, #e11d48) 18%, var(--border));
+  border-radius: 12px;
+  background: var(--rom-accent-soft, var(--primary-softer));
+  font-size: 0.82rem;
+}
+.rom-photo-requirement span { color: var(--muted); line-height: 1.45; }
 </style>
