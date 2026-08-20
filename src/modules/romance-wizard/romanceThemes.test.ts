@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { getRomanceExperience } from './romanceExperiences'
+import { ROMANCE_THEME_LAYOUTS } from './romanceThemeLayouts'
 import {
   isThemeRecommendedForExperience,
   listRomanceThemes,
@@ -32,5 +33,15 @@ describe('romance theme catalog', () => {
     const themes = listRomanceThemes()
     expect(themes.find((theme) => theme.id === 'estilo-spotify')?.label).toBe('Player Musical')
     expect(themes.find((theme) => theme.id === 'disney')?.label).toBe('Conto Encantado')
+  })
+
+  it('provides a dedicated public renderer for all 15 themes', () => {
+    const themes = listRomanceThemes()
+    expect(themes).toHaveLength(15)
+    expect(Object.keys(ROMANCE_THEME_LAYOUTS)).toHaveLength(15)
+    for (const theme of themes) {
+      expect(ROMANCE_THEME_LAYOUTS[theme.id]).toBeTruthy()
+      expect(theme.baseModelLabel).toMatch(/^Experiência /)
+    }
   })
 })
