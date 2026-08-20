@@ -28,7 +28,7 @@
         :mode="mode"
         :share-url="shareUrl"
       />
-      <footer v-if="themeLayout" class="exp-signature" aria-label="Criado com MayLov">
+      <footer v-if="themeLayout && showSignature" class="exp-signature" aria-label="Criado com MayLov">
         <span aria-hidden="true">♥</span>
         <span>Feito com carinho no <strong>MayLov</strong></span>
       </footer>
@@ -81,8 +81,10 @@ const props = withDefaults(
     presentation?: string | null
     /** Renderiza dentro de um frame estreito (mockup do wizard), sem unidades de viewport. */
     contained?: boolean
+    /** Exibe a assinatura interna; páginas públicas podem usar um rodapé próprio com CTA. */
+    showSignature?: boolean
   }>(),
-  { mode: 'full', shareUrl: '', presentation: null, contained: false },
+  { mode: 'full', shareUrl: '', presentation: null, contained: false, showSignature: true },
 )
 
 const root = ref<HTMLElement | null>(null)

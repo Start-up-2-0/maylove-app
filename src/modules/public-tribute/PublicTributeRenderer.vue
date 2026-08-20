@@ -23,6 +23,7 @@
         :presentation="tribute.content_json?.presentation"
         mode="full"
         :share-url="shareUrl"
+        :show-signature="false"
       />
 
       <footer class="public-foot" :class="{ 'public-foot--dark': theme.mode === 'dark' }">
