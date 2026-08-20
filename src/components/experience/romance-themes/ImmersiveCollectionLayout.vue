@@ -122,7 +122,7 @@ function formatDate(value: string) {
 .collection__hero, .collection__final { max-width: 820px; margin: 0 auto; text-align: center; }
 .collection__symbol { display: block; color: var(--c-accent); font-size: 2rem; }
 .collection__eyebrow { margin: 8px 0; color: var(--c-accent); font: 800 .72rem/1.2 system-ui; letter-spacing: .16em; text-transform: uppercase; }
-.collection h1 { margin: 10px 0; font: 600 clamp(2.2rem, 8vw, 5.6rem)/.95 var(--exp-font-display, Georgia, serif); }
+.collection h1 { max-width: 100%; margin: 10px 0; font: 600 clamp(1.8rem, 8vw, 5.6rem)/.95 var(--exp-font-display, Georgia, serif); overflow-wrap: anywhere; }
 .collection__subtitle { opacity: .7; font-style: italic; }
 .collection__cover-wrap { width: min(100%, 620px); margin: 30px auto; padding: 12px; background: var(--c-card); box-shadow: 0 24px 70px rgb(49 20 36 / 18%); transform: rotate(-1deg); }
 .collection__cover { display: block; width: 100%; max-height: 62vh; object-fit: cover; }
