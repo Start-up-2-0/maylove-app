@@ -4,7 +4,7 @@
       <div
         v-if="showCurtain"
         class="curtain-overlay"
-        :class="{ 'curtain-overlay--opening': opening, 'curtain-overlay--embedded': embedded }"
+        :class="{ 'curtain-overlay--opening': opening, 'curtain-overlay--embedded': embedded, 'curtain-overlay--preview': isPreview }"
         role="dialog"
         aria-label="Abertura do espetáculo"
       >
@@ -129,6 +129,7 @@ const contentReady = ref(false)
 const messageExpanded = ref(false)
 
 const embedded = computed(() => Boolean(props.config?.contained))
+const isPreview = computed(() => props.mode === 'preview' || embedded.value)
 
 const coupleLabel = computed(() => {
   if (props.content.senderName && props.content.honoreeName) {
@@ -178,8 +179,15 @@ function startOpen() {
   if (opening.value) return
   opening.value = true
   window.setTimeout(() => {
+    contentReady.value = true
     showCurtain.value = false
   }, 1100)
+}
+
+function skipOpening() {
+  opening.value = true
+  contentReady.value = true
+  showCurtain.value = false
 }
 
 function onCurtainLeft() {
@@ -187,8 +195,8 @@ function onCurtainLeft() {
 }
 
 onMounted(() => {
-  if (props.mode === 'preview' || embedded.value) {
-    window.setTimeout(() => startOpen(), embedded.value ? 500 : 700)
+  if (isPreview.value) {
+    window.setTimeout(() => skipOpening(), 180)
   }
 })
 </script>
@@ -308,6 +316,9 @@ onMounted(() => {
 .curtain-overlay-fade-leave-active {
   transition: opacity 0.35s ease 0.85s;
 }
+.curtain-overlay--preview.curtain-overlay-fade-leave-active {
+  transition: opacity 0.22s ease;
+}
 .curtain-overlay-fade-leave-to {
   opacity: 0;
 }
@@ -323,6 +334,10 @@ onMounted(() => {
 .curtain-theme__content--ready {
   opacity: 1;
   transform: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .curtain-overlay *,
+  .curtain-theme__content { animation: none !important; transition-duration: 0.01ms !important; transition-delay: 0ms !important; }
 }
 .curtain-theme__hero {
   position: relative;

@@ -4,7 +4,7 @@
       <div
         v-if="showOverlay"
         class="env-story-overlay"
-        :class="{ 'env-story-overlay--opening': opening, 'env-story-overlay--embedded': embedded }"
+        :class="{ 'env-story-overlay--opening': opening, 'env-story-overlay--embedded': embedded, 'env-story-overlay--preview': isPreview }"
         role="dialog"
         aria-label="Abrir envelope"
       >
@@ -82,7 +82,7 @@
         </button>
       </section>
 
-      <section class="env-story-theme__card">
+      <section v-if="content.music.url" class="env-story-theme__card">
         <header class="env-story-theme__card-head">
           <span class="env-story-theme__card-icon" aria-hidden="true">🎵</span>
           <p class="env-story-theme__eyebrow env-story-theme__eyebrow--inline">Nossa música</p>
@@ -96,7 +96,6 @@
             <span class="env-story-theme__time">0:00</span>
           </div>
         </div>
-        <p v-else class="env-story-theme__music-empty">Nenhuma música selecionada</p>
       </section>
 
       <section v-if="content.photos.length" class="env-story-theme__card">
@@ -168,6 +167,7 @@ const contentReady = ref(false)
 const messageExpanded = ref(false)
 
 const embedded = computed(() => Boolean(props.config?.contained))
+const isPreview = computed(() => props.mode === 'preview' || embedded.value)
 
 const coupleLabel = computed(() => {
   if (props.content.senderName && props.content.honoreeName) {
@@ -231,12 +231,14 @@ function startOpen() {
   opening.value = true
   audio?.play?.()
   window.setTimeout(() => {
+    contentReady.value = true
     showOverlay.value = false
   }, 1400)
 }
 
 function skipAnimation() {
   opening.value = true
+  contentReady.value = true
   showOverlay.value = false
 }
 
@@ -245,8 +247,8 @@ function onOverlayLeft() {
 }
 
 onMounted(() => {
-  if (props.mode === 'preview' || embedded.value) {
-    window.setTimeout(() => startOpen(), embedded.value ? 600 : 850)
+  if (isPreview.value) {
+    window.setTimeout(() => skipAnimation(), 180)
   }
 })
 </script>
@@ -470,6 +472,9 @@ onMounted(() => {
 .env-story-overlay-fade-leave-active {
   transition: opacity 0.45s ease 1s;
 }
+.env-story-overlay--preview.env-story-overlay-fade-leave-active {
+  transition: opacity 0.22s ease;
+}
 .env-story-overlay-fade-leave-to {
   opacity: 0;
 }
@@ -485,6 +490,12 @@ onMounted(() => {
 .env-story-theme__content--ready {
   opacity: 1;
   transform: translateY(0);
+}
+@media (prefers-reduced-motion: reduce) {
+  .env-story-overlay,
+  .env-story-envelope *,
+  .env-story-theme__content,
+  .env-story-theme__particle { animation: none !important; transition-duration: 0.01ms !important; transition-delay: 0ms !important; }
 }
 .env-story-theme__hero {
   position: relative;

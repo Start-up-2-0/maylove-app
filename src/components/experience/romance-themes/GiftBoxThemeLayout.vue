@@ -4,7 +4,7 @@
       <div
         v-if="showGift"
         class="gift-overlay"
-        :class="{ 'gift-overlay--opening': opening, 'gift-overlay--embedded': embedded }"
+        :class="{ 'gift-overlay--opening': opening, 'gift-overlay--embedded': embedded, 'gift-overlay--preview': isPreview }"
         role="dialog"
         aria-label="Abrir presente"
       >
@@ -141,6 +141,7 @@ const contentReady = ref(false)
 const messageExpanded = ref(false)
 
 const embedded = computed(() => Boolean(props.config?.contained))
+const isPreview = computed(() => props.mode === 'preview' || embedded.value)
 
 const coupleLabel = computed(() => {
   if (props.content.senderName && props.content.honoreeName) {
@@ -188,8 +189,15 @@ function startOpen() {
   if (opening.value) return
   opening.value = true
   window.setTimeout(() => {
+    contentReady.value = true
     showGift.value = false
   }, 1200)
+}
+
+function skipOpening() {
+  opening.value = true
+  contentReady.value = true
+  showGift.value = false
 }
 
 function onGiftLeft() {
@@ -197,8 +205,8 @@ function onGiftLeft() {
 }
 
 onMounted(() => {
-  if (props.mode === 'preview' || embedded.value) {
-    window.setTimeout(() => startOpen(), embedded.value ? 550 : 750)
+  if (isPreview.value) {
+    window.setTimeout(() => skipOpening(), 180)
   }
 })
 </script>
@@ -386,6 +394,9 @@ onMounted(() => {
 .gift-overlay-fade-leave-active {
   transition: opacity 0.4s ease 0.95s;
 }
+.gift-overlay--preview.gift-overlay-fade-leave-active {
+  transition: opacity 0.22s ease;
+}
 .gift-overlay-fade-leave-to {
   opacity: 0;
 }
@@ -401,6 +412,10 @@ onMounted(() => {
 .gift-theme__content--ready {
   opacity: 1;
   transform: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .gift-overlay *,
+  .gift-theme__content { animation: none !important; transition-duration: 0.01ms !important; transition-delay: 0ms !important; }
 }
 .gift-theme__hero {
   position: relative;
