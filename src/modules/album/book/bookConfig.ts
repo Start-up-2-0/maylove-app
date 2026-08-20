@@ -23,6 +23,8 @@ export interface BookConfigCover {
   mode: CoverMode
   media_id?: string | null
   eyebrow?: string | null
+  focal_x?: number
+  focal_y?: number
 }
 
 export interface BookConfigFonts {
@@ -181,6 +183,8 @@ export function normalizeBookConfig(raw?: Partial<BookConfig> | null): BookConfi
       mode: raw?.cover?.mode ?? DEFAULT_BOOK_CONFIG.cover.mode,
       media_id: raw?.cover?.media_id ?? null,
       eyebrow: raw?.cover?.eyebrow ?? DEFAULT_BOOK_CONFIG.cover.eyebrow,
+      focal_x: Math.min(100, Math.max(0, Number(raw?.cover?.focal_x ?? 50))),
+      focal_y: Math.min(100, Math.max(0, Number(raw?.cover?.focal_y ?? 50))),
     },
     colors: {
       paper: raw?.colors?.paper ?? DEFAULT_BOOK_CONFIG.colors.paper,
@@ -210,7 +214,42 @@ export function defaultBookConfigFor(presentation?: string | null): BookConfig {
         frame_style: DEFAULT_BOOK_FRAME_STYLE,
         board: { items: [] },
       })
+    case 'wedding-book':
+      return normalizeBookConfig({
+        cover: { mode: 'photo', media_id: null, eyebrow: 'CASAMENTO' },
+        colors: { paper: '#fffaf5', ink: '#3f302d', accent: '#b67872', page: '#f8eee8' },
+        fonts: { preset: 'classic' }, frame_style: 'cream', board: { items: [] },
+      })
+    case 'family-memories':
+      return normalizeBookConfig({
+        cover: { mode: 'photo', media_id: null, eyebrow: 'FAMÍLIA' },
+        colors: { paper: '#f7f0df', ink: '#40372c', accent: '#a8673f', page: '#efe1c5' },
+        fonts: { preset: 'editorial' }, frame_style: 'kraft', board: { items: [] },
+      })
+    case 'scrapbook':
+      return normalizeBookConfig({
+        cover: { mode: 'photo', media_id: null, eyebrow: 'INFÂNCIA' },
+        colors: { paper: '#fff8e7', ink: '#3f4652', accent: '#e8898d', page: '#eaf4ef' },
+        fonts: { preset: 'modern' }, frame_style: 'blush', board: { items: [] },
+      })
+    case 'travel-journal':
+      return normalizeBookConfig({
+        cover: { mode: 'photo', media_id: null, eyebrow: 'DIÁRIO DE VIAGEM' },
+        colors: { paper: '#f5ecd8', ink: '#253d3b', accent: '#c36b3d', page: '#e5dcc8' },
+        fonts: { preset: 'editorial' }, frame_style: 'kraft', board: { items: [] },
+      })
+    case 'magazine-style':
+      return normalizeBookConfig({
+        cover: { mode: 'full-bleed', media_id: null, eyebrow: 'EDIÇÃO ESPECIAL' },
+        colors: { paper: '#fafafa', ink: '#161616', accent: '#8b5cf6', page: '#ffffff' },
+        fonts: { preset: 'modern' }, frame_style: 'classic', board: { items: [] },
+      })
     case 'instant-photo':
+      return normalizeBookConfig({
+        cover: { mode: 'photo', media_id: null, eyebrow: 'CELEBRAÇÃO' },
+        colors: { paper: '#1b1822', ink: '#fff7ed', accent: '#f59e0b', page: '#26212e' },
+        fonts: { preset: 'modern' }, frame_style: 'classic', board: { items: [] },
+      })
     case 'polaroid-board':
     case 'portrait-album':
     case 'classic-photobook':
@@ -323,4 +362,3 @@ export function clampPolaroidScale(value?: number | null): number {
   if (!Number.isFinite(n)) return 1
   return Math.min(1.35, Math.max(0.55, n))
 }
-

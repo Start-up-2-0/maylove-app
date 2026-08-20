@@ -344,6 +344,7 @@ export interface AlbumDetail extends AlbumSummary {
 export interface AlbumValidation {
   valid: boolean
   errors: Array<{ field: string; code: string; message: string }>
+  warnings: Array<{ field: string; code: string; message: string }>
 }
 
 export interface PublicAlbumPhoto {

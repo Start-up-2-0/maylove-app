@@ -14,7 +14,7 @@
       class="book-cover__media"
       aria-hidden="true"
     >
-      <img :src="coverPhotoUrl" alt="" />
+      <img :src="coverPhotoUrl" alt="" :style="coverPhotoStyle" />
     </div>
 
     <div class="book-cover__copy">
@@ -50,6 +50,9 @@ const coverMode = computed<CoverMode>(
 )
 
 const coverPhotoUrl = computed(() => props.book.coverPhotoUrl)
+const coverPhotoStyle = computed(() => ({
+  objectPosition: `${props.book.bookConfig?.cover.focal_x ?? 50}% ${props.book.bookConfig?.cover.focal_y ?? 50}%`,
+}))
 
 const eyebrow = computed(
   () => props.book.bookConfig?.cover.eyebrow?.trim() || props.theme.cover.eyebrow || 'MEMORY',

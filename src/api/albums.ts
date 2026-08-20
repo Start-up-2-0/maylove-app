@@ -99,6 +99,7 @@ export async function presignAlbumMedia(
     filename: string
     mime_type: string
     size_bytes: number
+    replacement_media_id?: string
   },
 ): Promise<PresignResponse> {
   const response = await apiClient.post<ApiEnvelope<PresignResponse>>(
@@ -117,6 +118,25 @@ export async function confirmAlbumMedia(albumId: string, mediaId: string): Promi
 
 export async function deleteAlbumMedia(albumId: string, mediaId: string): Promise<void> {
   await apiClient.delete(`/albums/${albumId}/media/${mediaId}`)
+}
+
+export async function updateAlbumMedia(
+  albumId: string,
+  mediaId: string,
+  payload: Pick<AlbumMedia, 'title' | 'caption' | 'memory_date' | 'place_name'>,
+): Promise<AlbumMedia> {
+  const response = await apiClient.patch<ApiEnvelope<AlbumMedia>>(
+    `/albums/${albumId}/media/${mediaId}`,
+    payload,
+  )
+  return unwrap(response)
+}
+
+export async function replaceAlbumMedia(albumId: string, mediaId: string, replacementMediaId: string): Promise<AlbumMedia> {
+  const response = await apiClient.post<ApiEnvelope<AlbumMedia>>(`/albums/${albumId}/media/${mediaId}/replace`, {
+    replacement_media_id: replacementMediaId,
+  })
+  return unwrap(response)
 }
 
 export async function reorderAlbumMedia(albumId: string, order: string[]): Promise<void> {

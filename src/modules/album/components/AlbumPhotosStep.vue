@@ -8,7 +8,7 @@
     <section class="layout-panel ml-card">
       <p class="layout-panel__hint text-muted">
         {{ photos.length }} foto(s) na galeria. Defina a capa e arraste para reordenar. Os metadados
-        de cada foto são editados dentro das memórias.
+        de cada foto podem ser editados abaixo. No Memorial, você ainda pode reuni-las em memórias.
       </p>
     </section>
     <div v-if="photos.length" class="photo-grid">
@@ -42,6 +42,11 @@
             <em v-if="isCover(photo.id)" class="photo-tile__cover-tag">Capa</em>
           </span>
           <div class="photo-tile__actions">
+            <label class="ml-icon-btn photo-replace" :class="{ 'photo-replace--disabled': replacingId !== null }" title="Substituir foto preservando posição e referências">
+              <input class="hidden" type="file" accept="image/jpeg,image/png,image/webp" :disabled="replacingId !== null" @change="replacePhoto(photo, $event)" />
+              <span v-if="replacingId === photo.id" class="ml-spinner ml-spinner--xs" />
+              <template v-else>↻</template>
+            </label>
             <button
               class="ml-icon-btn"
               :class="{ 'ml-icon-btn--active': isCover(photo.id) }"
@@ -67,6 +72,32 @@
             </button>
           </div>
         </figcaption>
+        <div class="photo-meta">
+          <label class="ml-field">
+            <span>Título</span>
+            <input v-model="photo.title" class="ml-input ml-input--sm" maxlength="200" placeholder="Ex.: Nosso primeiro encontro" @blur="saveMetadata(photo)" />
+          </label>
+          <label class="ml-field">
+            <span>Legenda</span>
+            <textarea v-model="photo.caption" class="ml-input ml-input--sm" maxlength="1000" rows="2" placeholder="Conte o que tornou este momento especial." @blur="saveMetadata(photo)" />
+          </label>
+          <div class="photo-meta__row">
+            <label class="ml-field">
+              <span>Data</span>
+              <input v-model="photo.memory_date" type="date" class="ml-input ml-input--sm" @blur="saveMetadata(photo)" />
+            </label>
+            <label class="ml-field">
+              <span>Local</span>
+              <input v-model="photo.place_name" class="ml-input ml-input--sm" maxlength="160" placeholder="Cidade ou lugar" @blur="saveMetadata(photo)" />
+            </label>
+          </div>
+          <fieldset v-if="isCover(photo.id)" class="cover-focus">
+            <legend>Enquadramento da capa</legend>
+            <label><span>Horizontal</span><input v-model.number="form.book_config.cover.focal_x" type="range" min="0" max="100" /></label>
+            <label><span>Vertical</span><input v-model.number="form.book_config.cover.focal_y" type="range" min="0" max="100" /></label>
+          </fieldset>
+          <small v-if="savingMetadataId === photo.id" class="text-muted">Salvando metadados…</small>
+        </div>
       </figure>
     </div>
 
@@ -96,7 +127,9 @@ import {
   confirmAlbumMedia,
   deleteAlbumMedia,
   presignAlbumMedia,
+  replaceAlbumMedia,
   reorderAlbumMedia,
+  updateAlbumMedia,
 } from '@/api/albums'
 import type { AlbumMedia } from '@/api/types'
 import { resolveApiError } from '@/api/errors'
@@ -121,6 +154,8 @@ const uploading = ref(false)
 const error = ref('')
 const reordering = ref(false)
 const removingId = ref<string | null>(null)
+const replacingId = ref<string | null>(null)
+const savingMetadataId = ref<string | null>(null)
 const photoDragIndex = ref<number | null>(null)
 const photoDropIndex = ref<number | null>(null)
 
@@ -146,11 +181,31 @@ function isCover(mediaId: string) {
 
 function setAsCover(mediaId: string) {
   props.form.book_config.cover.media_id = mediaId
+  props.form.book_config.cover.focal_x ??= 50
+  props.form.book_config.cover.focal_y ??= 50
 }
 
 // Metadados de foto (título/descrição/data/local) são editados dentro de cada
 // memória (AlbumMemoriesStep) no novo modelo de chapters/memories, não na fototeca.
 function flushPendingCaptionSaves() {}
+
+async function saveMetadata(photo: AlbumMedia) {
+  if (savingMetadataId.value === photo.id) return
+  savingMetadataId.value = photo.id
+  error.value = ''
+  try {
+    await updateAlbumMedia(props.albumId, photo.id, {
+      title: photo.title?.trim() || null,
+      caption: photo.caption?.trim() || null,
+      memory_date: photo.memory_date || null,
+      place_name: photo.place_name?.trim() || null,
+    })
+  } catch (err) {
+    error.value = resolveApiError(err, 'Não foi possível salvar os dados da foto.')
+  } finally {
+    savingMetadataId.value = null
+  }
+}
 
 defineExpose({
   flushPendingCaptionSaves,
@@ -203,6 +258,11 @@ async function onFilesSelected(event: Event) {
 
 async function remove(mediaId: string) {
   if (removingId.value) return
+  const photo = props.photos.find((item) => item.id === mediaId)
+  const warning = isCover(mediaId)
+    ? 'Esta foto é a capa do álbum. Ao removê-la, você precisará escolher outra capa. Continuar?'
+    : `Remover${photo?.title ? ` “${photo.title}”` : ' esta foto'} definitivamente do álbum?`
+  if (!window.confirm(warning)) return
   removingId.value = mediaId
   error.value = ''
   try {
@@ -212,6 +272,48 @@ async function remove(mediaId: string) {
     error.value = 'Não foi possível remover a foto.'
   } finally {
     removingId.value = null
+  }
+}
+
+async function replacePhoto(photo: AlbumMedia, event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  input.value = ''
+  if (!file || replacingId.value) return
+
+  replacingId.value = photo.id
+  error.value = ''
+  let replacementMediaId: string | null = null
+  try {
+    const validation = await validatePhotoUpload(file, Math.max(0, props.photos.length - 1))
+    if (!validation.ok) throw new Error(validation.message)
+    const mimeType = inferImageMimeType(file)
+    if (!mimeType) throw new Error('Formato não suportado. Use JPEG, PNG ou WebP.')
+
+    const presign = await presignAlbumMedia(props.albumId, {
+      media_type: 'photo',
+      filename: file.name,
+      mime_type: mimeType,
+      size_bytes: file.size,
+      replacement_media_id: photo.id,
+    })
+    replacementMediaId = presign.media_id
+    await uploadFile(file, presign)
+    await confirmAlbumMedia(props.albumId, presign.media_id)
+    await replaceAlbumMedia(props.albumId, photo.id, presign.media_id)
+    replacementMediaId = null
+    emit('changed')
+  } catch (err) {
+    if (replacementMediaId) {
+      try {
+        await deleteAlbumMedia(props.albumId, replacementMediaId)
+      } catch {
+        // A limpeza periódica do backend também remove uploads temporários órfãos.
+      }
+    }
+    error.value = resolveApiError(err, 'Não foi possível substituir a foto.')
+  } finally {
+    replacingId.value = null
   }
 }
 
@@ -330,6 +432,18 @@ function onPhotoDragEnd() {
   color: var(--accent, #c45d7a);
 }
 
+.photo-replace {
+  display: inline-grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.photo-replace--disabled {
+  cursor: wait;
+  opacity: 0.55;
+  pointer-events: none;
+}
+
 .photo-tile--dragging {
   opacity: 0.55;
 }
@@ -437,6 +551,27 @@ function onPhotoDragEnd() {
   font-size: 0.78rem;
   font-weight: 600;
   color: var(--muted);
+}
+
+.photo-meta__row {
+  display: grid;
+  grid-template-columns: minmax(130px, 0.8fr) minmax(0, 1.2fr);
+  gap: 8px;
+}
+
+.cover-focus {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.cover-focus legend { padding: 0 5px; font-size: 0.78rem; font-weight: 600; color: var(--muted); }
+.cover-focus label { display: grid; grid-template-columns: 72px 1fr; align-items: center; gap: 8px; font-size: 0.78rem; color: var(--muted); }
+
+@media (max-width: 480px) {
+  .photo-meta__row { grid-template-columns: 1fr; }
 }
 
 .hidden {
