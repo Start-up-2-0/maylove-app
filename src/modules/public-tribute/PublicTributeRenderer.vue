@@ -83,12 +83,16 @@ onMounted(async () => {
   try {
     tribute.value = await fetchPublicTribute(slug)
     updateDocumentMetadata(tribute.value)
-    const sessionId = getSessionId()
-    await recordPublicView(slug, sessionId)
   } catch {
     error.value = 'Homenagem não encontrada ou indisponível no momento.'
   } finally {
     loading.value = false
+  }
+
+  if (tribute.value) {
+    // Analytics e secundario: uma falha ao registrar a visualizacao nao pode
+    // esconder uma homenagem que foi carregada corretamente.
+    void recordPublicView(slug, getSessionId()).catch(() => undefined)
   }
 })
 

@@ -76,6 +76,47 @@ export const apiClient = axios.create({
   withCredentials: true,
 })
 
+type PublicRequestConfig = InternalAxiosRequestConfig & {
+  _retriedAnonymously?: boolean
+}
+
+/**
+ * Cliente para endpoints que aceitam autenticacao opcional.
+ *
+ * Um token valido ainda e enviado para que a API possa identificar o proprio
+ * autor. Se a credencial local estiver expirada ou invalida, a requisicao e
+ * repetida anonimamente: uma sessao antiga nunca deve bloquear conteudo publico.
+ */
+export const publicApiClient = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  withCredentials: false,
+})
+
+publicApiClient.interceptors.request.use((config: PublicRequestConfig) => {
+  const token = getAccessToken()
+  if (token && !config._retriedAnonymously) {
+    setAccessTokenHeader(config, AUTH_TOKEN_HEADER, token)
+  }
+  return config
+})
+
+publicApiClient.interceptors.response.use(
+  (response) => response,
+  async (error: AxiosError<ApiErrorBody>) => {
+    const original = error.config as PublicRequestConfig | undefined
+    if (!original || original._retriedAnonymously || error.response?.status !== 401) {
+      return Promise.reject(error)
+    }
+
+    original._retriedAnonymously = true
+    delete original.headers[AUTH_TOKEN_HEADER]
+    return publicApiClient.request(original)
+  },
+)
+
 apiClient.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   const token = getAccessToken()
   if (token) {

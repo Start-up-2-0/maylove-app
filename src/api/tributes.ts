@@ -1,4 +1,4 @@
-import { apiClient, unwrap } from './client'
+import { apiClient, publicApiClient, unwrap } from './client'
 import type {
   ApiEnvelope,
   CheckoutResponse,
@@ -127,16 +127,16 @@ export async function importMusicFromYoutube(
 }
 
 export async function fetchPublicTribute(slug: string): Promise<PublicTribute> {
-  const response = await apiClient.get<ApiEnvelope<PublicTribute>>(`/public/tributes/${slug}`)
+  const response = await publicApiClient.get<ApiEnvelope<PublicTribute>>(`/public/tributes/${slug}`)
   return unwrap(response)
 }
 
 export async function recordPublicView(slug: string, sessionId: string): Promise<void> {
-  await apiClient.post(`/public/tributes/${slug}/view`, { session_id: sessionId })
+  await publicApiClient.post(`/public/tributes/${slug}/view`, { session_id: sessionId })
 }
 
 export async function recordPublicShare(slug: string, sessionId: string): Promise<void> {
-  await apiClient.post(`/public/tributes/${slug}/share`, { session_id: sessionId })
+  await publicApiClient.post(`/public/tributes/${slug}/share`, { session_id: sessionId })
 }
 
 export async function fetchSubscription(): Promise<SubscriptionInfo> {
