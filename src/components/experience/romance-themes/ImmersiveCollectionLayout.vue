@@ -118,13 +118,13 @@ function formatDate(value: string) {
 </script>
 
 <style scoped>
-.collection { --c-accent: #db2777; --c-bg: #fff7fb; --c-card: rgb(255 255 255 / 78%); --c-ink: #3f2433; min-height: 100%; padding: clamp(24px, 6vw, 72px) clamp(16px, 5vw, 56px); background: var(--c-bg); color: var(--c-ink); font-family: var(--exp-font-body, Georgia, serif); overflow: hidden; }
+.collection { --c-accent: #db2777; --c-bg: #fff7fb; --c-card: rgb(255 255 255 / 78%); --c-ink: #3f2433; --c-display: var(--c-ink); min-height: 100%; padding: clamp(24px, 6vw, 72px) clamp(16px, 5vw, 56px); background: var(--c-bg); color: var(--c-ink); font-family: var(--exp-font-body, Georgia, serif); overflow: hidden; }
 .collection * { box-sizing: border-box; min-width: 0; }
 .collection__hero, .collection__final { max-width: 820px; margin: 0 auto; text-align: center; }
 .collection__symbol { display: block; color: var(--c-accent); font-size: 2rem; }
 .collection__eyebrow { margin: 8px 0; color: var(--c-accent); font: 800 .72rem/1.2 system-ui; letter-spacing: .16em; text-transform: uppercase; }
-.collection h1 { max-width: 100%; margin: 10px 0; font: 600 clamp(1.8rem, 8vw, 5.6rem)/.95 var(--exp-font-display, Georgia, serif); overflow-wrap: anywhere; }
-.collection__subtitle { opacity: .7; font-style: italic; }
+.collection h1 { max-width: 100%; margin: 10px 0; color: var(--c-display); font: 600 clamp(1.8rem, 8vw, 5.6rem)/.95 var(--exp-font-display, Georgia, serif); overflow-wrap: anywhere; }
+.collection__subtitle { color: color-mix(in srgb, var(--c-display) 78%, transparent); font-style: italic; }
 .collection__cover-wrap { width: min(100%, 620px); margin: 30px auto; padding: 12px; background: var(--c-card); box-shadow: 0 24px 70px rgb(49 20 36 / 18%); transform: rotate(-1deg); }
 .collection__cover { display: block; width: 100%; max-height: 62vh; object-fit: cover; }
 .collection__countdown, .collection__message, .collection__memories, .collection__journey { max-width: 920px; margin: 42px auto; }
@@ -144,17 +144,18 @@ function formatDate(value: string) {
 .collection__journey small, .collection__journey em { opacity: .66; }
 .collection__final { padding: 60px 12px 24px; }
 .collection__final span { font-size: 2.4rem; }
+.collection__final { color: var(--c-display); }
 .collection__final p { font: italic 1.2rem/1.6 var(--exp-font-display, Georgia, serif); }
-.collection[data-variant='cassette'] { --c-accent:#ff7a18; --c-bg:linear-gradient(135deg,#23150e,#0e0907); --c-card:#332016; --c-ink:#ffe4c7; font-family:'Courier New',monospace; }
+.collection[data-variant='cassette'] { --c-accent:#ff9a44; --c-bg:linear-gradient(135deg,#23150e,#0e0907); --c-card:#332016; --c-ink:#ffe4c7; --c-display:#fff0dc; font-family:'Courier New',monospace; }
 .collection[data-variant='cassette'] .collection__cover-wrap { border: 12px solid #d7a76d; border-radius: 18px; transform:none; }
 .collection[data-variant='polaroid'] { --c-accent:#475569; --c-bg:#e7e5e4; --c-card:#fff; --c-ink:#292524; }
-.collection[data-variant='book'] { --c-accent:#b68a3a; --c-bg:#183628; --c-card:#f5eedc; --c-ink:#2f2619; }
+.collection[data-variant='book'] { --c-accent:#e7bc62; --c-bg:#183628; --c-card:#f5eedc; --c-ink:#f8edcf; --c-display:#fff7df; }
 .collection[data-variant='book'] .collection__message, .collection[data-variant='book'] .collection__memories, .collection[data-variant='book'] .collection__journey { color:#2f2619; }
 .collection[data-variant='bouquet'] { --c-accent:#e11d74; --c-bg:radial-gradient(circle at top,#fff,#ffe4ef); --c-card:rgb(255 255 255 / 82%); --c-ink:#5b213d; }
 .collection[data-variant='treasure'] { --c-accent:#9a6700; --c-bg:#ead39b; --c-card:#f5e5b8; --c-ink:#4b3215; background-image:repeating-linear-gradient(12deg,transparent 0 30px,rgb(91 62 22 / 5%) 31px); }
 .collection[data-variant='diary'] { --c-accent:#7c3aed; --c-bg:repeating-linear-gradient(#faf5ff 0 31px,#ddd6fe 32px); --c-card:rgb(255 255 255 / 88%); --c-ink:#3b2558; }
-.collection[data-variant='fairytale'] { --c-accent:#f6c453; --c-bg:radial-gradient(circle at top,#31347c,#11132f 70%); --c-card:rgb(255 255 255 / 10%); --c-ink:#fff; }
-.collection[data-variant='series'] { --c-accent:#e50914; --c-bg:#080808; --c-card:#181818; --c-ink:#fff; font-family:Inter,system-ui,sans-serif; }
+.collection[data-variant='fairytale'] { --c-accent:#ffd978; --c-bg:radial-gradient(circle at top,#31347c,#11132f 70%); --c-card:rgb(255 255 255 / 12%); --c-ink:#f8f8ff; --c-display:#fff; }
+.collection[data-variant='series'] { --c-accent:#ff3340; --c-bg:#080808; --c-card:#181818; --c-ink:#f5f5f5; --c-display:#fff; font-family:Inter,system-ui,sans-serif; }
 .collection[data-variant='series'] h1 { text-transform:uppercase; letter-spacing:-.04em; }
 @container (max-width: 420px) {
   .collection { width: 100%; max-width: 100%; padding: 24px 14px; }

@@ -399,7 +399,6 @@ async function refreshPreview() {
 
 async function onThemeChanged() {
   await flushAutosave()
-  await reload()
   previewRefreshToken.value += 1
 }
 
