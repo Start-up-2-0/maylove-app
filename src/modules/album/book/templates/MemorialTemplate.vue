@@ -10,7 +10,7 @@
       <div class="mem-hero__content">
         <p class="mem-hero__eyebrow">{{ eyebrow }}</p>
         <h1 class="mem-hero__title">{{ heroTitle }}</h1>
-        <p v-if="book.subtitle" class="mem-hero__dates">{{ book.subtitle }}</p>
+        <p v-if="book.lifeDates || book.subtitle" class="mem-hero__dates">{{ book.lifeDates || book.subtitle }}</p>
         <p v-if="honoreeLabel" class="mem-hero__honoree">{{ honoreeLabel }}</p>
       </div>
     </header>

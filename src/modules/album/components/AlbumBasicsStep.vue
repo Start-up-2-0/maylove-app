@@ -73,6 +73,16 @@
           :placeholder="honoreePlaceholder"
         />
       </label>
+      <div v-if="isMemorial" class="life-dates">
+        <label class="ml-field">
+          <span>Data de nascimento (opcional)</span>
+          <input v-model="form.life_birth_date" type="date" class="ml-input" />
+        </label>
+        <label class="ml-field">
+          <span>Data de falecimento (opcional)</span>
+          <input v-model="form.life_death_date" type="date" class="ml-input" :min="form.life_birth_date || undefined" />
+        </label>
+      </div>
       <label class="ml-field">
         <span>{{ dedicationLabel }}</span>
         <textarea
@@ -82,10 +92,11 @@
           :placeholder="dedicationPlaceholder"
         />
       </label>
-      <label class="ml-check">
-        <input v-model="form.is_public" type="checkbox" />
-        <span>Álbum público (visível pelo link após publicar)</span>
-      </label>
+      <fieldset class="basics-fieldset privacy-options">
+        <legend>Privacidade</legend>
+        <label class="ml-check"><input v-model="form.is_public" type="radio" :value="true" /><span><strong>Compartilhável por link</strong><small>Quem receber o link poderá abrir após a publicação.</small></span></label>
+        <label class="ml-check"><input v-model="form.is_public" type="radio" :value="false" /><span><strong>Privado</strong><small>Não ficará disponível na página pública até você alterar esta opção.</small></span></label>
+      </fieldset>
     </form>
   </div>
 </template>
@@ -302,6 +313,28 @@ const fontPresets = [
   display: flex;
   flex-wrap: wrap;
   gap: 14px;
+}
+
+.life-dates {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.privacy-options {
+  display: grid;
+  gap: 10px;
+}
+
+.privacy-options .ml-check span {
+  display: grid;
+  gap: 2px;
+}
+
+.privacy-options small { color: var(--muted); font-weight: 400; }
+
+@media (max-width: 560px) {
+  .life-dates { grid-template-columns: 1fr; }
 }
 
 .basics-color {

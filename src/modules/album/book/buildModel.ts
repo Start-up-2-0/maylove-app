@@ -66,6 +66,7 @@ interface AlbumBookInput {
   category?: string | null
   honoree_names?: string | null
   dedication?: string | null
+  life_dates?: { birth_date?: string | null; death_date?: string | null } | null
   color_primary?: string | null
   presentation?: string | null
   book_config?: BookConfig | Record<string, unknown> | null
@@ -278,6 +279,7 @@ export function buildMemoryBookModel(album: AlbumBookInput): MemoryBookModel {
     subtitle: album.subtitle ?? undefined,
     closingMessage: album.dedication?.trim() || undefined,
     signature: album.honoree_names?.trim() || undefined,
+    lifeDates: formatLifeDates(album.life_dates),
     colorPrimary: bookConfig.colors.accent || album.color_primary || defaultAccent,
     contentPages,
     bookConfig,
@@ -314,12 +316,14 @@ export function buildMemoryBookModelFromDetail(
           }))
         : undefined
 
+  const lifeDates = (album.content_json as { life_dates?: { birth_date?: string | null; death_date?: string | null } } | null)?.life_dates
   return buildMemoryBookModel({
     title: album.title,
     subtitle: album.subtitle,
     category: 'category' in album ? (album.category ?? undefined) ?? null : null,
     honoree_names: 'honoree_names' in album ? (album.honoree_names ?? undefined) ?? null : null,
     dedication: 'dedication' in album ? (album.dedication ?? undefined) ?? null : null,
+    life_dates: lifeDates ?? null,
     color_primary: album.color_primary,
     presentation: resolvePresentation(
       album.content_json && (album.content_json as { presentation?: string }).presentation
@@ -335,6 +339,16 @@ export function buildMemoryBookModelFromDetail(
       config: e.config ?? null,
     })),
   })
+}
+
+function formatLifeDates(dates?: { birth_date?: string | null; death_date?: string | null } | null): string | undefined {
+  const year = (value?: string | null) => value?.match(/^\d{4}/)?.[0]
+  const birth = year(dates?.birth_date)
+  const death = year(dates?.death_date)
+  if (birth && death) return `${birth} — ${death}`
+  if (birth) return `Nasc. ${birth}`
+  if (death) return `† ${death}`
+  return undefined
 }
 
 export function estimateBookPageCount(

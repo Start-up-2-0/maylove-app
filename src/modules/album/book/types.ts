@@ -63,6 +63,7 @@ export interface MemoryBookModel {
   subtitle?: string
   closingMessage?: string
   signature?: string
+  lifeDates?: string
   colorPrimary: string
   contentPages: MemoryBookContentPage[]
   bookConfig?: import('./bookConfig').BookConfig

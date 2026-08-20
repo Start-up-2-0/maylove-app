@@ -11,7 +11,7 @@
       <p class="eyebrow">Começar</p>
       <h1 class="section-title">Novo álbum</h1>
       <p class="text-muted">
-        Escolha o formato da sua história — galeria fotográfica ou memorial digital sereno.
+        Escolha a ocasião. Cada modelo começa com uma identidade e uma narrativa adequadas, que você pode personalizar.
       </p>
     </header>
 
@@ -58,7 +58,7 @@ const selectedModelId = ref(ALBUM_MODELS[0]?.id ?? 'gallery')
 const selectedModel = computed(() => getAlbumModel(selectedModelId.value) ?? ALBUM_MODELS[0]!)
 
 const createLabel = computed(() =>
-  selectedModel.value.id === 'memorial' ? 'Criar memorial' : 'Criar álbum',
+  selectedModel.value.id === 'memorial' ? 'Criar memorial' : `Criar ${selectedModel.value.name.toLowerCase()}`,
 )
 
 async function create() {
