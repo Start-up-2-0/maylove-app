@@ -180,24 +180,28 @@ function stepIndex(step: AlbumWizardStep): number {
 
 async function goToStep(step: AlbumWizardStep) {
   if (!wizardSteps.value.includes(step)) return
-  if (currentStep.value === 'photos' && step !== 'photos') {
-    await flushAutosave()
-  }
+  if (step === currentStep.value) return
+  const saved = await flushAutosave()
+  if (!saved) return
   currentStep.value = step
 }
 
 async function goToPublish() {
-  const ok = await flushAutosave()
-  if (!ok) {
-    // Ainda assim avança: o publish step tenta flushar de novo antes de publicar.
-  }
-  goToStep('publish')
+  const saved = await flushAutosave()
+  if (!saved) return
+  currentStep.value = 'publish'
 }
 
-function previousStep() {
+async function previousStep() {
   if (navigating.value) return
   const index = stepIndex(currentStep.value)
-  if (index > 0) currentStep.value = wizardSteps.value[index - 1]
+  if (index <= 0) return
+  navigating.value = true
+  try {
+    await goToStep(wizardSteps.value[index - 1])
+  } finally {
+    navigating.value = false
+  }
 }
 
 async function nextStep() {
@@ -208,15 +212,12 @@ async function nextStep() {
       await goToPublish()
       return
     }
-    advanceStep()
+    const index = stepIndex(currentStep.value)
+    if (index >= wizardSteps.value.length - 1) return
+    await goToStep(wizardSteps.value[index + 1])
   } finally {
     navigating.value = false
   }
-}
-
-function advanceStep() {
-  const index = stepIndex(currentStep.value)
-  if (index < wizardSteps.value.length - 1) currentStep.value = wizardSteps.value[index + 1]
 }
 
 async function refreshPreview() {
@@ -224,7 +225,8 @@ async function refreshPreview() {
   try {
     // Garante que posições Polaroid e ajustes do form
     // não sejam sobrescritos por um reload antes do autosave.
-    await flushAutosave()
+    const saved = await flushAutosave()
+    if (!saved) return
     await reload()
     previewRefreshToken.value += 1
   } finally {

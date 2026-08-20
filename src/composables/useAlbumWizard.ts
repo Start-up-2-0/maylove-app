@@ -12,16 +12,31 @@ import {
 import type { BookPresentationId } from '@/modules/album/book/types'
 import { useAutosave } from './useAutosave'
 
+export function mergeAlbumContentJson(
+  current: Record<string, unknown> | null | undefined,
+  presentation: BookPresentationId,
+  additions: Record<string, unknown> = {},
+): Record<string, unknown> {
+  return {
+    ...(current ?? {}),
+    ...additions,
+    presentation,
+  }
+}
+
 export function useAlbumWizard(albumId: string) {
   const album = ref<AlbumDetail | null>(null)
   const loading = ref(true)
   const error = ref('')
+  let persistedContentJson: Record<string, unknown> | null = null
 
   const form = reactive({
     title: '',
     subtitle: '',
     honoree_names: '',
     dedication: '',
+    life_birth_date: '',
+    life_death_date: '',
     category: '',
     color_primary: DEFAULT_BOOK_CONFIG.colors.accent,
     is_public: true,
@@ -39,7 +54,12 @@ export function useAlbumWizard(albumId: string) {
     color_primary: form.book_config.colors.accent || form.color_primary,
     is_public: form.is_public,
     book_config: form.book_config,
-    content_json: { presentation: form.presentation },
+    content_json: mergeAlbumContentJson(persistedContentJson, form.presentation, {
+      life_dates: {
+        birth_date: form.life_birth_date || null,
+        death_date: form.life_death_date || null,
+      },
+    }),
   }))
 
   const { saving, savedAt, error: saveError, flush: flushAutosave } = useAutosave(
@@ -82,10 +102,14 @@ export function useAlbumWizard(albumId: string) {
   }
 
   function syncFormFromAlbum(data: AlbumDetail) {
+    persistedContentJson = data.content_json ? { ...data.content_json } : null
     form.title = data.title ?? ''
     form.subtitle = data.subtitle ?? ''
     form.honoree_names = data.honoree_names ?? ''
     form.dedication = data.dedication ?? data.closing_message ?? ''
+    const lifeDates = (data.content_json as { life_dates?: { birth_date?: string; death_date?: string } } | null)?.life_dates
+    form.life_birth_date = lifeDates?.birth_date ?? ''
+    form.life_death_date = lifeDates?.death_date ?? ''
     form.category = data.category ?? ''
     form.color_primary = data.color_primary ?? DEFAULT_BOOK_CONFIG.colors.accent
     form.is_public = data.is_public

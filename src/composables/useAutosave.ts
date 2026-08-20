@@ -9,35 +9,33 @@ export function useAutosave<T extends Record<string, unknown>>(
   const savedAt = ref<Date | null>(null)
   const error = ref('')
   let timer: ReturnType<typeof setTimeout> | null = null
-  let version = 0
+  let changeVersion = 0
+  let savedVersion = 0
   let pending = false
   let inFlight: Promise<void> | null = null
 
   async function runSave() {
-    const currentVersion = ++version
+    const targetVersion = changeVersion
     saving.value = true
     error.value = ''
     try {
       await saveFn({ ...source.value })
-      if (currentVersion === version) {
-        savedAt.value = new Date()
-        pending = false
-      }
+      savedVersion = Math.max(savedVersion, targetVersion)
+      savedAt.value = new Date()
+      pending = savedVersion < changeVersion
     } catch {
-      if (currentVersion === version) {
-        error.value = 'Não foi possível salvar automaticamente.'
-      }
+      error.value = 'Não foi possível salvar automaticamente.'
+      pending = true
       throw new Error('autosave_failed')
     } finally {
-      if (currentVersion === version) {
-        saving.value = false
-      }
+      saving.value = false
     }
   }
 
   watch(
     source,
     () => {
+      changeVersion += 1
       pending = true
       if (timer) clearTimeout(timer)
       timer = setTimeout(() => {
