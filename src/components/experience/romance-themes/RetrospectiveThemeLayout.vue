@@ -186,7 +186,6 @@
         </ol>
 
         <p v-if="content.closingMessage" class="retro-theme__closing">{{ content.closingMessage }}</p>
-        <footer class="retro-theme__foot">Feito com ♥ no MayLov</footer>
       </section>
     </main>
   </div>

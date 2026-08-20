@@ -114,7 +114,6 @@
         <p v-else class="gift-theme__timeline-empty">Momento especial de vocês aparecerá aqui.</p>
       </section>
 
-      <footer class="gift-theme__foot">Feito com ♥ no MayLov</footer>
     </div>
   </div>
 </template>

@@ -102,7 +102,6 @@
         <p v-else class="curtain-theme__timeline-empty">Momento especial de vocês aparecerá aqui.</p>
       </section>
 
-      <footer class="curtain-theme__foot">Feito com ♥ no MayLov</footer>
     </div>
   </div>
 </template>

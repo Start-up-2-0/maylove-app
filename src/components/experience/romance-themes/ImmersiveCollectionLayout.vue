@@ -197,6 +197,7 @@ function formatDate(value: string) {
 .collection { --c-accent: #db2777; --c-bg: #fff7fb; --c-card: rgb(255 255 255 / 78%); --c-ink: #3f2433; --c-display: var(--c-ink); min-height: 100%; padding: clamp(24px, 6cqi, 72px) clamp(16px, 5cqi, 56px); background: var(--c-bg); color: var(--c-ink); font-family: var(--exp-font-body, Georgia, serif); font-size:var(--exp-type-body,1rem); overflow: hidden; }
 .collection * { box-sizing: border-box; min-width: 0; }
 .collection__hero, .collection__final { max-width: 820px; margin: 0 auto; text-align: center; }
+.collection__hero { min-height:min(var(--exp-first-fold,760px),760px); }
 .collection__symbol { display: block; color: var(--c-accent); font-size: 2rem; }
 .collection__eyebrow { margin: 8px 0; color: var(--c-accent); font: 800 .72rem/1.2 system-ui; letter-spacing: .16em; text-transform: uppercase; }
 .collection h1 { max-width: 100%; margin: 10px 0; color: var(--c-display); font: 600 var(--exp-type-display,clamp(1.8rem,10cqi,5.6rem))/.95 var(--exp-font-display, Georgia, serif); overflow-wrap: anywhere; }
@@ -298,7 +299,7 @@ function formatDate(value: string) {
 .collection[data-variant='fairytale'] .collection__journey li { border:1px solid rgb(255 217 120 / 24%); }
 .collection[data-variant='series'] { --c-accent:#ff3340; --c-bg:#080808; --c-card:#181818; --c-ink:#f5f5f5; --c-display:#fff; font-family:Inter,system-ui,sans-serif; }
 .collection[data-variant='series'] h1 { text-transform:uppercase; letter-spacing:-.04em; }
-.collection[data-variant='series'] .collection__hero { position:relative; max-width:1100px; min-height:min(76vh,720px); display:flex; flex-direction:column; justify-content:flex-end; padding:clamp(140px,28vh,300px) clamp(12px,5vw,64px) 44px; text-align:left; }
+.collection[data-variant='series'] .collection__hero { position:relative; max-width:1100px; min-height:min(var(--exp-first-fold,720px),720px); display:flex; flex-direction:column; justify-content:flex-end; padding:clamp(140px,28vh,300px) clamp(12px,5vw,64px) 44px; text-align:left; }
 .collection[data-variant='series'] .collection__hero::after { content:''; position:absolute; inset:auto 0 0; height:45%; background:linear-gradient(transparent,#080808); pointer-events:none; }
 .collection[data-variant='series'] .collection__hero > * { position:relative; z-index:1; }
 .collection[data-variant='series'] .collection__cover-wrap { position:absolute; z-index:0; inset:0; width:100%; margin:0; padding:0; background:#111; box-shadow:none; transform:none; }

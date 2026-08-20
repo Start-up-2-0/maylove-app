@@ -28,6 +28,10 @@
         :mode="mode"
         :share-url="shareUrl"
       />
+      <footer v-if="themeLayout" class="exp-signature" aria-label="Criado com MayLov">
+        <span aria-hidden="true">♥</span>
+        <span>Feito com carinho no <strong>MayLov</strong></span>
+      </footer>
     </div>
 
     <div v-if="isFull" class="exp-controls">
@@ -130,12 +134,15 @@ const rootStyle = computed<CSSProperties>(() => {
     vars['--exp-hero-min'] = '220px'
     vars['--exp-hero-card-min'] = '180px'
     vars['--exp-stage'] = 'auto'
+    vars['--exp-first-fold'] = '460px'
   } else if (props.mode === 'preview') {
     vars['--exp-hero-min'] = '560px'
     vars['--exp-hero-card-min'] = '420px'
     vars['--exp-stage'] = '620px'
+    vars['--exp-first-fold'] = '620px'
   } else {
     vars['--exp-stage'] = '100svh'
+    vars['--exp-first-fold'] = 'min(100svh, 900px)'
   }
   return { ...vars, fontFamily: props.theme.fontBody }
 })
@@ -205,6 +212,30 @@ const rootStyle = computed<CSSProperties>(() => {
   position: relative;
   z-index: 2;
   container-type: inline-size;
+}
+.exp-signature {
+  position: relative;
+  z-index: 5;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  min-height: 64px;
+  padding: 18px 20px;
+  border-top: 1px solid color-mix(in srgb, var(--exp-primary, #e11d7a) 18%, transparent);
+  background: color-mix(in srgb, var(--exp-bg, #fff) 94%, transparent);
+  color: var(--exp-muted, #745f6b);
+  font: 600 var(--exp-type-caption, 0.78rem)/1.3 system-ui, sans-serif;
+  letter-spacing: 0.035em;
+  text-align: center;
+}
+.exp-signature > span:first-child {
+  color: var(--exp-primary, #e11d7a);
+  font-size: 0.92rem;
+}
+.exp-signature strong {
+  color: var(--exp-ink, currentColor);
+  font-weight: 800;
 }
 .exp-controls {
   position: fixed;
